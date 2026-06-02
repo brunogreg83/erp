@@ -3589,12 +3589,12 @@ Extraia todos os produtos, mesmo que sejam muitos. Use os valores numéricos exa
     numero_nf:  parsed.numero_nf  || '—',
     data:       parsed.data       || '—',
     itens:      (parsed.itens || []).map(it => ({
-      codigo:         it.codigo         || '',
-      nome:           it.nome           || '',
-      quantidade:     parseFloat(it.quantidade)     || 0,
-      unidade:        it.unidade        || 'UN',
-      preco_unitario: parseFloat(it.preco_unitario) || 0,
-      total_item:     parseFloat(it.total_item)     || 0,
+      codigo:         String(it.codigo  || ''),
+      nome:           String(it.nome    || ''),
+      quantidade:     parseFloat(String(it.quantidade     || 0).replace(',','.')) || 0,
+      unidade:        String(it.unidade || 'UN'),
+      preco_unitario: parseFloat(String(it.preco_unitario || 0).replace(/\./g,'').replace(',','.')) || 0,
+      total_item:     parseFloat(String(it.total_item     || 0).replace(/\./g,'').replace(',','.')) || 0,
     }))
   };
 }
