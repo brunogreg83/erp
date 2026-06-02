@@ -1365,12 +1365,11 @@ const sit    = (e,m) => e <= 0 || e < m * 0.5 ? 'Crítico' : e < m ? 'Baixo' : '
 const stFin  = s => { const d=daysTo(s); return d<0?'Vencido':d<=3?'Pendente':'No prazo'; };
 
 window.marcarPago = async (id) => {
-  const idx = D.pagar.findIndex(p => p.id === id);
-  if (idx < 0) return;
-  D.pagar[idx].pago = !D.pagar[idx].pago;
-  await salvar('pagar', D.pagar);
-  renderFinanceiro();
-  toast(D.pagar[idx].pago ? '✅ Marcado como Pago!' : 'Pagamento desfeito.');
+  const item = D.pagar.find(p => p.id === id);
+  if (!item) return;
+  const novoPago = !item.pago;
+  await upd('pagar', id, { pago: novoPago });
+  toast(novoPago ? '✅ Marcado como Pago!' : '↩️ Pagamento desfeito.');
 };
 
 function badge(t) {
@@ -2241,9 +2240,9 @@ window.filtrarPagarMes = () => {
   document.getElementById('tabela-pagar').innerHTML = filtradas.map(p => `<tr>
     <td>${p.fornecedor}${p.recorrente ? ' <span title="Recorrente · ' + (p.parcela||'') + '/' + (p.total_parcelas||'') + '" style="font-size:10px;background:#E6F1FB;color:#185FA5;padding:1px 6px;border-radius:10px;margin-left:4px;">🔄 ' + (p.parcela||'') + '/' + (p.total_parcelas||'?') + '</span>' : ''}</td>
     <td>${fmtDt(p.vencimento)}</td><td>${R$(p.valor)}</td>
-    <td>${p.pago ? badge('Pago') : badge(stFin(p.vencimento))}</td>
+    <td>${p.pago === true ? badge('Pago') : badge(stFin(p.vencimento))}</td>
     <td><div class="td-actions">
-      ${!p.pago ? `<button class="btn-edit" style="background:#1D9E75;color:#fff;border-color:#1D9E75;" onclick="marcarPago('${p.id}')">✓ Pago</button>` : `<button class="btn-edit" style="background:#aaa;color:#fff;border-color:#aaa;" onclick="marcarPago('${p.id}')">Desfazer</button>`}
+      ${p.pago !== true ? `<button class="btn-edit" style="background:#1D9E75;color:#fff;border-color:#1D9E75;" onclick="marcarPago('${p.id}')">✓ Pago</button>` : `<button class="btn-edit" style="background:#aaa;color:#fff;border-color:#aaa;" onclick="marcarPago('${p.id}')">Desfazer</button>`}
       <button class="btn-edit" onclick="editPagar('${p.id}')">Editar</button>
       <button class="btn-danger" onclick="delPagar('${p.id}')">✕</button>
     </div></td></tr>`).join('')
