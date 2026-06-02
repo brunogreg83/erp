@@ -3563,11 +3563,26 @@ Extraia todos os produtos, mesmo que sejam muitos. Use os valores numéricos exa
   });
 
   const data = await response.json();
+
+  // Verificar erro da API
+  if (!response.ok || data.error) {
+    const msg = data.error?.message || JSON.stringify(data);
+    throw new Error('API Anthropic: ' + msg);
+  }
+
   const text = data.content?.map(c => c.text || '').join('').trim();
+
+  if (!text) throw new Error('Resposta vazia da IA. Tente novamente.');
 
   // Parse JSON da resposta
   const clean = text.replace(/```json|```/g, '').trim();
-  const parsed = JSON.parse(clean);
+
+  let parsed;
+  try {
+    parsed = JSON.parse(clean);
+  } catch(e) {
+    throw new Error('IA não retornou JSON válido. Tente novamente ou use o XML da NF-e.');
+  }
 
   return {
     fornecedor: parsed.fornecedor || '—',
