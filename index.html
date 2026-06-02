@@ -1364,8 +1364,17 @@ const totPed = p => (p.itens||[]).reduce((s,i) => s + (parseFloat(i.qty)||0) * (
 const sit    = (e,m) => e <= 0 || e < m * 0.5 ? 'Crítico' : e < m ? 'Baixo' : 'OK';
 const stFin  = s => { const d=daysTo(s); return d<0?'Vencido':d<=3?'Pendente':'No prazo'; };
 
+window.marcarPago = async (id) => {
+  const idx = D.pagar.findIndex(p => p.id === id);
+  if (idx < 0) return;
+  D.pagar[idx].pago = !D.pagar[idx].pago;
+  await salvar('pagar', D.pagar);
+  renderFinanceiro();
+  toast(D.pagar[idx].pago ? '✅ Marcado como Pago!' : 'Pagamento desfeito.');
+};
+
 function badge(t) {
-  const cls = {Entregue:'green',Ativo:'green',OK:'green',Recebido:'green','No prazo':'green',
+  const cls = {Entregue:'green',Ativo:'green',OK:'green',Recebido:'green','No prazo':'green',Pago:'green',
     'Em rota':'amber',Baixo:'amber',Pendente:'amber','Em trânsito':'amber',Inativo:'amber',
     Aguardando:'gray',Separação:'blue',Crítico:'red',Vencido:'red'};
   return `<span class="badge badge-${cls[t]||'gray'}">${t}</span>`;
@@ -2232,8 +2241,9 @@ window.filtrarPagarMes = () => {
   document.getElementById('tabela-pagar').innerHTML = filtradas.map(p => `<tr>
     <td>${p.fornecedor}${p.recorrente ? ' <span title="Recorrente · ' + (p.parcela||'') + '/' + (p.total_parcelas||'') + '" style="font-size:10px;background:#E6F1FB;color:#185FA5;padding:1px 6px;border-radius:10px;margin-left:4px;">🔄 ' + (p.parcela||'') + '/' + (p.total_parcelas||'?') + '</span>' : ''}</td>
     <td>${fmtDt(p.vencimento)}</td><td>${R$(p.valor)}</td>
-    <td>${badge(stFin(p.vencimento))}</td>
+    <td>${p.pago ? badge('Pago') : badge(stFin(p.vencimento))}</td>
     <td><div class="td-actions">
+      ${!p.pago ? `<button class="btn-edit" style="background:#1D9E75;color:#fff;border-color:#1D9E75;" onclick="marcarPago('${p.id}')">✓ Pago</button>` : `<button class="btn-edit" style="background:#aaa;color:#fff;border-color:#aaa;" onclick="marcarPago('${p.id}')">Desfazer</button>`}
       <button class="btn-edit" onclick="editPagar('${p.id}')">Editar</button>
       <button class="btn-danger" onclick="delPagar('${p.id}')">✕</button>
     </div></td></tr>`).join('')
@@ -2288,11 +2298,6 @@ window.atualizarSaldoMes = () => {
       <div class="kpi-label" style="color:#3B6D11;">↑ Receitas previstas</div>
       <div class="kpi-value" style="color:#1D9E75;">${R$(tRecMes)}</div>
       <div style="margin-top:8px;max-height:120px;overflow-y:auto;">${recItens || '<div style="font-size:12px;color:#bbb;">Nenhum lançamento</div>'}</div>
-    </div>
-    <div class="kpi-card" style="background:#f5f5f3;">
-      <div class="kpi-label" style="color:#A32D2D;">↓ Despesas previstas</div>
-      <div class="kpi-value" style="color:#D85A30;">${R$(tPagMes)}</div>
-      <div style="margin-top:8px;max-height:120px;overflow-y:auto;">${pagItens || '<div style="font-size:12px;color:#bbb;">Nenhum lançamento</div>'}</div>
     </div>`;
 };
 
