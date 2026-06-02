@@ -148,7 +148,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   .content { padding: 16px; padding-bottom: 80px; overflow-y: auto; flex: 1; }
 
   /* Grids viram 1 coluna */
-  .kpi-grid   { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .kpi-grid   { grid-template-columns: 1fr; gap: 10px; }
   .two-col    { grid-template-columns: 1fr; gap: 12px; }
   .three-col  { grid-template-columns: 1fr; gap: 10px; }
 
@@ -369,9 +369,10 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 
       <!-- VENDAS -->
       <div class="screen" id="screen-vendas">
-        <div style="display:flex;gap:8px;margin-bottom:18px;">
+        <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center;">
           <button class="btn-primary" onclick="openModal('modal-pedido')"><i class="ti ti-plus"></i> Novo pedido</button>
           <button class="btn-ghost" onclick="exportCSV()"><i class="ti ti-download"></i> Exportar CSV</button>
+          <input class="form-input" id="vendas-busca" placeholder="🔍 Buscar por cliente, status ou nº pedido..." style="max-width:300px;height:36px;margin-left:auto;" oninput="filtrarVendas(this.value)">
         </div>
         <div class="table-wrap">
           <table><thead><tr><th>Nº Pedido</th><th>Data</th><th>Cliente</th><th>Itens</th><th>Total</th><th>Status</th><th></th></tr></thead>
@@ -750,7 +751,11 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <div class="section-title" style="margin-top:8px;">Itens do pedido</div>
       <div id="ped-itens"></div>
       <button class="btn-ghost" style="width:100%;margin-top:4px;" onclick="addItem()"><i class="ti ti-plus"></i> Adicionar item</button>
-      <div class="form-group" style="margin-top:14px;"><label class="form-label">Observações</label>
+      <div class="form-group" style="margin-top:14px;">
+        <label class="form-label">Desconto (R$)</label>
+        <input class="form-input" type="text" inputmode="decimal" id="ped-desconto" value="0" placeholder="0,00">
+      </div>
+      <div class="form-group"><label class="form-label">Observações</label>
         <textarea class="form-input" id="ped-obs" rows="3" placeholder="Observações sobre o pedido, entrega, condições especiais..." style="resize:vertical;"></textarea>
       </div>
     </div>
@@ -1204,49 +1209,7 @@ document.addEventListener('wheel', function(e) {
 window.ocItens = []; // estado global dos itens da OC
 window.pitens  = []; // estado global dos itens do pedido
 
-// ── Máscaras de formatação automática ─────────────────────────────────────
-function maskCNPJ(v) {
-  v = v.replace(/\D/g,'').slice(0,14);
-  if (v.length <= 2)  return v;
-  if (v.length <= 5)  return v.slice(0,2)+'.'+v.slice(2);
-  if (v.length <= 8)  return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5);
-  if (v.length <= 12) return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8);
-  return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8,12)+'-'+v.slice(12,14);
-}
-
-function maskTel(v) {
-  v = v.replace(/\D/g,'').slice(0,11);
-  if (v.length <= 2)  return '(' + v;
-  if (v.length <= 6)  return '('+v.slice(0,2)+') '+v.slice(2);
-  if (v.length <= 10) return '('+v.slice(0,2)+') '+v.slice(2,6)+'-'+v.slice(6);
-  return '('+v.slice(0,2)+') '+v.slice(2,7)+'-'+v.slice(7,11);
-}
-
-function applyMask(el, fn) {
-  el.addEventListener('input', function() {
-    const pos = this.selectionStart;
-    const prev = this.value.length;
-    this.value = fn(this.value);
-    const diff = this.value.length - prev;
-    this.setSelectionRange(pos + diff, pos + diff);
-  });
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  // Clientes
-  const clCnpj = document.getElementById('cl-cnpj');
-  const clTel  = document.getElementById('cl-tel');
-  if (clCnpj) applyMask(clCnpj, maskCNPJ);
-  if (clTel)  applyMask(clTel,  maskTel);
-
-  // Fornecedores
-  const foTel  = document.getElementById('forn-tel');
-  const foCnpj = document.getElementById('forn-cnpj');
-  if (foCnpj) applyMask(foCnpj, maskCNPJ);
-  if (foTel)  applyMask(foTel,  maskTel);
-});
-
-// ── Máscaras de CNPJ e Telefone ───────────────────────────────────────────
+// ── Máscaras de CNPJ, Telefone e CEP ─────────────────────────────────────
 function maskCNPJ(v) {
   v = v.replace(/\D/g,'').slice(0,14);
   if (v.length <= 2)  return v;
@@ -1360,16 +1323,43 @@ const R$     = v => 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDi
 const fmtDt  = s => { if(!s) return '—'; const [y,m,d]=s.split('-'); return `${d}/${m}/${y}`; };
 const today  = () => new Date().toISOString().split('T')[0];
 const daysTo = s => Math.round((new Date(s) - new Date(today())) / 86400000);
-const totPed = p => (p.itens||[]).reduce((s,i) => s + (parseFloat(i.qty)||0) * (parseFloat(i.preco)||0), 0);
+const totPed = p => Math.max(0, (p.itens||[]).reduce((s,i) => s + (parseFloat(i.qty)||0) * (parseFloat(i.preco)||0), 0) - (parseFloat(p.desconto)||0));
 const sit    = (e,m) => e <= 0 || e < m * 0.5 ? 'Crítico' : e < m ? 'Baixo' : 'OK';
 const stFin  = s => { const d=daysTo(s); return d<0?'Vencido':d<=3?'Pendente':'No prazo'; };
 
 window.marcarPago = async (id) => {
   const item = D.pagar.find(p => p.id === id);
-  if (!item) return;
-  const novoPago = !item.pago;
-  await upd('pagar', id, { pago: novoPago });
+  if (!item) { toast('❌ Lançamento não encontrado.'); return; }
+  const novoPago = item.pago !== true;
+  // Atualiza local imediatamente para feedback visual instantâneo
+  item.pago = novoPago;
+  renderFinanceiro();
   toast(novoPago ? '✅ Marcado como Pago!' : '↩️ Pagamento desfeito.');
+  // Persiste no Firebase
+  try {
+    await upd('pagar', id, { pago: novoPago });
+  } catch(e) {
+    // Reverte se falhar
+    item.pago = !novoPago;
+    renderFinanceiro();
+    toast('❌ Erro ao salvar. Tente novamente.');
+  }
+};
+
+window.marcarRecebido = async (id) => {
+  const item = D.receber.find(r => r.id === id);
+  if (!item) { toast('❌ Título não encontrado.'); return; }
+  const novoRecebido = item.recebido !== true;
+  item.recebido = novoRecebido;
+  filtrarReceberMes();
+  toast(novoRecebido ? '✅ Marcado como Recebido!' : '↩️ Recebimento desfeito.');
+  try {
+    await upd('receber', id, { recebido: novoRecebido });
+  } catch(e) {
+    item.recebido = !novoRecebido;
+    filtrarReceberMes();
+    toast('❌ Erro ao salvar. Tente novamente.');
+  }
 };
 
 function badge(t) {
@@ -1531,6 +1521,8 @@ function prepPedido() {
   window.pitens = [];
   document.getElementById('ped-itens').innerHTML = '';
   sel('ped-cli', D.clientes.map(c => c.nome));
+  const descEl = document.getElementById('ped-desconto');
+  if (descEl) descEl.value = '0';
 }
 window.addItem = () => {
   const idx = window.pitens.length;
@@ -1560,7 +1552,8 @@ window.salvarPedido = async () => {
     pgto:    document.getElementById('ped-pgto').value,
     forma:   document.getElementById('ped-forma').value,
     cond:    document.getElementById('ped-cond')?.value  || '',
-    obs:     document.getElementById('ped-obs')?.value   || '',
+    obs:      document.getElementById('ped-obs')?.value      || '',
+    desconto: parseFloat(document.getElementById('ped-desconto')?.value || '0') || 0,
     itens
   });
   closeModal('modal-pedido');
@@ -1597,6 +1590,8 @@ window.editPedido = id => {
     document.getElementById('ped-cond').value = p.cond || '';
   if (document.getElementById('ped-obs'))
     document.getElementById('ped-obs').value  = p.obs  || '';
+  if (document.getElementById('ped-desconto'))
+    document.getElementById('ped-desconto').value = p.desconto || 0;
 
   // popular itens preservando produto, qty e preço originais
   (p.itens || []).forEach(it => {
@@ -1643,7 +1638,8 @@ window.atualizarPedido = async id => {
     pgto:    document.getElementById('ped-pgto').value,
     forma:   document.getElementById('ped-forma').value,
     cond:    document.getElementById('ped-cond')?.value || '',
-    obs:     document.getElementById('ped-obs')?.value  || '',
+    obs:      document.getElementById('ped-obs')?.value      || '',
+    desconto: parseFloat(document.getElementById('ped-desconto')?.value || '0') || 0,
     itens
   });
 
@@ -1693,6 +1689,35 @@ function renderPedidos() {
       }).join('')
     : '<tr><td colspan="7"><div class="empty-state">Nenhum pedido ainda. Crie o primeiro!</div></td></tr>';
 }
+window.filtrarVendas = (q) => {
+  const lo = q.toLowerCase().trim();
+  const rows = [...D.pedidos].sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  const filtradas = lo ? rows.filter(p =>
+    (p.cliente||'').toLowerCase().includes(lo) ||
+    (p.status||'').toLowerCase().includes(lo) ||
+    p.id.slice(-6).toLowerCase().includes(lo)
+  ) : rows;
+
+  document.getElementById('tabela-pedidos').innerHTML = filtradas.length
+    ? filtradas.map(p => {
+        const nfBtn = p.nf_emitida
+          ? `<button class="btn-nf emitida" title="NF emitida: ${p.nf_numero||'—'}" onclick="verDadosNF('${p.id}')"><i class="ti ti-file-check"></i> NF ${p.nf_numero||'emitida'}</button>`
+          : `<button class="btn-nf" onclick="abrirEmissaoNF('${p.id}')" title="Faturar / Emitir NF"><i class="ti ti-receipt-2"></i> Faturar</button>`;
+        return `<tr>
+          <td>#${p.id.slice(-6).toUpperCase()}</td>
+          <td>${fmtDt(p.data)}</td><td>${p.cliente}</td>
+          <td>${(p.itens||[]).length}</td><td>${R$(totPed(p))}</td>
+          <td>${badge(p.status)}</td>
+          <td><div class="td-actions">
+            ${nfBtn}
+            <button class="btn-view" onclick="verPedido('${p.id}')" title="Ver pedido"><i class="ti ti-file-text"></i></button>
+            <button class="btn-edit" onclick="editPedido('${p.id}')">Editar</button>
+            <button class="btn-danger" onclick="delPedido('${p.id}')">Excluir</button>
+          </div></td></tr>`;
+      }).join('')
+    : `<tr><td colspan="7"><div class="empty-state">Nenhum pedido encontrado para "${q}".</div></td></tr>`;
+};
+
 window.exportCSV = () => {
   const rows = [['ID','Data','Cliente','Total','Status'], ...D.pedidos.map(p=>[p.id,fmtDt(p.data),p.cliente,totPed(p),p.status])];
   const a = document.createElement('a');
@@ -1771,11 +1796,8 @@ window.atualizarProduto = async id => {
     obs:       document.getElementById('pr-obs').value,
   };
 
-  console.log('[atualizarProduto] id:', id, '| dados:', dados);
-
   try {
     await updateDoc(doc(db, 'produtos', id), dados);
-    console.log('[atualizarProduto] Firebase OK');
     document.getElementById('modal-produto').classList.remove('open');
     document.querySelector('#modal-produto .modal-footer').innerHTML =
       '<button class="btn-ghost" onclick="closeModal(\'modal-produto\')">Cancelar</button>' +
@@ -2128,61 +2150,33 @@ window.atualizarPagar = async id => {
   closeModal('modal-pagar'); toast('✅ Conta atualizada!');
 };
 
+function popularSeletorMeses(elId, selectedIdx = 0) {
+  const sel = document.getElementById(elId);
+  if (!sel) return;
+  sel.innerHTML = '';
+  const now = new Date();
+  const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                 'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    const opt = document.createElement('option');
+    opt.value = ym;
+    opt.textContent = meses[d.getMonth()] + '/' + d.getFullYear();
+    if (i === selectedIdx) opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+
 function renderFinanceiro() {
   const tR = D.receber.reduce((s,r) => s+(parseFloat(r.valor)||0), 0);
   const tP = D.pagar.reduce((s,p) => s+(parseFloat(p.valor)||0),   0);
 
-  // popular seletor de meses do Saldo Projetado
-  const sel = document.getElementById('fin-mes-saldo');
-  if (sel && sel.options.length === 0) {
-    const now = new Date();
-    const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-                   'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    for (let i = 0; i < 12; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-      const ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-      const opt = document.createElement('option');
-      opt.value = ym;
-      opt.textContent = meses[d.getMonth()] + '/' + d.getFullYear();
-      if (i === 0) opt.selected = true;
-      sel.appendChild(opt);
-    }
-  }
+  // popular seletores de mês (sempre limpa e repopula para garantir mês atual correto)
+  popularSeletorMeses('fin-mes-saldo');
+  popularSeletorMeses('pagar-mes-sel');
+  popularSeletorMeses('receber-mes-sel');
   atualizarSaldoMes();
-
-  // popular seletor de meses de Contas a Pagar
-  const selPagar = document.getElementById('pagar-mes-sel');
-  if (selPagar && selPagar.options.length === 0) {
-    const now = new Date();
-    const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-                   'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    for (let i = 0; i < 12; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-      const ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-      const opt = document.createElement('option');
-      opt.value = ym;
-      opt.textContent = meses[d.getMonth()] + '/' + d.getFullYear();
-      if (i === 0) opt.selected = true;
-      selPagar.appendChild(opt);
-    }
-  }
-
-  // popular seletor de meses de Contas a Receber
-  const selReceber = document.getElementById('receber-mes-sel');
-  if (selReceber && selReceber.options.length === 0) {
-    const now2 = new Date();
-    const meses2 = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-                    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    for (let i = 0; i < 12; i++) {
-      const d = new Date(now2.getFullYear(), now2.getMonth() + i, 1);
-      const ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-      const opt = document.createElement('option');
-      opt.value = ym;
-      opt.textContent = meses2[d.getMonth()] + '/' + d.getFullYear();
-      if (i === 0) opt.selected = true;
-      selReceber.appendChild(opt);
-    }
-  }
 
   // tabela contas a receber — filtrada pelo mês selecionado
   filtrarReceberMes();
@@ -2210,8 +2204,11 @@ window.filtrarReceberMes = () => {
 
   document.getElementById('tabela-receber').innerHTML = filtradas.map(r => `<tr>
     <td>${r.cliente}</td><td>${fmtDt(r.vencimento)}</td><td>${R$(r.valor)}</td>
-    <td>${badge(stFin(r.vencimento))}</td>
+    <td>${r.recebido === true ? badge('Recebido') : badge(stFin(r.vencimento))}</td>
     <td><div class="td-actions">
+      ${r.recebido !== true
+        ? `<button class="btn-edit" style="background:#1D9E75;color:#fff;border-color:#1D9E75;" onclick="marcarRecebido('${r.id}')">✓ Recebido</button>`
+        : `<button class="btn-edit" style="background:#aaa;color:#fff;border-color:#aaa;" onclick="marcarRecebido('${r.id}')">Desfazer</button>`}
       <button class="btn-edit" onclick="editReceber('${r.id}')">Editar</button>
       <button class="btn-danger" onclick="delReceber('${r.id}')">✕</button>
     </div></td></tr>`).join('')
@@ -3213,8 +3210,8 @@ function buildPedidoHtml(p, cli, cod, tot, itensRows) {
 '</div>\n' +
 
 '<div class="totals"><div class="totals-box">\n' +
-'  <div class="total-row"><span>Subtotal</span><span>R$ ' + Number(tot).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span></div>\n' +
-'  <div class="total-row"><span>Descontos</span><span>R$ 0,00</span></div>\n' +
+'  <div class="total-row"><span>Subtotal</span><span>R$ ' + Number((p.itens||[]).reduce((s,i)=>s+(parseFloat(i.qty)||0)*(parseFloat(i.preco)||0),0)).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span></div>\n' +
+'  <div class="total-row"><span>Desconto</span><span style="color:#D85A30;">- R$ ' + Number(parseFloat(p.desconto)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span></div>\n' +
 '  <div class="total-row"><span>Total do Pedido</span><span>R$ ' + Number(tot).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span></div>\n' +
 '</div></div>\n' +
 
@@ -3749,19 +3746,8 @@ function getAnthropicKey() {
   return localStorage.getItem('anthropic_api_key') || '';
 }
 
-// Preencher campo ao entrar em Ajustes
-const _goToOrig = window.goTo;
-window.goTo = function(sec, btn) {
-  if (_goToOrig) _goToOrig(sec, btn);
-  if (sec === 'ajustes') {
-    setTimeout(() => {
-      const k = getAnthropicKey();
-      const el = document.getElementById('anthropic-key-input');
-      const st = document.getElementById('anthropic-key-status');
-      if (el && k) { el.value = k; if(st) st.innerHTML = '<span style="color:#1D9E75;">✅ Chave configurada</span>'; }
-    }, 50);
-  }
-};
+// Preenchimento da chave Anthropic ao entrar em Ajustes
+// (integrado diretamente no goTo final abaixo)
 
 // ── Usuários ───────────────────────────────────────────────────────────────
 window.salvarUsuario = async () => {
@@ -3862,6 +3848,15 @@ window.goTo = (id, btn) => {
   btn.classList.add('active');
   document.getElementById('page-title').textContent = titles[id];
   sessionStorage.setItem('abc_tela', id);
+  // Preencher chave Anthropic ao entrar em Ajustes
+  if (id === 'ajustes') {
+    setTimeout(() => {
+      const k = getAnthropicKey();
+      const el = document.getElementById('anthropic-key-input');
+      const st = document.getElementById('anthropic-key-status');
+      if (el && k) { el.value = k; if (st) st.innerHTML = '<span style="color:#1D9E75;">✅ Chave configurada</span>'; }
+    }, 50);
+  }
   // redesenhar gráficos que dependem de visibilidade
   if (id === 'financeiro') {
     const tR = D.receber.reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
