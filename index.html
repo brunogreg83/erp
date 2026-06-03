@@ -3534,12 +3534,12 @@ Retorne SOMENTE um JSON válido, sem texto antes ou depois, no seguinte formato:
 
 Extraia todos os produtos, mesmo que sejam muitos. Use os valores numéricos exatos da NF.`;
 
-  const apiKey = getAnthropicKey();
+  const apiKey = getOpenAIKey();
   if (!apiKey) {
     throw new Error('Chave API Anthropic não configurada. Acesse Ajustes → Inteligência Artificial para inserir sua chave.');
   }
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -3548,7 +3548,7 @@ Extraia todos os produtos, mesmo que sejam muitos. Use os valores numéricos exa
       'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
+      model: 'gpt-5.4-mini',
       max_tokens: 4000,
       messages: [{
         role: 'user',
@@ -3742,7 +3742,7 @@ window.salvarAnthropicKey = () => {
   setTimeout(() => { const el = document.getElementById('anthropic-key-status'); if(el) el.textContent = ''; }, 3000);
 };
 
-function getAnthropicKey() {
+function getOpenAIKey() {
   return localStorage.getItem('anthropic_api_key') || '';
 }
 
@@ -3851,7 +3851,7 @@ window.goTo = (id, btn) => {
   // Preencher chave Anthropic ao entrar em Ajustes
   if (id === 'ajustes') {
     setTimeout(() => {
-      const k = getAnthropicKey();
+      const k = getOpenAIKey();
       const el = document.getElementById('anthropic-key-input');
       const st = document.getElementById('anthropic-key-status');
       if (el && k) { el.value = k; if (st) st.innerHTML = '<span style="color:#1D9E75;">✅ Chave configurada</span>'; }
@@ -3886,3 +3886,45 @@ window._getSessao = () => { try { return JSON.parse(sessionStorage.getItem(SESSI
 </script>
 </body>
 </html>
+
+
+function gerarAlertasInteligentes(){
+  try{
+    const alertas=[];
+
+    (D.produtos||[]).forEach(p=>{
+      const e=parseFloat(p.estoque||0);
+      const m=parseFloat(p.minimo||0);
+      if(m>0 && e<m){
+        alertas.push('⚠️ Estoque baixo: '+(p.nome||p.produto));
+      }
+    });
+
+    (D.pagar||[]).forEach(c=>{
+      if(!c.pago){
+        const v=new Date(c.vencimento||c.data||0);
+        if(v < new Date()){
+          alertas.push('🔴 Conta vencida: '+(c.descricao||'Pagamento'));
+        }
+      }
+    });
+
+    (D.receber||[]).forEach(r=>{
+      if(!r.recebido){
+        const v=new Date(r.vencimento||r.data||0);
+        if(v < new Date()){
+          alertas.push('🟠 Recebimento pendente: '+(r.cliente||'Cliente'));
+        }
+      }
+    });
+
+    const el=document.getElementById('dash-alertas');
+    if(el){
+      el.innerHTML='<div class="section-title">Alertas do sistema</div>' +
+        (alertas.length
+          ? '<div style="font-size:13px;">'+alertas.map(a=>'<div style="margin:6px 0;">'+a+'</div>').join('')+'</div>'
+          : '<div style="color:#1D9E75;font-size:13px;">✅ Nenhum alerta crítico.</div>');
+    }
+  }catch(e){console.error(e);}
+}
+
