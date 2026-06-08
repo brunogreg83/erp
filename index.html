@@ -4023,10 +4023,6 @@ function renderAll() {
 // expor globalmente para o onchange do select funcionar
 window.renderDashboard = renderDashboard;
 window._getSessao = () => { try { return JSON.parse(sessionStorage.getItem(SESSION_KEY)); } catch(e){ return null; } };
-</script>
-</body>
-</html>
-
 
 function gerarAlertasInteligentes(){
   try{
@@ -4067,4 +4063,7 @@ function gerarAlertasInteligentes(){
     }
   }catch(e){console.error(e);}
 }
+</script>
+</body>
+</html>
 
