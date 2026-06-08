@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AB Chemicals – ERP Cloud</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>emailjs.init('kAwPjAH_jv7lOCqeT');</script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a18; min-height: 100vh; }
@@ -3329,8 +3331,8 @@ window.__enviarPedidoEmail = function(pedidoId, cb) {
 
   if (!cli.email) { cb(false, 'Cliente sem email cadastrado'); return; }
 
-  const cod  = '#' + p.id.slice(-6).toUpperCase();
-  const tot  = totPed(p);
+  const cod      = '#' + p.id.slice(-6).toUpperCase();
+  const tot      = totPed(p);
   const itensRows = (p.itens||[]).map((it,i) =>
     '<tr><td>' + (i+1) + '</td><td>' + it.produto + '</td>' +
     '<td style="text-align:center;">' + it.qty + '</td>' +
@@ -3338,43 +3340,16 @@ window.__enviarPedidoEmail = function(pedidoId, cb) {
     '<td style="text-align:right;">R$ ' + Number((parseFloat(it.qty)||0)*(parseFloat(it.preco)||0)).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>'
   ).join('');
 
-  const subtotal = (p.itens||[]).reduce((s,i)=>s+(parseFloat(i.qty)||0)*(parseFloat(i.preco)||0),0);
-  const desconto = parseFloat(p.desconto)||0;
-
-  const htmlPedido =
-    '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' +
-    'body{font-family:Arial,sans-serif;color:#1a1a18;padding:32px;font-size:13px;}' +
-    'h1{color:#0a1628;font-size:18px;margin-bottom:4px;}' +
-    '.sub{color:#888;font-size:12px;margin-bottom:24px;}' +
-    'table{width:100%;border-collapse:collapse;margin-top:16px;}' +
-    'th{background:#f5f5f3;padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#888;}' +
-    'td{padding:10px 12px;border-bottom:1px solid #f0f0ec;font-size:13px;}' +
-    '.totals{text-align:right;margin-top:16px;font-size:13px;}' +
-    '.total-final{font-size:15px;font-weight:700;color:#1D9E75;margin-top:6px;}' +
-    '.footer{margin-top:32px;font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:12px;}' +
-    '</style></head><body>' +
-    '<h1>Pedido de Venda ' + cod + '</h1>' +
-    '<div class="sub">AB Chemicals — Londrina/PR — abchemicalspr@gmail.com — (43) 98871-2001</div>' +
-    '<p>Prezado(a) <b>' + (cli.nome || p.cliente) + '</b>,</p>' +
-    '<p style="margin-top:8px;">Segue seu pedido <b>' + cod + '</b> de ' + fmtDt(p.data) + ':</p>' +
-    '<table><thead><tr><th>#</th><th>Produto</th><th>Qtd.</th><th style="text-align:right;">Preço unit.</th><th style="text-align:right;">Total</th></tr></thead>' +
-    '<tbody>' + itensRows + '</tbody></table>' +
-    '<div class="totals">' +
-    '<div>Subtotal: R$ ' + Number(subtotal).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</div>' +
-    (desconto > 0 ? '<div style="color:#D85A30;">Desconto: - R$ ' + Number(desconto).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</div>' : '') +
-    '<div class="total-final">Total do Pedido: R$ ' + Number(tot).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</div>' +
-    '</div>' +
-    (p.obs ? '<p style="margin-top:16px;background:#f9f9f7;padding:12px;border-radius:6px;"><b>Obs:</b> ' + p.obs + '</p>' : '') +
-    '<p style="margin-top:24px;">Atenciosamente,<br><b>AB Chemicals</b></p>' +
-    '<div class="footer">Email gerado automaticamente pelo ERP AB Chemicals.</div>' +
-    '</body></html>';
+  // Reutiliza o mesmo HTML rico do popup — remove apenas os botões no-print
+  const htmlCompleto = buildPedidoHtml(p, cli, cod, tot, itensRows)
+    .replace(/<div class="no-print">[\s\S]*?<\/div>\n/, '');
 
   function doSend() {
     emailjs.send('service_2efwo64', 'template_jfha3la', {
       pedido_cod:   cod,
       cliente_nome: cli.nome || p.cliente,
       para_email:   cli.email,
-      html_pedido:  htmlPedido
+      html_pedido:  htmlCompleto
     }).then(() => {
       toast('✅ Pedido enviado para ' + cli.email);
       cb(true, '');
