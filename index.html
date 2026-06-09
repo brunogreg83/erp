@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AB Chemicals – ERP Cloud</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>emailjs.init('kAwPjAH_jv7lOCqeT');</script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a18; min-height: 100vh; }
@@ -2613,38 +2615,7 @@ function enviarOCPorEmail(o, forn) {
       '<p style="margin-top:24px;">Aguardamos confirmação do recebimento desta OC.</p>' +
       '<p style="margin-top:8px;">Atenciosamente,<br><b>AB Chemicals</b><br>abchemicalspr@gmail.com — (43) 98871-2001 — Londrina/PR</p>' +
       '<div class="footer">Este email foi gerado automaticamente pelo sistema ERP AB Chemicals.</div>' +
-      '
-<!-- AB Chemicals - Importação NF-e XML (IA-free, arquivo único) -->
-<script>
-window.importarNFeXML = function(file){
-  const reader = new FileReader();
-  reader.onload = function(e){
-    try{
-      const xml = new DOMParser().parseFromString(e.target.result,"text/xml");
-      const emit = xml.querySelector("emit xNome")?.textContent || "";
-      const nNF = xml.querySelector("ide nNF")?.textContent || "";
-      const itens = [...xml.querySelectorAll("det")].map(det=>({
-        codigo: det.querySelector("cProd")?.textContent || "",
-        produto: det.querySelector("xProd")?.textContent || "",
-        quantidade: det.querySelector("qCom")?.textContent || "",
-        unidade: det.querySelector("uCom")?.textContent || ""
-      }));
-      localStorage.setItem("ultimaNFeImportada", JSON.stringify({emit,nNF,itens}));
-      alert(`NF-e importada com sucesso\\nFornecedor: ${emit}\\nItens: ${itens.length}`);
-    }catch(err){
-      alert("Erro ao processar XML da NF-e.");
-    }
-  };
-  reader.readAsText(file);
-};
-</script>
-
-<div id="nfe-import-widget" style="position:fixed;bottom:16px;left:16px;z-index:9999;background:#fff;border:1px solid #ddd;padding:10px;border-radius:10px;">
-  <strong>Importar NF-e XML</strong><br>
-  <input type="file" accept=".xml" onchange="if(this.files[0]) importarNFeXML(this.files[0])">
-</div>
-
-</body></html>';
+      '</body></html>';
 
     emailjs.send('service_2efwo64', 'template_jfha3la', {
       pedido_cod:   cod,
@@ -2660,6 +2631,75 @@ window.importarNFeXML = function(file){
   };
   document.head.appendChild(s);
 }
+
+// ── Envio de OC chamado pelo popup (via window.opener) ────────────────────
+window.__enviarOCEmail = function(ocId, cb) {
+  const o    = D.ordens.find(x => x.id === ocId);
+  if (!o) { cb(false, 'OC não encontrada'); return; }
+  const forn = D.fornecedores.find(f => f.nome === o.fornecedor) || {};
+  if (!forn.email) { cb(false, 'Fornecedor sem email cadastrado'); return; }
+
+  const cod  = 'OC-' + o.id.slice(-6).toUpperCase();
+  const itens = (o.itens && o.itens.length)
+    ? o.itens
+    : o.produto ? [{ produto: o.produto, qty: o.qty || 1, custo: o.total || 0 }] : [];
+  const total = o.total || itens.reduce((s,i)=>s+(parseFloat(i.qty)||0)*(parseFloat(i.custo)||0),0);
+
+  const itensRows = itens.map((it,i) =>
+    '<tr><td>' + (i+1) + '</td><td>' + it.produto + '</td>' +
+    '<td style="text-align:center;">' + it.qty + '</td>' +
+    '<td style="text-align:right;">R$ ' + Number(it.custo).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td>' +
+    '<td style="text-align:right;">R$ ' + Number((parseFloat(it.qty)||0)*(parseFloat(it.custo)||0)).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>'
+  ).join('');
+
+  const htmlOC =
+    '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' +
+    'body{font-family:Arial,sans-serif;color:#1a1a18;padding:32px;font-size:13px;}' +
+    'h1{color:#0a1628;font-size:18px;margin-bottom:4px;}' +
+    '.sub{color:#888;font-size:12px;margin-bottom:24px;}' +
+    'table{width:100%;border-collapse:collapse;margin-top:16px;}' +
+    'th{background:#f5f5f3;padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#888;}' +
+    'td{padding:10px 12px;border-bottom:1px solid #f0f0ec;font-size:13px;}' +
+    '.total{text-align:right;font-size:15px;font-weight:700;color:#0a1628;margin-top:16px;}' +
+    '.footer{margin-top:32px;font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:12px;}' +
+    '</style></head><body>' +
+    '<h1>Ordem de Compra ' + cod + '</h1>' +
+    '<div class="sub">AB Chemicals — Londrina/PR — abchemicalspr@gmail.com — (43) 98871-2001</div>' +
+    '<p>Prezado(a) <b>' + (forn.contato || forn.nome) + '</b>,</p>' +
+    '<p style="margin-top:8px;">Segue nossa Ordem de Compra <b>' + cod + '</b> de ' + fmtDt(o.data) + ':</p>' +
+    '<table><thead><tr><th>#</th><th>Produto</th><th>Qtd.</th><th style="text-align:right;">Custo unit.</th><th style="text-align:right;">Total</th></tr></thead>' +
+    '<tbody>' + itensRows + '</tbody></table>' +
+    '<div class="total">Total: R$ ' + Number(parseFloat(total)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</div>' +
+    (o.obs ? '<p style="margin-top:16px;background:#f9f9f7;padding:12px;border-radius:6px;"><b>Obs:</b> ' + o.obs + '</p>' : '') +
+    '<p style="margin-top:24px;">Aguardamos confirmação. Atenciosamente,<br><b>AB Chemicals</b></p>' +
+    '<div class="footer">Email gerado automaticamente pelo ERP AB Chemicals.</div>' +
+    '</body></html>';
+
+  function doSend() {
+    emailjs.send('service_2efwo64', 'template_jfha3la', {
+      pedido_cod:   cod,
+      cliente_nome: forn.nome,
+      para_email:   forn.email,
+      html_pedido:  htmlOC
+    }).then(() => {
+      toast('✅ OC enviada para ' + forn.email);
+      cb(true, '');
+    }).catch(err => {
+      console.error('EmailJS OC:', err);
+      cb(false, err.text || err.message || 'Falha no envio');
+    });
+  }
+
+  if (typeof emailjs !== 'undefined') {
+    doSend();
+  } else {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
+    s.onload = () => { emailjs.init('kAwPjAH_jv7lOCqeT'); doSend(); };
+    s.onerror = () => cb(false, 'Falha ao carregar EmailJS');
+    document.head.appendChild(s);
+  }
+};
 
 // ── Template OC ────────────────────────────────────────────────────────────
 window.verOC = id => {
@@ -2762,35 +2802,32 @@ window.verOC = id => {
 '<span>AB Chemicals \u2013 Londrina/PR \u00B7 Gerado em ' + new Date().toLocaleString('pt-BR') + '</span>' +
 '<span>' + cod + '</span></div>' +
 
-'<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"><\/script>' +
 '<script>' +
-'emailjs.init("kAwPjAH_jv7lOCqeT");' +
 'var _emailForn = "' + (forn.email || '').replace(/"/g,'\\"') + '";' +
 'var _codOC = "' + cod + '";' +
 'var _nomeForn = "' + o.fornecedor.replace(/"/g,'\\"') + '";' +
+'var _ocId = "' + o.id + '";' +
 'function enviarEmailOC() {' +
 '  if (!_emailForn) { alert("Fornecedor não possui email cadastrado."); return; }' +
 '  var btn = document.getElementById("btn-email-oc");' +
 '  btn.textContent = "\u23F3 Enviando..."; btn.disabled = true;' +
-'  var noprint = document.querySelector(".no-print");' +
-'  noprint.style.display = "none";' +
-'  var htmlOC = document.documentElement.outerHTML;' +
-'  noprint.style.display = "flex";' +
-'  emailjs.send("service_2efwo64","template_jfha3la",{' +
-'    pedido_cod: _codOC,' +
-'    cliente_nome: _nomeForn,' +
-'    para_email: _emailForn,' +
-'    html_pedido: htmlOC' +
-'  }).then(function(){' +
-'    btn.textContent = "\u2705 Enviado para " + _emailForn;' +
-'    btn.style.background = "#1D9E75";' +
-'    setTimeout(function(){ btn.textContent = "\u2709\uFE0F Enviar para fornecedor"; btn.style.background = "#185FA5"; btn.disabled=false; },3000);' +
-'  }).catch(function(err){' +
-'    btn.textContent = "\u274C Erro ao enviar";' +
-'    btn.style.background = "#D85A30"; btn.disabled=false;' +
-'    console.error(err);' +
-'    setTimeout(function(){ btn.textContent = "\u2709\uFE0F Enviar para fornecedor"; btn.style.background="#185FA5"; },3000);' +
-'  });' +
+'  try {' +
+'    window.opener.__enviarOCEmail(_ocId, function(ok, msg) {' +
+'      if (ok) {' +
+'        btn.textContent = "\u2705 Enviado para " + _emailForn;' +
+'        btn.style.background = "#1D9E75";' +
+'      } else {' +
+'        btn.textContent = "\u274C Erro: " + msg;' +
+'        btn.style.background = "#D85A30";' +
+'      }' +
+'      btn.disabled = false;' +
+'      setTimeout(function(){ btn.textContent = "\u2709\uFE0F Enviar para fornecedor"; btn.style.background = "#185FA5"; }, 3500);' +
+'    });' +
+'  } catch(e) {' +
+'    btn.textContent = "\u274C Erro ao comunicar com ERP";' +
+'    btn.style.background = "#D85A30"; btn.disabled = false;' +
+'    console.error(e);' +
+'  }' +
 '}' +
 '<\/script>' +
 '</body></html>';
@@ -3253,38 +3290,85 @@ function buildPedidoHtml(p, cli, cod, tot, itensRows) {
 '  <span>Pedido ' + cod + '</span>\n' +
 '</div>\n' +
 
-'<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"><\/script>\n' +
 '<script>\n' +
-'  emailjs.init("kAwPjAH_jv7lOCqeT");\n' +
-'  var _cod = "' + cod + '";\n' +
-'  var _cli = "' + (cli.nome || p.cliente).replace(/"/g, '\\"') + '";\n' +
+'  var _pedidoId = "' + p.id + '";\n' +
 '  function enviarEmail() {\n' +
 '    var btn = document.getElementById("btn-email");\n' +
 '    btn.textContent = "\u23F3 Enviando...";\n' +
 '    btn.disabled = true;\n' +
-'    var noprint = document.querySelector(".no-print");\n' +
-'    noprint.style.display = "none";\n' +
-'    var htmlPedido = document.documentElement.outerHTML;\n' +
-'    noprint.style.display = "flex";\n' +
-'    emailjs.send("service_2efwo64", "template_jfha3la", {\n' +
-'      pedido_cod:   _cod,\n' +
-'      cliente_nome: _cli,\n' +
-'      html_pedido:  htmlPedido\n' +
-'    }).then(function() {\n' +
-'      btn.textContent = "\u2705 Email enviado!";\n' +
-'      btn.style.background = "#1D9E75";\n' +
-'      setTimeout(function(){ btn.textContent = "\u2709\uFE0F Enviar por Email"; btn.style.background = "#185FA5"; btn.disabled = false; }, 3000);\n' +
-'    }).catch(function(err) {\n' +
-'      btn.textContent = "\u274C Erro ao enviar";\n' +
-'      btn.style.background = "#D85A30";\n' +
-'      btn.disabled = false;\n' +
-'      console.error("EmailJS:", err);\n' +
-'      setTimeout(function(){ btn.textContent = "\u2709\uFE0F Enviar por Email"; btn.style.background = "#185FA5"; }, 3000);\n' +
-'    });\n' +
+'    try {\n' +
+'      window.opener.__enviarPedidoEmail(_pedidoId, function(ok, msg) {\n' +
+'        if (ok) {\n' +
+'          btn.textContent = "\u2705 Email enviado!";\n' +
+'          btn.style.background = "#1D9E75";\n' +
+'        } else {\n' +
+'          btn.textContent = "\u274C Erro: " + msg;\n' +
+'          btn.style.background = "#D85A30";\n' +
+'        }\n' +
+'        btn.disabled = false;\n' +
+'        setTimeout(function(){ btn.textContent = "\u2709\uFE0F Enviar por Email"; btn.style.background = "#185FA5"; }, 3500);\n' +
+'      });\n' +
+'    } catch(e) {\n' +
+'      btn.textContent = "\u274C Erro ao comunicar com ERP";\n' +
+'      btn.style.background = "#D85A30"; btn.disabled = false;\n' +
+'      console.error(e);\n' +
+'    }\n' +
 '  }\n' +
 '<\/script>\n' +
 '</body></html>';
 }
+
+// ── Envio de Pedido de Venda chamado pelo popup (via window.opener) ────────
+window.__enviarPedidoEmail = function(pedidoId, cb) {
+  const p = D.pedidos.find(x => x.id === pedidoId);
+  if (!p) { cb(false, 'Pedido não encontrado'); return; }
+
+  const nomePed = (p.cliente || '').trim().toLowerCase();
+  const cli = D.clientes.find(c => c.nome === p.cliente)
+           || D.clientes.find(c => c.nome.trim().toLowerCase() === nomePed)
+           || D.clientes.find(c => c.nome.trim().toLowerCase().includes(nomePed) || nomePed.includes(c.nome.trim().toLowerCase()))
+           || {};
+
+  if (!cli.email) { cb(false, 'Cliente sem email cadastrado'); return; }
+
+  const cod      = '#' + p.id.slice(-6).toUpperCase();
+  const tot      = totPed(p);
+  const itensRows = (p.itens||[]).map((it,i) =>
+    '<tr><td>' + (i+1) + '</td><td>' + it.produto + '</td>' +
+    '<td style="text-align:center;">' + it.qty + '</td>' +
+    '<td style="text-align:right;">R$ ' + Number(parseFloat(it.preco)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td>' +
+    '<td style="text-align:right;">R$ ' + Number((parseFloat(it.qty)||0)*(parseFloat(it.preco)||0)).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>'
+  ).join('');
+
+  // Reutiliza o mesmo HTML rico do popup — remove apenas os botões no-print
+  const htmlCompleto = buildPedidoHtml(p, cli, cod, tot, itensRows)
+    .replace(/<div class="no-print">[\s\S]*?<\/div>\n/, '');
+
+  function doSend() {
+    emailjs.send('service_2efwo64', 'template_jfha3la', {
+      pedido_cod:   cod,
+      cliente_nome: cli.nome || p.cliente,
+      para_email:   cli.email,
+      html_pedido:  htmlCompleto
+    }).then(() => {
+      toast('✅ Pedido enviado para ' + cli.email);
+      cb(true, '');
+    }).catch(err => {
+      console.error('EmailJS pedido:', err);
+      cb(false, err.text || err.message || 'Falha no envio');
+    });
+  }
+
+  if (typeof emailjs !== 'undefined') {
+    doSend();
+  } else {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
+    s.onload = () => { emailjs.init('kAwPjAH_jv7lOCqeT'); doSend(); };
+    s.onerror = () => cb(false, 'Falha ao carregar EmailJS');
+    document.head.appendChild(s);
+  }
+};
 
 window.verPedido = id => {
   const p = D.pedidos.find(x => x.id === id);
@@ -3565,12 +3649,12 @@ Retorne SOMENTE um JSON válido, sem texto antes ou depois, no seguinte formato:
 
 Extraia todos os produtos, mesmo que sejam muitos. Use os valores numéricos exatos da NF.`;
 
-  const apiKey = getAnthropicKey();
+  const apiKey = getOpenAIKey();
   if (!apiKey) {
     throw new Error('Chave API Anthropic não configurada. Acesse Ajustes → Inteligência Artificial para inserir sua chave.');
   }
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -3579,7 +3663,7 @@ Extraia todos os produtos, mesmo que sejam muitos. Use os valores numéricos exa
       'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
+      model: 'gpt-5.4-mini',
       max_tokens: 4000,
       messages: [{
         role: 'user',
@@ -3773,7 +3857,7 @@ window.salvarAnthropicKey = () => {
   setTimeout(() => { const el = document.getElementById('anthropic-key-status'); if(el) el.textContent = ''; }, 3000);
 };
 
-function getAnthropicKey() {
+function getOpenAIKey() {
   return localStorage.getItem('anthropic_api_key') || '';
 }
 
@@ -3882,7 +3966,7 @@ window.goTo = (id, btn) => {
   // Preencher chave Anthropic ao entrar em Ajustes
   if (id === 'ajustes') {
     setTimeout(() => {
-      const k = getAnthropicKey();
+      const k = getOpenAIKey();
       const el = document.getElementById('anthropic-key-input');
       const st = document.getElementById('anthropic-key-status');
       if (el && k) { el.value = k; if (st) st.innerHTML = '<span style="color:#1D9E75;">✅ Chave configurada</span>'; }
@@ -3914,6 +3998,47 @@ function renderAll() {
 // expor globalmente para o onchange do select funcionar
 window.renderDashboard = renderDashboard;
 window._getSessao = () => { try { return JSON.parse(sessionStorage.getItem(SESSION_KEY)); } catch(e){ return null; } };
+
+function gerarAlertasInteligentes(){
+  try{
+    const alertas=[];
+
+    (D.produtos||[]).forEach(p=>{
+      const e=parseFloat(p.estoque||0);
+      const m=parseFloat(p.minimo||0);
+      if(m>0 && e<m){
+        alertas.push('⚠️ Estoque baixo: '+(p.nome||p.produto));
+      }
+    });
+
+    (D.pagar||[]).forEach(c=>{
+      if(!c.pago){
+        const v=new Date(c.vencimento||c.data||0);
+        if(v < new Date()){
+          alertas.push('🔴 Conta vencida: '+(c.descricao||'Pagamento'));
+        }
+      }
+    });
+
+    (D.receber||[]).forEach(r=>{
+      if(!r.recebido){
+        const v=new Date(r.vencimento||r.data||0);
+        if(v < new Date()){
+          alertas.push('🟠 Recebimento pendente: '+(r.cliente||'Cliente'));
+        }
+      }
+    });
+
+    const el=document.getElementById('dash-alertas');
+    if(el){
+      el.innerHTML='<div class="section-title">Alertas do sistema</div>' +
+        (alertas.length
+          ? '<div style="font-size:13px;">'+alertas.map(a=>'<div style="margin:6px 0;">'+a+'</div>').join('')+'</div>'
+          : '<div style="color:#1D9E75;font-size:13px;">✅ Nenhum alerta crítico.</div>');
+    }
+  }catch(e){console.error(e);}
+}
 </script>
 </body>
 </html>
+
