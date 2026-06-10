@@ -274,7 +274,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <button class="nav-item" onclick="goTo('ajustes',this)" id="nav-ajustes"><i class="ti ti-settings"></i>Ajustes</button>
     </nav>
     <div class="sidebar-user">
-      <div class="u-label">Nuvem · <span id="fb-label">conectando...</span></div>
+      <div class="u-label">Nuvem · <span id="fb-label-side">conectando...</span></div>
       <div class="u-name" id="sidebar-username">—</div>
     </div>
   </div>
@@ -1088,6 +1088,7 @@ function fazerLogin() {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('erp-shell').style.display    = 'flex';
     erro.classList.remove('show');
+    if (fbReady) syncOk();
   } else {
     erro.classList.add('show');
     document.getElementById('inp-senha').value = '';
@@ -1137,6 +1138,7 @@ if (sessao) {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('erp-shell').style.display    = 'flex';
   aplicarPerfil(sessao.perfil, sessao.nome);
+  if (fbReady) syncOk();
   // restaurar última tela visitada
   const ultimaTela = sessionStorage.getItem('abc_tela');
   if (ultimaTela && sessao.perfil === 'admin') {
@@ -1258,7 +1260,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <script type="module">
 import { initializeApp }       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot }
+import { getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot, enableNetwork, disableNetwork }
                                 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // ── Firebase init ──────────────────────────────────────────────────────────
@@ -1286,15 +1288,20 @@ function syncOk()  {
   dot.className='sync-dot ok'; lbl.textContent='Firebase conectado';
   const ind=document.getElementById('sync-indicator'); if(ind){ind.className='sync-indicator';}
   const ms=document.getElementById('mob-sync'); if(ms) ms.className='m-sync ok';
+  const side=document.getElementById('fb-label-side'); if(side) side.textContent='conectado';
 }
 function syncErr() {
   dot.className='sync-dot err'; lbl.textContent='Erro de conexão';
   const ind=document.getElementById('sync-indicator'); if(ind){ind.className='sync-indicator err';}
   const ms=document.getElementById('mob-sync'); if(ms) ms.className='m-sync err';
+  const side=document.getElementById('fb-label-side'); if(side) side.textContent='erro';
 }
+window.addEventListener('online',  () => enableNetwork(db).then(syncOk).catch(syncErr));
+window.addEventListener('offline', () => syncErr());
 
 // ── Real-time listeners ────────────────────────────────────────────────────
 let loaded = {};
+let fbReady = false;
 ['pedidos','produtos','clientes','receber','pagar','ordens','usuarios','fornecedores'].forEach(col => {
   onSnapshot(
     collection(db, col),
@@ -1302,6 +1309,7 @@ let loaded = {};
       D[col] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       loaded[col] = true;
       if (col === 'usuarios') window._usuariosDB = D.usuarios;
+      fbReady = true;
       syncOk();
       renderAll();
     },
