@@ -39,8 +39,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .topbar { height: 52px; border-bottom: 1px solid #e8e7e0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: #fff; }
 .topbar-title { font-size: 15px; font-weight: 600; }
 .topbar-actions { display: flex; gap: 8px; align-items: center; }
-.sync-indicator { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #aaa; }
-.sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; transition: background 0.4s; }
+.sync-indicator { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: #1D9E75; background: #e8f8f2; border: 1px solid #b2e8d2; border-radius: 999px; padding: 4px 12px; transition: all 0.4s; }
+.sync-indicator.err { color: #D85A30; background: #fdeee9; border-color: #f5c4b3; }
+.sync-indicator.loading { color: #b07800; background: #fff8e1; border-color: #ffe08a; }
+.sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #1D9E75; flex-shrink: 0; transition: background 0.4s; }
 .sync-dot.ok { background: #1D9E75; }
 .sync-dot.err { background: #D85A30; }
 .sync-dot.loading { background: #F0A500; animation: pulse 1s infinite; }
@@ -320,9 +322,9 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     <div class="topbar">
       <div class="topbar-title" id="page-title">Dashboard</div>
       <div class="topbar-actions">
-        <div class="sync-indicator">
+        <div class="sync-indicator loading" id="sync-indicator">
           <div class="sync-dot loading" id="sync-dot"></div>
-          <span id="sync-txt">Firebase</span>
+          <span id="fb-label">Conectando...</span>
         </div>
         <button class="btn-ghost" onclick="fazerLogout()"><i class="ti ti-logout"></i> Sair</button>
       </div>
@@ -1281,11 +1283,13 @@ window.pitens = [];
 const dot  = document.getElementById('sync-dot');
 const lbl  = document.getElementById('fb-label');
 function syncOk()  {
-  dot.className='sync-dot ok';  lbl.textContent='conectado';
+  dot.className='sync-dot ok'; lbl.textContent='Firebase conectado';
+  const ind=document.getElementById('sync-indicator'); if(ind){ind.className='sync-indicator';}
   const ms=document.getElementById('mob-sync'); if(ms) ms.className='m-sync ok';
 }
 function syncErr() {
-  dot.className='sync-dot err'; lbl.textContent='erro de conexão';
+  dot.className='sync-dot err'; lbl.textContent='Erro de conexão';
+  const ind=document.getElementById('sync-indicator'); if(ind){ind.className='sync-indicator err';}
   const ms=document.getElementById('mob-sync'); if(ms) ms.className='m-sync err';
 }
 
