@@ -735,7 +735,25 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     <div class="modal-body">
       <div class="form-group"><label class="form-label">Cliente</label><select class="form-input" id="ped-cli"></select></div>
       <div class="form-group"><label class="form-label">Condição de pagamento</label>
-        <select class="form-input" id="ped-pgto"><option>À vista</option><option>30 dias</option><option>30/60 dias</option><option>30/60/90 dias</option></select></div>
+        <select class="form-input" id="ped-pgto">
+          <option>À vista</option>
+          <option>7 dias</option>
+          <option>14 dias</option>
+          <option>21 dias</option>
+          <option>28 dias</option>
+          <option>30 dias</option>
+          <option>Boleto 30 dias</option>
+          <option>15/30 dias</option>
+          <option>30/60 dias</option>
+          <option>30/60/90 dias</option>
+          <option>28/56/84 dias</option>
+          <option>45 dias</option>
+          <option>60 dias</option>
+          <option>2x sem juros</option>
+          <option>3x sem juros</option>
+          <option>Entrada + saldo</option>
+          <option>Outro</option>
+        </select></div>
       <div class="form-group"><label class="form-label">Forma de pagamento</label>
         <select class="form-input" id="ped-forma">
           <option value="">Selecione...</option>
@@ -751,7 +769,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <div class="form-group"><label class="form-label">Condição de pagamento (detalhes)</label>
         <input class="form-input" id="ped-cond" placeholder="Ex: 50% na entrega + 50% em 30 dias"></div>
       <div class="form-group"><label class="form-label">Status</label>
-        <select class="form-input" id="ped-status"><option>Aguardando</option><option>Separação</option><option>Em rota</option><option>Entregue</option></select></div>
+        <select class="form-input" id="ped-status"><option>Aguardando</option><option>Separação</option><option>Em rota</option><option>Entregue</option><option>Faturado</option></select></div>
       <div class="section-title" style="margin-top:8px;">Itens do pedido</div>
       <div id="ped-itens"></div>
       <button class="btn-ghost" style="width:100%;margin-top:4px;" onclick="addItem()"><i class="ti ti-plus"></i> Adicionar item</button>
@@ -1085,6 +1103,11 @@ function fazerLogin() {
   if (usuario) {
     salvarSessao({ login: usuario.login, nome: usuario.nome, perfil: usuario.perfil });
     aplicarPerfil(usuario.perfil, usuario.nome);
+    // restaurar última tela visitada (apenas admin; vendedor já é redirecionado para vendas)
+    const ultimaTela = sessionStorage.getItem('abc_tela');
+    if (ultimaTela && usuario.perfil === 'admin') {
+      restaurarTela(ultimaTela);
+    }
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('erp-shell').style.display    = 'flex';
     erro.classList.remove('show');
@@ -1132,6 +1155,45 @@ function aplicarPerfil(perfil, nome) {
   }
 }
 
+// Restaura a última tela visitada (sidebar, screens, nav mobile inferior, drawer e FAB)
+function restaurarTela(tela) {
+  if (!tela) return;
+  const titles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',estoque:'Estoque e Produtos',
+    clientes:'Clientes e CRM',financeiro:'Financeiro e Faturamento',compras:'Compras e Fornecedores',
+    relatorios:'Relatórios',ajustes:'Ajustes do Sistema'};
+  const mobTitles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',estoque:'Estoque e Produtos',
+    clientes:'Clientes e CRM',financeiro:'Financeiro',compras:'Compras',relatorios:'Relatórios',ajustes:'Ajustes'};
+
+  // telas
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const sc = document.getElementById('screen-' + tela);
+  if (sc) sc.classList.add('active');
+
+  // sidebar desktop
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const nb = document.getElementById('nav-' + tela);
+  if (nb) nb.classList.add('active');
+
+  // drawer mobile
+  const mdr = document.getElementById('mob-nav-' + tela);
+  if (mdr) mdr.classList.add('active');
+
+  // nav bar inferior mobile
+  document.querySelectorAll('.mn-item').forEach(b => b.classList.remove('active'));
+  const mbn = document.getElementById('mbn-' + tela);
+  if (mbn) mbn.classList.add('active');
+
+  // títulos
+  const pt = document.getElementById('page-title');
+  if (pt) pt.textContent = titles[tela] || 'Dashboard';
+  const mt = document.getElementById('mob-title');
+  if (mt) mt.textContent = mobTitles[tela] || 'Dashboard';
+
+  // FAB: mostrar só em Vendas
+  const fab = document.getElementById('mob-fab');
+  if (fab) fab.style.display = tela === 'vendas' ? 'flex' : 'none';
+}
+
 // ao carregar: checar sessão
 const sessao = verificarSessao();
 if (sessao) {
@@ -1142,20 +1204,7 @@ if (sessao) {
   // restaurar última tela visitada
   const ultimaTela = sessionStorage.getItem('abc_tela');
   if (ultimaTela && sessao.perfil === 'admin') {
-    // ativar a tela salva sem chamar goTo (firebase ainda não carregou)
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    const sc = document.getElementById('screen-' + ultimaTela);
-    if (sc) sc.classList.add('active');
-    const nb = document.getElementById('nav-' + ultimaTela);
-    if (nb) nb.classList.add('active');
-    const titles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',estoque:'Estoque e Produtos',
-      clientes:'Clientes e CRM',financeiro:'Financeiro e Faturamento',compras:'Compras e Fornecedores',
-      relatorios:'Relatórios',ajustes:'Ajustes do Sistema'};
-    const pt = document.getElementById('page-title');
-    if (pt) pt.textContent = titles[ultimaTela] || 'Dashboard';
-    const mt = document.getElementById('mob-title');
-    if (mt) mt.textContent = titles[ultimaTela] || 'Dashboard';
+    restaurarTela(ultimaTela);
   }
 }
 
@@ -1333,13 +1382,107 @@ async function upd(col, id, data) {
 
 // ── Utils ──────────────────────────────────────────────────────────────────
 const getSessao = () => { try { return JSON.parse(sessionStorage.getItem('abc_auth')); } catch(e){ return null; } };
-const R$     = v => 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2});
+const R$     = v => { const n = Number(v); return 'R$ ' + (isNaN(n) ? '0,00' : n.toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2})); };
 const fmtDt  = s => { if(!s) return '—'; const [y,m,d]=s.split('-'); return `${d}/${m}/${y}`; };
 const today  = () => new Date().toISOString().split('T')[0];
 const daysTo = s => Math.round((new Date(s) - new Date(today())) / 86400000);
+
+// Converte um valor digitado em formato brasileiro (ex: "1.234,56" ou "1234,56"
+// ou "1234.56" ou "1234") para Number. Retorna 0 se inválido/vazio.
+function parseValorBR(v) {
+  if (v == null) return 0;
+  let s = String(v).trim();
+  if (!s) return 0;
+  // remove tudo que não seja dígito, ponto, vírgula ou sinal
+  s = s.replace(/[^\d.,-]/g, '');
+  if (s.includes(',')) {
+    // vírgula = separador decimal → remove pontos (milhar) e troca vírgula por ponto
+    s = s.replace(/\./g, '').replace(',', '.');
+  }
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+
 const totPed = p => Math.max(0, (p.itens||[]).reduce((s,i) => s + (parseFloat(i.qty)||0) * (parseFloat(i.preco)||0), 0) - (parseFloat(p.desconto)||0));
 const sit    = (e,m) => e <= 0 || e < m * 0.5 ? 'Crítico' : e < m ? 'Baixo' : 'OK';
 const stFin  = s => { const d=daysTo(s); return d<0?'Vencido':d<=3?'Pendente':'No prazo'; };
+
+// ── Geração de parcelas a partir da condição de pagamento do pedido ────────
+// Recebe o texto de "Condição de pagamento" (ped-pgto) e retorna um array de
+// { dias, percentual } representando cada parcela em relação à data do pedido.
+function gerarParcelasCondPgto(pgto) {
+  const txt = (pgto || '').trim().toLowerCase();
+
+  // À vista / sem prazo definido → parcela única em D+0
+  if (!txt || txt === 'à vista' || txt === 'a vista') {
+    return [{ dias: 0, pct: 1 }];
+  }
+
+  // Casos "Nx sem juros" → N parcelas mensais, primeira em D+0
+  const mx = txt.match(/^(\d+)x/);
+  if (mx) {
+    const n = parseInt(mx[1], 10) || 1;
+    const pct = 1 / n;
+    return Array.from({length:n}, (_,i) => ({ dias: i*30, pct }));
+  }
+
+  // Extrai todos os números de dias presentes no texto (ex: "30/60/90 dias", "28/56/84 dias")
+  const nums = (txt.match(/\d+/g) || []).map(Number).filter(n => n > 0);
+  if (nums.length) {
+    const pct = 1 / nums.length;
+    return nums.map(d => ({ dias: d, pct }));
+  }
+
+  // "Entrada + saldo" ou "Outro" → tratar como parcela única em D+0 (sem prazo definido)
+  return [{ dias: 0, pct: 1 }];
+}
+
+// Soma dias a uma data no formato YYYY-MM-DD, retornando também no formato YYYY-MM-DD
+function somarDias(dataBase, dias) {
+  const d = new Date(dataBase + 'T12:00:00');
+  d.setDate(d.getDate() + dias);
+  return d.toISOString().split('T')[0];
+}
+
+// Lança as contas a receber referentes a um pedido faturado.
+// Usa cliente, valor total e condição de pagamento (pgto) do pedido.
+async function lancarContasReceberPedido(pedido, itens) {
+  const total = totPed({ ...pedido, itens });
+  if (!pedido.cliente || !total || isNaN(total)) return;
+
+  const parcelas = gerarParcelasCondPgto(pedido.pgto);
+  const cod = (pedido.id || '').toString().slice(-6).toUpperCase();
+  const totalParcelas = parcelas.length;
+
+  for (let i = 0; i < parcelas.length; i++) {
+    const { dias, pct } = parcelas[i];
+    const vencimento = somarDias(pedido.data || today(), dias);
+    let valor = Math.round(total * pct * 100) / 100;
+    // ajusta a última parcela para corrigir arredondamentos
+    if (i === parcelas.length - 1) {
+      const somaAnteriores = parcelas.slice(0, -1)
+        .reduce((s, p) => s + Math.round(total * p.pct * 100) / 100, 0);
+      valor = Math.round((total - somaAnteriores) * 100) / 100;
+    }
+    if (isNaN(valor)) valor = 0;
+    const sufixo = totalParcelas > 1 ? ` (${i+1}/${totalParcelas})` : '';
+    const partes = ['Pedido #' + cod];
+    if (pedido.forma) partes.push(pedido.forma);
+    if (pedido.pgto)  partes.push(pedido.pgto);
+    const desc = partes.join(' · ') + sufixo;
+
+    await add('receber', {
+      cliente: pedido.cliente,
+      valor,
+      vencimento,
+      desc,
+      pedidoId: pedido.id || null,
+      forma: pedido.forma || '',
+      pgto: pedido.pgto || '',
+    });
+  }
+}
+
 
 window.marcarPago = async (id) => {
   const item = D.pagar.find(p => p.id === id);
@@ -1377,7 +1520,7 @@ window.marcarRecebido = async (id) => {
 };
 
 function badge(t) {
-  const cls = {Entregue:'green',Ativo:'green',OK:'green',Recebido:'green','No prazo':'green',Pago:'green',
+  const cls = {Entregue:'green',Ativo:'green',OK:'green',Recebido:'green','No prazo':'green',Pago:'green',Faturado:'green',
     'Em rota':'amber',Baixo:'amber',Pendente:'amber','Em trânsito':'amber',Inativo:'amber',
     Aguardando:'gray',Separação:'blue',Crítico:'red',Vencido:'red'};
   return `<span class="badge badge-${cls[t]||'gray'}">${t}</span>`;
@@ -1559,7 +1702,7 @@ window.setPI = (idx, nome) => {
 window.salvarPedido = async () => {
   const itens = window.pitens.filter(Boolean).filter(i => i.produto);
   if (!itens.length) { toast('Adicione ao menos um item!'); return; }
-  const docRef = await add('pedidos', {
+  const novoPedido = {
     data:   today(),
     cliente: document.getElementById('ped-cli').value,
     status:  document.getElementById('ped-status').value,
@@ -1569,9 +1712,18 @@ window.salvarPedido = async () => {
     obs:      document.getElementById('ped-obs')?.value      || '',
     desconto: parseFloat(document.getElementById('ped-desconto')?.value || '0') || 0,
     itens
-  });
+  };
+  const docRef = await add('pedidos', novoPedido);
+
+  // Se o pedido já nasce como "Faturado", lança automaticamente as contas a receber
+  if (novoPedido.status === 'Faturado') {
+    await lancarContasReceberPedido({ ...novoPedido, id: docRef?.id }, itens);
+    toast('✅ Pedido criado e lançado no contas a receber!');
+  } else {
+    toast('✅ Pedido criado no Firebase!');
+  }
+
   closeModal('modal-pedido');
-  toast('✅ Pedido criado no Firebase!');
   // aguarda listener atualizar D.pedidos e abre o template
   setTimeout(() => {
     const p = D.pedidos.find(x => x.id === docRef?.id) || {
@@ -1646,7 +1798,7 @@ window.atualizarPedido = async id => {
   const pedidoAntigo = D.pedidos.find(x => x.id === id);
   const statusAntigo = pedidoAntigo?.status || 'Aguardando';
 
-  await upd('pedidos', id, {
+  const dadosPedido = {
     cliente: document.getElementById('ped-cli').value,
     status:  novoStatus,
     pgto:    document.getElementById('ped-pgto').value,
@@ -1655,9 +1807,12 @@ window.atualizarPedido = async id => {
     obs:      document.getElementById('ped-obs')?.value      || '',
     desconto: parseFloat(document.getElementById('ped-desconto')?.value || '0') || 0,
     itens
-  });
+  };
+
+  await upd('pedidos', id, dadosPedido);
 
   // Subtrair do estoque quando sai de "Aguardando" pela primeira vez
+  let msg = '✅ Pedido atualizado!';
   if (statusAntigo === 'Aguardando' && novoStatus !== 'Aguardando') {
     for (const it of itens) {
       const prod = D.produtos.find(p => p.nome === it.produto);
@@ -1666,10 +1821,16 @@ window.atualizarPedido = async id => {
         await upd('produtos', prod.id, { estoque: novoEstoque });
       }
     }
-    toast('✅ Pedido atualizado e estoque baixado!');
-  } else {
-    toast('✅ Pedido atualizado!');
+    msg = '✅ Pedido atualizado e estoque baixado!';
   }
+
+  // Ao virar "Faturado" pela primeira vez, lança automaticamente as contas a receber
+  if (statusAntigo !== 'Faturado' && novoStatus === 'Faturado') {
+    await lancarContasReceberPedido({ ...dadosPedido, id, data: pedidoAntigo?.data || today() }, itens);
+    msg = '✅ Pedido atualizado e lançado no contas a receber!';
+  }
+
+  toast(msg);
 
   // restaurar botão original
   document.querySelector('#modal-pedido .modal-footer').innerHTML = `
@@ -2011,7 +2172,7 @@ window.copiarCliente = () => {
 window.salvarReceber = async () => {
   await add('receber', {
     cliente: document.getElementById('rec-cli').value,
-    valor:   +document.getElementById('rec-val').value,
+    valor:   parseValorBR(document.getElementById('rec-val').value),
     vencimento: document.getElementById('rec-venc').value,
     desc:    document.getElementById('rec-desc').value,
   });
@@ -2035,7 +2196,7 @@ window.editReceber = id => {
 window.atualizarReceber = async id => {
   await upd('receber', id, {
     cliente:    document.getElementById('rec-cli').value,
-    valor:      +document.getElementById('rec-val').value,
+    valor:      parseValorBR(document.getElementById('rec-val').value),
     vencimento: document.getElementById('rec-venc').value,
     desc:       document.getElementById('rec-desc').value,
   });
@@ -2099,7 +2260,7 @@ document.addEventListener('change', e => {
 
 window.salvarPagar = async () => {
   const fornecedor  = document.getElementById('pag-forn').value.trim();
-  const valor       = parseFloat(document.getElementById('pag-val').value) || 0;
+  const valor       = parseValorBR(document.getElementById('pag-val').value);
   const vencimento  = document.getElementById('pag-venc').value;
   const desc        = document.getElementById('pag-desc').value;
   const recorrente  = document.getElementById('pag-recorrente').checked;
@@ -2154,7 +2315,7 @@ window.editPagar = id => {
 window.atualizarPagar = async id => {
   await upd('pagar', id, {
     fornecedor: document.getElementById('pag-forn').value,
-    valor:      +document.getElementById('pag-val').value,
+    valor:      parseValorBR(document.getElementById('pag-val').value),
     vencimento: document.getElementById('pag-venc').value,
     desc:       document.getElementById('pag-desc').value,
   });
@@ -3240,6 +3401,7 @@ function buildPedidoHtml(p, cli, cod, tot, itensRows) {
 '    <div class="val" style="margin-top:8px;color:#888;">Data: ' + fmtDt(p.data) + '</div>\n' +
 '    <div class="val" style="margin-top:4px;">' +
       (p.status==='Entregue' ? '<span class="badge badge-green">Entregue</span>' :
+       p.status==='Faturado' ? '<span class="badge badge-green">Faturado</span>' :
        p.status==='Em rota'  ? '<span class="badge badge-amber">Em rota</span>'  :
        p.status==='Separação'? '<span class="badge badge-blue">Separação</span>' :
        '<span class="badge badge-gray">' + p.status + '</span>') +
