@@ -1111,7 +1111,6 @@ function fazerLogin() {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('erp-shell').style.display    = 'flex';
     erro.classList.remove('show');
-    if (fbReady) syncOk();
   } else {
     erro.classList.add('show');
     document.getElementById('inp-senha').value = '';
@@ -1200,7 +1199,6 @@ if (sessao) {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('erp-shell').style.display    = 'flex';
   aplicarPerfil(sessao.perfil, sessao.nome);
-  if (fbReady) syncOk();
   // restaurar última tela visitada
   const ultimaTela = sessionStorage.getItem('abc_tela');
   if (ultimaTela && sessao.perfil === 'admin') {
