@@ -526,6 +526,18 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                 <span id="anthropic-key-status" style="font-size:12px;color:#888;"></span>
               </div>
             </div>
+            <div class="card">
+              <div class="section-title"><i class="ti ti-receipt-2" style="margin-right:6px;"></i>Emissão de NF-e (Focus NFe)</div>
+              <div style="font-size:12px;color:#888;margin-bottom:14px;">Informe a URL da Cloud Function que faz a integração com a Focus NFe. Ambiente atual configurado no servidor: <b>homologação</b> (testes).</div>
+              <div class="form-group">
+                <label class="form-label">URL base das Cloud Functions</label>
+                <input class="form-input" id="focus-fn-url-input" placeholder="https://us-central1-SEU-PROJETO.cloudfunctions.net" style="font-family:monospace;font-size:12px;">
+              </div>
+              <div style="display:flex;gap:10px;align-items:center;margin-top:4px;">
+                <button class="btn-primary" onclick="salvarFocusFnUrl()"><i class="ti ti-check"></i> Salvar URL</button>
+                <span id="focus-fn-url-status" style="font-size:12px;color:#888;"></span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -658,6 +670,14 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
         <button class="btn-primary" onclick="abrirPortalSEFAZ()"><i class="ti ti-external-link"></i> Abrir Portal SEFAZ</button>
         <button class="btn-ghost" onclick="copiarDadosNF()"><i class="ti ti-copy"></i> Copiar dados</button>
+      </div>
+
+      <div style="border-top:1px solid #f0f0ec;padding-top:14px;margin-bottom:16px;">
+        <div class="section-title" style="margin-bottom:10px;">Emissão automática (Focus NFe)</div>
+        <div id="nf-focus-aviso" style="background:#FFF6E0;border-radius:8px;padding:10px 14px;font-size:12px;color:#8A6300;margin-bottom:10px;display:none;"></div>
+        <div id="nf-focus-status" style="font-size:12px;color:#666;margin-bottom:10px;"></div>
+        <button class="btn-primary" id="btn-emitir-focus" onclick="emitirNFeFocus()"><i class="ti ti-send"></i> Emitir NF-e (Focus NFe)</button>
+        <button class="btn-ghost" id="btn-consultar-focus" onclick="consultarNFeFocus()" style="display:none;"><i class="ti ti-refresh"></i> Consultar status</button>
       </div>
 
       <div style="border-top:1px solid #f0f0ec;padding-top:14px;">
@@ -3654,6 +3674,12 @@ window.abrirEmissaoNF = id => {
 
   // Guardar dados para copiar
   document.getElementById('modal-emissao-nf').dataset.dadosNF = dados;
+  delete document.getElementById('modal-emissao-nf').dataset.focusRef;
+
+  // Resetar área de emissão Focus NFe
+  document.getElementById('nf-focus-aviso').style.display = 'none';
+  document.getElementById('nf-focus-status').textContent = '';
+  document.getElementById('btn-consultar-focus').style.display = 'none';
 
   document.getElementById('modal-emissao-nf').classList.add('open');
 };
@@ -3698,6 +3724,134 @@ window.registrarNF = async () => {
   closeModal('modal-emissao-nf');
   _pedidoNFId = null;
   toast('✅ NF ' + numero + ' registrada no pedido!');
+};
+
+// ── Emissão automática via Focus NFe ────────────────────────────────────────
+function _focusEndpoint(nome) {
+  const base = getFocusFnUrl();
+  if (!base) return null;
+  return base + '/' + nome;
+}
+
+window.emitirNFeFocus = async () => {
+  const baseUrl = getFocusFnUrl();
+  const aviso = document.getElementById('nf-focus-aviso');
+  const statusEl = document.getElementById('nf-focus-status');
+  const btn = document.getElementById('btn-emitir-focus');
+
+  if (!baseUrl) {
+    aviso.style.display = 'block';
+    aviso.innerHTML = '<i class="ti ti-alert-triangle"></i> Configure a URL das Cloud Functions em <b>Ajustes → Emissão de NF-e (Focus NFe)</b> antes de emitir.';
+    return;
+  }
+  aviso.style.display = 'none';
+
+  const p = D.pedidos.find(x => x.id === _pedidoNFId);
+  if (!p) return;
+
+  const nomePedNF = (p.cliente || '').trim().toLowerCase();
+  const cli = D.clientes.find(c => c.nome === p.cliente)
+           || D.clientes.find(c => c.nome.trim().toLowerCase() === nomePedNF)
+           || D.clientes.find(c => c.nome.trim().toLowerCase().includes(nomePedNF) || nomePedNF.includes(c.nome.trim().toLowerCase()))
+           || {};
+
+  if (!cli.cnpj && !cli.cpf) {
+    aviso.style.display = 'block';
+    aviso.innerHTML = '<i class="ti ti-alert-triangle"></i> Cliente "' + (p.cliente||'') + '" não possui CNPJ/CPF cadastrado. Atualize o cadastro do cliente em CRM antes de emitir a NF-e.';
+    return;
+  }
+
+  // "Cidade / Estado" costuma vir como "Londrina / PR" — separa para enviar UF correta
+  let cidade = cli.cidade || '';
+  let uf = '';
+  if (cidade.includes('/')) {
+    const partes = cidade.split('/');
+    cidade = partes[0].trim();
+    uf = partes[1].trim().toUpperCase();
+  }
+
+  const ref = 'pedido-' + p.id; // referência única para a Focus NFe
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Emitindo...';
+  statusEl.textContent = 'Enviando dados para a Focus NFe (homologação)...';
+
+  try {
+    const resp = await fetch(_focusEndpoint('emitirNFe'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ref,
+        pedido: { id: p.id, itens: p.itens, data: p.data },
+        cliente: { nome: cli.nome || p.cliente, cnpj: cli.cnpj, cpf: cli.cpf, ie: cli.ie,
+                   endereco: cli.endereco, cidade, uf, cep: cli.cep, tel: cli.tel, email: cli.email }
+      })
+    });
+
+    const data = await resp.json();
+
+    if (!resp.ok || data.erro) {
+      statusEl.innerHTML = '<span style="color:#C0392B;">❌ ' + (data.erro || 'Erro ao emitir NF-e') + (data.detalhes ? ('<br><small>' + JSON.stringify(data.detalhes).slice(0,300) + '</small>') : '') + '</span>';
+      toast('❌ Erro ao emitir NF-e. Veja detalhes no modal.');
+      return;
+    }
+
+    // Status inicial costuma ser "processando_autorizacao"
+    statusEl.innerHTML = '<span style="color:#185FA5;">⏳ Status: ' + (data.status || 'processando') + '. Clique em "Consultar status" em alguns segundos.</span>';
+    document.getElementById('btn-consultar-focus').style.display = 'inline-flex';
+    document.getElementById('modal-emissao-nf').dataset.focusRef = ref;
+
+    // Se já vier autorizada (raro na primeira resposta, mas possível)
+    if (data.status === 'autorizado' && data.numero) {
+      document.getElementById('nf-numero').value = data.numero;
+      document.getElementById('nf-chave').value  = data.chave_nfe || '';
+      statusEl.innerHTML = '<span style="color:#1D9E75;">✅ NF-e autorizada! Número ' + data.numero + '. Clique em "Registrar NF no pedido" para salvar.</span>';
+    }
+  } catch (err) {
+    statusEl.innerHTML = '<span style="color:#C0392B;">❌ Falha de conexão com a Cloud Function: ' + String(err.message||err) + '</span>';
+    toast('❌ Falha de conexão ao emitir NF-e.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-send"></i> Emitir NF-e (Focus NFe)';
+  }
+};
+
+window.consultarNFeFocus = async () => {
+  const baseUrl = getFocusFnUrl();
+  const statusEl = document.getElementById('nf-focus-status');
+  const btn = document.getElementById('btn-consultar-focus');
+  const ref = document.getElementById('modal-emissao-nf').dataset.focusRef;
+  if (!baseUrl || !ref) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Consultando...';
+
+  try {
+    const resp = await fetch(_focusEndpoint('consultarNFe') + '?ref=' + encodeURIComponent(ref));
+    const data = await resp.json();
+
+    if (!resp.ok || data.erro) {
+      statusEl.innerHTML = '<span style="color:#C0392B;">❌ ' + (data.erro || 'Erro ao consultar NF-e') + '</span>';
+      return;
+    }
+
+    if (data.status === 'autorizado') {
+      document.getElementById('nf-numero').value = data.numero || '';
+      document.getElementById('nf-chave').value  = data.chave_nfe || '';
+      statusEl.innerHTML = '<span style="color:#1D9E75;">✅ NF-e autorizada! Número ' + (data.numero||'') +
+        '. ' + (data.caminho_danfe ? ('<a href="' + data.caminho_danfe + '" target="_blank">Ver DANFE</a>. ') : '') +
+        'Clique em "Registrar NF no pedido" para salvar.</span>';
+    } else if (data.status === 'erro_autorizacao' || data.status === 'cancelado' || data.status === 'denegado') {
+      statusEl.innerHTML = '<span style="color:#C0392B;">❌ Status: ' + data.status + (data.mensagem ? (' — ' + data.mensagem) : '') + '</span>';
+    } else {
+      statusEl.innerHTML = '<span style="color:#185FA5;">⏳ Status: ' + (data.status||'processando') + '. Aguarde e consulte novamente.</span>';
+    }
+  } catch (err) {
+    statusEl.innerHTML = '<span style="color:#C0392B;">❌ Falha de conexão: ' + String(err.message||err) + '</span>';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-refresh"></i> Consultar status';
+  }
 };
 
 window.verDadosNF = id => {
@@ -4033,6 +4187,19 @@ function getOpenAIKey() {
   return localStorage.getItem('anthropic_api_key') || '';
 }
 
+// ── Cloud Function URL (Focus NFe) ───────────────────────────────────────────
+window.salvarFocusFnUrl = () => {
+  const url = document.getElementById('focus-fn-url-input').value.trim().replace(/\/$/, '');
+  if (url && !/^https:\/\/.+/.test(url)) { toast('❌ URL inválida. Deve começar com https://'); return; }
+  localStorage.setItem('focus_fn_url', url);
+  document.getElementById('focus-fn-url-status').innerHTML = '<span style="color:#1D9E75;">✅ URL salva!</span>';
+  setTimeout(() => { const el = document.getElementById('focus-fn-url-status'); if(el) el.textContent = ''; }, 3000);
+};
+
+function getFocusFnUrl() {
+  return localStorage.getItem('focus_fn_url') || '';
+}
+
 // Preenchimento da chave Anthropic ao entrar em Ajustes
 // (integrado diretamente no goTo final abaixo)
 
@@ -4142,6 +4309,10 @@ window.goTo = (id, btn) => {
       const el = document.getElementById('anthropic-key-input');
       const st = document.getElementById('anthropic-key-status');
       if (el && k) { el.value = k; if (st) st.innerHTML = '<span style="color:#1D9E75;">✅ Chave configurada</span>'; }
+      const fu = getFocusFnUrl();
+      const elF = document.getElementById('focus-fn-url-input');
+      const stF = document.getElementById('focus-fn-url-status');
+      if (elF && fu) { elF.value = fu; if (stF) stF.innerHTML = '<span style="color:#1D9E75;">✅ URL configurada</span>'; }
     }, 50);
   }
   // redesenhar gráficos que dependem de visibilidade
