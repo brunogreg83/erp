@@ -639,38 +639,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   <div class="modal" style="width:560px;">
     <div class="modal-header"><span class="modal-header-title">Faturar / Emitir NF-e</span><span class="modal-drag-hint"><i class="ti ti-arrows-move"></i> mover</span></div>
     <div class="modal-body">
-      <div style="background:#E6F1FB;border-radius:8px;padding:12px 14px;font-size:12px;color:#185FA5;margin-bottom:16px;line-height:1.6;">
-        <i class="ti ti-info-circle"></i> <b>Como funciona:</b> Copie os dados do pedido abaixo, acesse o portal da SEFAZ do seu estado e cole as informações para emitir a NF-e. Após emitir, registre o número da NF aqui para controle interno.
-      </div>
       <div id="nf-dados-pedido" style="background:#f9f9f7;border-radius:8px;padding:14px;font-size:13px;line-height:1.8;margin-bottom:16px;"></div>
-
-      <div class="form-group">
-        <label class="form-label">Estado do emitente (selecione para abrir o portal correto)</label>
-        <select class="form-input" id="nf-estado">
-          <option value="">Selecione o estado...</option>
-          <option value="PR">Paraná (PR)</option>
-          <option value="SP">São Paulo (SP)</option>
-          <option value="MG">Minas Gerais (MG)</option>
-          <option value="SC">Santa Catarina (SC)</option>
-          <option value="RS">Rio Grande do Sul (RS)</option>
-          <option value="RJ">Rio de Janeiro (RJ)</option>
-          <option value="MS">Mato Grosso do Sul (MS)</option>
-          <option value="MT">Mato Grosso (MT)</option>
-          <option value="GO">Goiás (GO)</option>
-          <option value="DF">Distrito Federal (DF)</option>
-          <option value="BA">Bahia (BA)</option>
-          <option value="PE">Pernambuco (PE)</option>
-          <option value="CE">Ceará (CE)</option>
-          <option value="AM">Amazonas (AM)</option>
-          <option value="PA">Pará (PA)</option>
-          <option value="outros">Outros estados (Portal Nacional)</option>
-        </select>
-      </div>
-
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
-        <button class="btn-primary" onclick="abrirPortalSEFAZ()"><i class="ti ti-external-link"></i> Abrir Portal SEFAZ</button>
-        <button class="btn-ghost" onclick="copiarDadosNF()"><i class="ti ti-copy"></i> Copiar dados</button>
-      </div>
 
       <div style="border-top:1px solid #f0f0ec;padding-top:14px;margin-bottom:16px;">
         <div class="section-title" style="margin-bottom:10px;">Emissão automática (Focus NFe)</div>
