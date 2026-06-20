@@ -3759,7 +3759,9 @@ window.emitirNFeFocus = async () => {
     const data = await resp.json();
 
     if (!resp.ok || data.erro) {
-      statusEl.innerHTML = '<span style="color:#C0392B;">❌ ' + (data.erro || 'Erro ao emitir NF-e') + (data.detalhes ? ('<br><small>' + JSON.stringify(data.detalhes).slice(0,300) + '</small>') : '') + '</span>';
+      const extra = data.resposta_bruta ? ('<br><small>HTTP ' + (data.status_http||'') + ': ' + String(data.resposta_bruta).slice(0,400) + '</small>')
+                   : data.detalhes ? ('<br><small>' + JSON.stringify(data.detalhes).slice(0,300) + '</small>') : '';
+      statusEl.innerHTML = '<span style="color:#C0392B;">❌ ' + (data.erro || 'Erro ao emitir NF-e') + extra + '</span>';
       toast('❌ Erro ao emitir NF-e. Veja detalhes no modal.');
       return;
     }
