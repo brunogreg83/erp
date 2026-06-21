@@ -1021,7 +1021,7 @@ window.mobGoTo = function(id) {
   const perfil  = sessao?.perfil || 'admin';
   const perms   = perfil === 'admin'
     ? ['dashboard','vendas','estoque','clientes','financeiro','compras','relatorios','ajustes']
-    : ['vendas'];
+    : ['vendas','clientes'];
   if (!perms.includes(id)) { alert('Acesso não autorizado.'); return; }
 
   // telas
@@ -1113,14 +1113,14 @@ function aplicarPerfil(perfil, nome) {
   if (mob) mob.textContent = nome || 'Usuário';
 
   if (perfil === 'vendedor') {
-    // desktop: esconder itens
-    ['nav-dashboard','nav-estoque','nav-clientes','nav-financeiro','nav-compras','nav-relatorios','nav-ajustes']
+    // desktop: esconder itens (Clientes permanece visível)
+    ['nav-dashboard','nav-estoque','nav-financeiro','nav-compras','nav-relatorios','nav-ajustes']
       .forEach(id => { const b = document.getElementById(id); if(b) b.style.display='none'; });
-    // mobile drawer: esconder itens
-    ['mob-nav-dashboard','mob-nav-estoque','mob-nav-clientes','mob-nav-financeiro','mob-nav-compras','mob-nav-relatorios','mob-nav-ajustes']
+    // mobile drawer: esconder itens (Clientes permanece visível)
+    ['mob-nav-dashboard','mob-nav-estoque','mob-nav-financeiro','mob-nav-compras','mob-nav-relatorios','mob-nav-ajustes']
       .forEach(id => { const b = document.getElementById(id); if(b) b.style.display='none'; });
-    // mobile bottom nav: esconder botões não permitidos
-    ['mbn-dashboard','mbn-clientes','mbn-estoque']
+    // mobile bottom nav: esconder botões não permitidos (Clientes permanece visível)
+    ['mbn-dashboard','mbn-estoque']
       .forEach(id => { const b = document.getElementById(id); if(b) b.style.display='none'; });
 
     // redirecionar para vendas
@@ -4301,7 +4301,7 @@ function renderUsuarios() {
 
 // ── Navegação com controle de acesso ──────────────────────────────────────
 const ROTAS_ADMIN    = ['dashboard','vendas','estoque','clientes','financeiro','compras','relatorios','ajustes'];
-const ROTAS_VENDEDOR = ['vendas'];
+const ROTAS_VENDEDOR = ['vendas','clientes'];
 const titles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',estoque:'Estoque e Produtos',
   clientes:'Clientes e CRM',financeiro:'Financeiro e Faturamento',compras:'Compras e Fornecedores',
   relatorios:'Relatórios',ajustes:'Ajustes do Sistema'};
