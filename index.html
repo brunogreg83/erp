@@ -416,36 +416,33 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <!-- FINANCEIRO -->
       <div class="screen" id="screen-financeiro">
 
+        <!-- Seletor de mês único — controla todos os cards da página -->
+        <div class="card" style="margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <div class="section-title" style="margin-bottom:0;display:flex;align-items:center;gap:8px;"><i class="ti ti-calendar"></i> Mês de referência</div>
+          <select id="fin-mes-global" onchange="atualizarFinanceiroMes()" style="border:1px solid #e8e7e0;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;color:#333;background:#fff;cursor:pointer;outline:none;"></select>
+        </div>
+
         <!-- Saldo Projetado por mês -->
         <div class="card" style="margin-bottom:22px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-            <div class="section-title" style="margin-bottom:0;" id="fin-saldo-titulo">Saldo Projetado — Maio/2026</div>
-            <select id="fin-mes-saldo" onchange="atualizarSaldoMes()" style="border:1px solid #e8e7e0;border-radius:8px;padding:4px 10px;font-size:12px;color:#555;background:#fff;cursor:pointer;outline:none;"></select>
-          </div>
+          <div class="section-title" style="margin-bottom:14px;" id="fin-saldo-titulo">Saldo Projetado — Maio/2026</div>
           <div id="fin-saldo-mes" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;"></div>
         </div>
         <div class="two-col">
           <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-              <div class="section-title" style="margin-bottom:0;" id="receber-titulo">Contas a receber</div>
-              <select id="receber-mes-sel" onchange="filtrarReceberMes()" style="border:1px solid #e8e7e0;border-radius:8px;padding:4px 10px;font-size:12px;color:#555;background:#fff;cursor:pointer;outline:none;"></select>
-            </div>
+            <div class="section-title" style="margin-bottom:14px;" id="receber-titulo">Contas a receber</div>
             <div class="table-wrap" style="margin:0;"><table><thead><tr><th>Cliente</th><th>Vencimento</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody id="tabela-receber"></tbody></table></div>
             <div id="receber-total-mes" style="text-align:right;padding:10px 14px 0;font-size:13px;color:#888;"></div>
             <button class="btn-primary" style="margin-top:12px;" onclick="openModal('modal-receber')"><i class="ti ti-plus"></i> Lançar título</button>
           </div>
           <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-              <div class="section-title" style="margin-bottom:0;" id="pagar-titulo">Contas a pagar</div>
-              <select id="pagar-mes-sel" onchange="filtrarPagarMes()" style="border:1px solid #e8e7e0;border-radius:8px;padding:4px 10px;font-size:12px;color:#555;background:#fff;cursor:pointer;outline:none;"></select>
-            </div>
+            <div class="section-title" style="margin-bottom:14px;" id="pagar-titulo">Contas a pagar</div>
             <div class="table-wrap" style="margin:0;"><table><thead><tr><th>Fornecedor</th><th>Vencimento</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody id="tabela-pagar"></tbody></table></div>
             <div id="pagar-total-mes" style="text-align:right;padding:10px 14px 0;font-size:13px;color:#888;"></div>
             <button class="btn-primary" style="margin-top:12px;" onclick="openModal('modal-pagar')"><i class="ti ti-plus"></i> Lançar conta</button>
           </div>
         </div>
 
-        <!-- Gráfico Receitas x Despesas — último -->
+        <!-- Gráfico Receitas x Despesas — mês selecionado -->
         <div class="card" style="padding-bottom:14px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
             <div class="section-title" style="margin-bottom:0;">Receitas × Despesas</div>
@@ -1056,13 +1053,10 @@ window.mobGoTo = function(id) {
 
   // redesenhar gráficos ao navegar
   if (id === 'financeiro') {
-    const tR = D.receber.reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
-    const tP = D.pagar.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
     setTimeout(() => {
-      const rxd = calcRxDMesAtual(); desenharRxD('fin-rxd-chart','fin-rxd-legenda','fin-saldo-badge', rxd.tR, rxd.tP);
-      const sel = document.getElementById('fin-mes-saldo');
+      const sel = document.getElementById('fin-mes-global');
       if (sel && sel.options.length === 0) renderFinanceiro();
-      else { if (sel) atualizarSaldoMes(); filtrarReceberMes(); filtrarPagarMes(); }
+      else atualizarFinanceiroMes();
     }, 30);
   }
   if (id === 'dashboard') {
@@ -2337,24 +2331,28 @@ function renderFinanceiro() {
   const tR = D.receber.reduce((s,r) => s+(parseFloat(r.valor)||0), 0);
   const tP = D.pagar.reduce((s,p) => s+(parseFloat(p.valor)||0),   0);
 
-  // popular seletores de mês (sempre limpa e repopula para garantir mês atual correto)
-  popularSeletorMeses('fin-mes-saldo');
-  popularSeletorMeses('pagar-mes-sel');
-  popularSeletorMeses('receber-mes-sel');
-  atualizarSaldoMes();
+  // popular o seletor de mês único (sempre limpa e repopula para garantir mês atual correto)
+  popularSeletorMeses('fin-mes-global');
 
-  // tabela contas a receber — filtrada pelo mês selecionado
-  filtrarReceberMes();
-
-  // tabela contas a pagar — filtrada pelo mês selecionado
-  filtrarPagarMes();
-
-  const { tR: tRfin, tP: tPfin } = calcRxDMesAtual();
-  setTimeout(() => desenharRxD('fin-rxd-chart','fin-rxd-legenda','fin-saldo-badge', tRfin, tPfin), 0);
+  // aplica o mês selecionado a todos os cards da página
+  atualizarFinanceiroMes();
 }
 
+// ── Seletor de mês único: atualiza Saldo Projetado, Contas a receber/pagar e gráfico RxD ──
+window.atualizarFinanceiroMes = () => {
+  atualizarSaldoMes();
+  filtrarReceberMes();
+  filtrarPagarMes();
+
+  const sel = document.getElementById('fin-mes-global');
+  const ym  = sel ? sel.value : null;
+  if (!ym) return;
+  const { tR, tP } = calcRxDMes(ym);
+  setTimeout(() => desenharRxD('fin-rxd-chart','fin-rxd-legenda','fin-saldo-badge', tR, tP, ym), 0);
+};
+
 window.filtrarReceberMes = () => {
-  const selReceber = document.getElementById('receber-mes-sel');
+  const selReceber = document.getElementById('fin-mes-global');
   if (!selReceber) return;
   const ym = selReceber.value;
   const [ano, mes] = ym.split('-').map(Number);
@@ -2386,7 +2384,7 @@ window.filtrarReceberMes = () => {
 };
 
 window.filtrarPagarMes = () => {
-  const selPagar = document.getElementById('pagar-mes-sel');
+  const selPagar = document.getElementById('fin-mes-global');
   if (!selPagar) return;
   const ym = selPagar.value;
   const [ano, mes] = ym.split('-').map(Number);
@@ -2417,7 +2415,7 @@ window.filtrarPagarMes = () => {
 };
 
 window.atualizarSaldoMes = () => {
-  const sel = document.getElementById('fin-mes-saldo');
+  const sel = document.getElementById('fin-mes-global');
   if (!sel) return;
   const ym = sel.value; // ex: "2026-05"
   const [ano, mes] = ym.split('-').map(Number);
@@ -3074,7 +3072,16 @@ function calcRxDMesAtual() {
   return { tR, tP };
 }
 
-function desenharRxD(containerId, legendaId, badgeId, receitas, despesas) {
+// Mesmo cálculo, porém para um mês arbitrário "AAAA-MM" (usado pelo seletor único do Financeiro)
+function calcRxDMes(ym) {
+  const tR = D.receber.filter(r => r.vencimento && r.vencimento.startsWith(ym))
+                      .reduce((s,r) => s+(parseFloat(r.valor)||0), 0);
+  const tP = D.pagar.filter(p => p.vencimento && p.vencimento.startsWith(ym))
+                    .reduce((s,p) => s+(parseFloat(p.valor)||0), 0);
+  return { tR, tP };
+}
+
+function desenharRxD(containerId, legendaId, badgeId, receitas, despesas, ym) {
   const container = document.getElementById(containerId);
   const legenda   = document.getElementById(legendaId);
   const badge     = document.getElementById(badgeId);
@@ -3082,7 +3089,8 @@ function desenharRxD(containerId, legendaId, badgeId, receitas, despesas) {
 
   const saldo = receitas - despesas;
   if (badge) {
-    const _nm = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][new Date().getMonth()];
+    const nomesMes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const _nm = ym ? nomesMes[Number(ym.split('-')[1]) - 1] : nomesMes[new Date().getMonth()];
     badge.innerHTML = '<span style="font-size:10px;color:#aaa;margin-right:6px;">' + _nm + '</span>' + R$(saldo);
     badge.style.color = saldo >= 0 ? '#1D9E75' : '#D85A30';
   }
@@ -4324,13 +4332,10 @@ window.goTo = (id, btn) => {
   }
   // redesenhar gráficos que dependem de visibilidade
   if (id === 'financeiro') {
-    const tR = D.receber.reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
-    const tP = D.pagar.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
     setTimeout(() => {
-      const rxd = calcRxDMesAtual(); desenharRxD('fin-rxd-chart','fin-rxd-legenda','fin-saldo-badge', rxd.tR, rxd.tP);
-      const sel = document.getElementById('fin-mes-saldo');
+      const sel = document.getElementById('fin-mes-global');
       if (sel && sel.options.length === 0) renderFinanceiro();
-      else { if (sel) atualizarSaldoMes(); filtrarReceberMes(); filtrarPagarMes(); }
+      else atualizarFinanceiroMes();
     }, 30);
   }
   if (id === 'dashboard') {
