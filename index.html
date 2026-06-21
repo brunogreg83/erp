@@ -3160,9 +3160,9 @@ function desenharRxD(containerId, legendaId, badgeId, receitas, despesas, ym) {
 // ── Dashboard ──────────────────────────────────────────────────────────────
 function renderDashboard() {
   const ymAtualDash = new Date().toISOString().slice(0,7);
-  const fat  = D.pedidos.filter(p => p.status==='Entregue' && (p.data||'').startsWith(ymAtualDash)).reduce((s,p)=>s+totPed(p),0);
+  const fat  = D.pedidos.filter(p => (p.status==='Entregue' || p.status==='Faturado') && (p.data||'').startsWith(ymAtualDash)).reduce((s,p)=>s+totPed(p),0);
   const mesDash = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][new Date().getMonth()];
-  const ab   = D.pedidos.filter(p=>p.status!=='Entregue').length;
+  const ab   = D.pedidos.filter(p=>p.status!=='Entregue' && p.status!=='Faturado').length;
   const ag   = D.pedidos.filter(p=>p.status==='Aguardando').length;
   const al   = D.produtos.filter(p=>sit(p.estoque,p.minimo)!=='OK');
   const ativos = D.clientes.filter(c=>c.status==='Ativo').length;
@@ -3191,7 +3191,7 @@ function renderDashboard() {
 
   // ── Gráfico de faturamento — Canvas animado com comparativo ──────────────
   const porMes = {};
-  D.pedidos.filter(p => p.status === 'Entregue').forEach(p => {
+  D.pedidos.filter(p => p.status === 'Entregue' || p.status === 'Faturado').forEach(p => {
     if (!p.data) return;
     const ym = p.data.slice(0,7);
     porMes[ym] = (porMes[ym] || 0) + totPed(p);
