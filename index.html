@@ -473,7 +473,10 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         </div>
 
         <div class="card" style="margin-bottom:22px;">
-          <div class="section-title">Sugestão de reposição automática</div>
+          <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+            <span>Sugestão de reposição automática</span>
+            <button class="btn-primary" style="font-size:12px;padding:5px 12px;display:none;" id="btn-comprar-todos" onclick="abrirOCTodos()"><i class="ti ti-shopping-cart"></i> Comprar Todos</button>
+          </div>
           <div id="cmp-sugestoes"></div>
         </div>
         <div class="table-wrap">
@@ -2735,6 +2738,38 @@ window.abrirOCProd = nome => {
   document.getElementById('modal-oc').classList.add('open');
 };
 
+// Abre a OC já com todos os produtos sugeridos na reposição automática
+window.abrirOCTodos = () => {
+  const sug = D.produtos.filter(p => sit(p.estoque,p.minimo) !== 'OK');
+  if (!sug.length) { toast('Nenhuma reposição necessária!'); return; }
+
+  window.ocItens = [];
+  document.getElementById('oc-itens').innerHTML = '';
+  document.getElementById('oc-forn').value = '';
+  document.getElementById('oc-obs').value  = '';
+
+  sug.forEach((p, idx) => {
+    const estoque = parseFloat(p.estoque) || 0;
+    const minimo  = parseFloat(p.minimo)  || 0;
+    const qty     = Math.max(1, Math.ceil(minimo - estoque));
+    const custo   = p.custo || 0;
+    window.ocItens.push({ produto: p.nome, qty, custo });
+
+    const opts = D.produtos.map(x => '<option value="' + x.nome + '"' + (x.nome===p.nome?' selected':'') + '>' + x.nome + '</option>').join('');
+    const row = document.createElement('div');
+    row.className = 'pi-row'; row.id = 'oci-' + idx;
+    row.innerHTML =
+      '<select class="form-input" onchange="window.ocItens[' + idx + '].produto=this.value;autoPrecoOC(' + idx + ',this.value)"><option value="">Selecione...</option>' + opts + '</select>' +
+      '<input type="text" inputmode="decimal" class="form-input" style="max-width:75px;" value="' + qty + '" onchange="window.ocItens[' + idx + '].qty=+this.value">' +
+      '<input type="text" inputmode="decimal" class="form-input" style="max-width:100px;" placeholder="Custo unit." id="oci-preco-' + idx + '" value="' + custo + '" onchange="window.ocItens[' + idx + '].custo=+this.value">' +
+      '<button class="btn-danger" onclick="document.getElementById(\'oci-' + idx + '\').remove();window.ocItens[' + idx + ']=null">✕</button>';
+    document.getElementById('oc-itens').appendChild(row);
+  });
+
+  document.getElementById('modal-oc').classList.add('open');
+  toast('📋 ' + sug.length + ' produto(s) adicionado(s) à ordem de compra');
+};
+
 // ── Envio automático de OC por email ──────────────────────────────────────
 function enviarOCPorEmail(o, forn) {
   if (!forn?.email) return;
@@ -3004,6 +3039,8 @@ function renderCompras() {
         <div class="stock-info"><div class="stock-name">${p.nome}</div><div class="stock-code">Estoque: ${p.estoque} / Mín: ${p.minimo}</div></div>
         <button class="btn-primary" style="font-size:12px;padding:5px 12px;" onclick="abrirOCProd('${p.nome}')">Comprar</button></div>`).join('')
     : '<div class="empty-state" style="padding:16px;">Nenhuma reposição necessária.</div>';
+  const btnTodos = document.getElementById('btn-comprar-todos');
+  if (btnTodos) btnTodos.style.display = sug.length > 1 ? 'inline-flex' : 'none';
 
   document.getElementById('tabela-compras').innerHTML = [...D.ordens]
     .sort((a,b)=>(b.data||'').localeCompare(a.data||''))
