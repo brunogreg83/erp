@@ -528,7 +528,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
             </div>
             <div class="card">
               <div class="section-title"><i class="ti ti-receipt-2" style="margin-right:6px;"></i>Emissão de NF-e (Focus NFe)</div>
-              <div style="font-size:12px;color:#888;margin-bottom:14px;">Informe a URL da Cloud Function que faz a integração com a Focus NFe. Ambiente atual configurado no servidor: <b>homologação</b> (testes).</div>
+              <div style="font-size:12px;color:#888;margin-bottom:14px;">Informe a URL da Cloud Function que faz a integração com a Focus NFe. Ambiente atual configurado no servidor: <b>produção</b>.</div>
               <div class="form-group">
                 <label class="form-label">URL base das Cloud Functions</label>
                 <input class="form-input" id="focus-fn-url-input" placeholder="https://us-central1-SEU-PROJETO.cloudfunctions.net" style="font-family:monospace;font-size:12px;">
@@ -676,10 +676,21 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     <div class="modal-header"><span class="modal-header-title">NF-e Registrada</span><span class="modal-drag-hint"><i class="ti ti-arrows-move"></i> mover</span></div>
     <div class="modal-body">
       <div id="ver-nf-corpo"></div>
+      <div id="ver-nf-cancelar-area" style="display:none;border-top:1px solid #f0f0ec;padding-top:14px;margin-top:14px;">
+        <div class="section-title" style="margin-bottom:8px;color:#C0392B;"><i class="ti ti-alert-triangle"></i> Cancelar NF-e na SEFAZ</div>
+        <div style="font-size:12px;color:#888;margin-bottom:10px;">O cancelamento é irreversível e só é permitido pela SEFAZ em até 24h após a autorização. Informe a justificativa (mínimo 15 caracteres).</div>
+        <textarea id="ver-nf-justificativa" class="form-input" rows="3" placeholder="Ex: Erro nos dados do cliente, pedido cancelado pelo comprador..." style="resize:vertical;font-size:13px;"></textarea>
+        <div id="ver-nf-cancelar-status" style="font-size:12px;margin-top:8px;min-height:18px;"></div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="btn-primary" style="background:#C0392B;border-color:#C0392B;" onclick="confirmarCancelamentoSEFAZ()"><i class="ti ti-send"></i> Confirmar cancelamento</button>
+          <button class="btn-ghost" onclick="document.getElementById('ver-nf-cancelar-area').style.display='none'">Voltar</button>
+        </div>
+      </div>
     </div>
-    <div class="modal-footer">
+    <div class="modal-footer" id="ver-nf-footer">
       <button class="btn-ghost" onclick="closeModal('modal-ver-nf')">Fechar</button>
-      <button class="btn-ghost" onclick="cancelarNF()"><i class="ti ti-x"></i> Cancelar NF</button>
+      <button class="btn-ghost" style="color:#C0392B;" onclick="mostrarCancelarSEFAZ()"><i class="ti ti-file-x"></i> Cancelar NF-e SEFAZ</button>
+      <button class="btn-ghost" onclick="cancelarNFInterno()"><i class="ti ti-x"></i> Remover registro</button>
     </div>
   </div>
 </div>
@@ -1579,6 +1590,11 @@ window.closeModal = id => {
         '<button class="btn-ghost" onclick="closeModal(\'modal-produto\')">Cancelar</button>' +
         '<button class="btn-primary" onclick="salvarProduto()">Salvar</button>';
     }
+  }
+  if (id === 'modal-ver-nf') {
+    document.getElementById('ver-nf-cancelar-area').style.display = 'none';
+    document.getElementById('ver-nf-footer').style.display = '';
+    document.getElementById('ver-nf-cancelar-status').textContent = '';
   }
 };
 // Modais fecham apenas via botão Cancelar/Salvar
@@ -3688,6 +3704,8 @@ window.abrirEmissaoNF = id => {
   // Guardar dados para copiar
   document.getElementById('modal-emissao-nf').dataset.dadosNF = dados;
   delete document.getElementById('modal-emissao-nf').dataset.focusRef;
+  delete document.getElementById('modal-emissao-nf').dataset.focusDanfe;
+  delete document.getElementById('modal-emissao-nf').dataset.focusXml;
 
   // Resetar área de emissão Focus NFe
   document.getElementById('nf-focus-aviso').style.display = 'none';
@@ -3726,12 +3744,15 @@ window.registrarNF = async () => {
   if (!numero) { toast('Informe o número da NF emitida.'); return; }
   if (!_pedidoNFId) return;
 
+  const modal = document.getElementById('modal-emissao-nf');
   await upd('pedidos', _pedidoNFId, {
     nf_emitida: true,
     nf_numero:  numero,
     nf_chave:   document.getElementById('nf-chave').value.trim(),
     nf_data:    today(),
-    status:     'Entregue'
+    nf_danfe:   modal.dataset.focusDanfe || '',
+    nf_xml:     modal.dataset.focusXml   || '',
+    status:     'Faturado'
   });
 
   closeModal('modal-emissao-nf');
@@ -3787,7 +3808,7 @@ window.emitirNFeFocus = async () => {
 
   btn.disabled = true;
   btn.innerHTML = '<i class="ti ti-loader-2"></i> Emitindo...';
-  statusEl.textContent = 'Enviando dados para a Focus NFe (homologação)...';
+  statusEl.textContent = 'Enviando dados para a Focus NFe (produção)...';
 
   try {
     const resp = await fetch(_focusEndpoint('emitirNFe'), {
@@ -3820,7 +3841,11 @@ window.emitirNFeFocus = async () => {
     if (data.status === 'autorizado' && data.numero) {
       document.getElementById('nf-numero').value = data.numero;
       document.getElementById('nf-chave').value  = data.chave_nfe || '';
-      statusEl.innerHTML = '<span style="color:#1D9E75;">✅ NF-e autorizada! Número ' + data.numero + '. Clique em "Registrar NF no pedido" para salvar.</span>';
+      document.getElementById('modal-emissao-nf').dataset.focusDanfe = data.caminho_danfe || '';
+      document.getElementById('modal-emissao-nf').dataset.focusXml   = data.caminho_xml   || '';
+      const danfeLink = data.caminho_danfe ? (' <a href="' + data.caminho_danfe + '" target="_blank" style="color:#1D9E75;font-weight:600;"><i class="ti ti-file-text"></i> Ver DANFE</a>') : '';
+      const xmlLink   = data.caminho_xml   ? (' <a href="' + data.caminho_xml   + '" target="_blank" style="color:#185FA5;font-weight:600;"><i class="ti ti-code"></i> Baixar XML</a>') : '';
+      statusEl.innerHTML = '<span style="color:#1D9E75;">✅ NF-e autorizada! Número ' + data.numero + '.' + danfeLink + xmlLink + ' Clique em "Registrar NF no pedido" para salvar.</span>';
     }
   } catch (err) {
     statusEl.innerHTML = '<span style="color:#C0392B;">❌ Falha de conexão com a Cloud Function: ' + String(err.message||err) + '</span>';
@@ -3853,9 +3878,12 @@ window.consultarNFeFocus = async () => {
     if (data.status === 'autorizado') {
       document.getElementById('nf-numero').value = data.numero || '';
       document.getElementById('nf-chave').value  = data.chave_nfe || '';
-      statusEl.innerHTML = '<span style="color:#1D9E75;">✅ NF-e autorizada! Número ' + (data.numero||'') +
-        '. ' + (data.caminho_danfe ? ('<a href="' + data.caminho_danfe + '" target="_blank">Ver DANFE</a>. ') : '') +
-        'Clique em "Registrar NF no pedido" para salvar.</span>';
+      const modal = document.getElementById('modal-emissao-nf');
+      modal.dataset.focusDanfe = data.caminho_danfe || '';
+      modal.dataset.focusXml   = data.caminho_xml   || '';
+      const danfeLink = data.caminho_danfe ? (' <a href="' + data.caminho_danfe + '" target="_blank" style="color:#1D9E75;font-weight:600;"><i class="ti ti-file-text"></i> Ver DANFE</a>') : '';
+      const xmlLink   = data.caminho_xml   ? (' <a href="' + data.caminho_xml   + '" target="_blank" style="color:#185FA5;font-weight:600;"><i class="ti ti-code"></i> Baixar XML</a>') : '';
+      statusEl.innerHTML = '<span style="color:#1D9E75;">✅ NF-e autorizada! Número ' + (data.numero||'') + '.' + danfeLink + xmlLink + ' Clique em "Registrar NF no pedido" para salvar.</span>';
     } else if (data.status === 'erro_autorizacao' || data.status === 'cancelado' || data.status === 'denegado') {
       statusEl.innerHTML = '<span style="color:#C0392B;">❌ Status: ' + data.status + (data.mensagem ? (' — ' + data.mensagem) : '') + '</span>';
     } else {
@@ -3891,20 +3919,88 @@ window.verDadosNF = id => {
     </div>
     <div style="background:#EAF3DE;border-radius:8px;padding:10px 14px;font-size:12px;color:#3B6D11;">
       <i class="ti ti-check"></i> NF-e registrada com sucesso no pedido.
-    </div>`;
+    </div>
+    ${(p.nf_danfe || p.nf_xml) ? `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
+      ${p.nf_danfe ? `<a href="${p.nf_danfe}" target="_blank" class="btn-primary" style="text-decoration:none;font-size:13px;"><i class="ti ti-file-text"></i> Ver DANFE</a>` : ''}
+      ${p.nf_xml   ? `<a href="${p.nf_xml}"   target="_blank" class="btn-ghost"   style="text-decoration:none;font-size:13px;"><i class="ti ti-code"></i> Baixar XML</a>` : ''}
+    </div>` : ''}
+    ${(p.nf_danfe || p.nf_xml) ? '' : '<div style="margin-top:12px;font-size:12px;color:#aaa;"><i class="ti ti-info-circle"></i> DANFE e XML não disponíveis (NF registrada manualmente).</div>'}`;
 
   document.getElementById('modal-ver-nf').classList.add('open');
 };
 
-window.cancelarNF = async () => {
+window.cancelarNFInterno = async () => {
   if (!_pedidoNFId) return;
-  if (!confirm('Cancelar o registro da NF neste pedido? (Isso não cancela a NF na SEFAZ — apenas remove o registro interno.)')) return;
+  if (!confirm('Remover o registro da NF deste pedido? (Isso NÃO cancela a NF na SEFAZ — apenas remove o registro interno.)')) return;
   await upd('pedidos', _pedidoNFId, {
-    nf_emitida: false, nf_numero: '', nf_chave: '', nf_data: ''
+    nf_emitida: false, nf_numero: '', nf_chave: '', nf_data: '', nf_danfe: '', nf_xml: '', status: 'Entregue'
   });
   closeModal('modal-ver-nf');
   _pedidoNFId = null;
   toast('Registro da NF removido do pedido.');
+};
+
+// Manter compatibilidade com chamadas antigas
+window.cancelarNF = window.cancelarNFInterno;
+
+window.mostrarCancelarSEFAZ = () => {
+  const baseUrl = getFocusFnUrl();
+  if (!baseUrl) { toast('❌ Configure a URL das Cloud Functions em Ajustes antes de cancelar.'); return; }
+  document.getElementById('ver-nf-cancelar-area').style.display = 'block';
+  document.getElementById('ver-nf-justificativa').value = '';
+  document.getElementById('ver-nf-cancelar-status').textContent = '';
+  document.getElementById('ver-nf-footer').style.display = 'none';
+};
+
+window.confirmarCancelamentoSEFAZ = async () => {
+  const justificativa = document.getElementById('ver-nf-justificativa').value.trim();
+  const statusEl = document.getElementById('ver-nf-cancelar-status');
+
+  if (justificativa.length < 15) {
+    statusEl.innerHTML = '<span style="color:#C0392B;">❌ Justificativa deve ter ao menos 15 caracteres.</span>';
+    return;
+  }
+  if (!_pedidoNFId) return;
+
+  const p = D.pedidos.find(x => x.id === _pedidoNFId);
+  if (!p) return;
+
+  const ref = 'pedido-' + p.id;
+  const btn = document.querySelector('#ver-nf-cancelar-area .btn-primary');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Cancelando...';
+  statusEl.innerHTML = '<span style="color:#888;">Enviando solicitação de cancelamento à SEFAZ...</span>';
+
+  try {
+    const resp = await fetch(_focusEndpoint('cancelarNFeFocus'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref, justificativa })
+    });
+    const data = await resp.json();
+
+    if (!resp.ok || data.ok === false) {
+      const msg = data.raw?.mensagem || data.erro || JSON.stringify(data).slice(0, 200);
+      statusEl.innerHTML = '<span style="color:#C0392B;">❌ ' + msg + '</span>';
+      return;
+    }
+
+    // Cancelamento aceito — atualizar pedido no Firestore
+    await upd('pedidos', _pedidoNFId, {
+      nf_emitida: false, nf_numero: '', nf_chave: '', nf_data: '', nf_danfe: '', nf_xml: '',
+      nf_cancelada: true, nf_cancelada_data: today(), status: 'Entregue'
+    });
+
+    closeModal('modal-ver-nf');
+    _pedidoNFId = null;
+    toast('✅ NF-e cancelada na SEFAZ com sucesso!');
+  } catch (err) {
+    statusEl.innerHTML = '<span style="color:#C0392B;">❌ Falha de conexão: ' + String(err.message||err) + '</span>';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-send"></i> Confirmar cancelamento';
+  }
 };
 
 // ── Importação de NF-e (XML / PDF) ─────────────────────────────────────────
