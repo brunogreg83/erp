@@ -3835,7 +3835,7 @@ window.emitirNFeFocus = async () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ref,
-        pedido: { id: p.id, itens: p.itens, data: p.data },
+        pedido: { id: p.id, itens: p.itens, data: p.data, desconto: p.desconto || 0 },
         cliente: { nome: cli.nome || p.cliente, cnpj: cli.cnpj, cpf: cli.cpf, ie: cli.ie,
                    endereco: cli.endereco, cidade, uf, cep: cli.cep, tel: cli.tel, email: cli.email }
       })
