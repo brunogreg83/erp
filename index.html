@@ -683,13 +683,24 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <div id="ver-nf-cancelar-status" style="font-size:12px;margin-top:8px;min-height:18px;"></div>
         <div style="display:flex;gap:8px;margin-top:10px;">
           <button class="btn-primary" style="background:#C0392B;border-color:#C0392B;" onclick="confirmarCancelamentoSEFAZ()"><i class="ti ti-send"></i> Confirmar cancelamento</button>
-          <button class="btn-ghost" onclick="document.getElementById('ver-nf-cancelar-area').style.display='none'">Voltar</button>
+          <button class="btn-ghost" onclick="document.getElementById('ver-nf-cancelar-area').style.display='none';document.getElementById('ver-nf-footer').style.display='';">Voltar</button>
+        </div>
+      </div>
+      <div id="ver-nf-devolucao-area" style="display:none;border-top:1px solid #f0f0ec;padding-top:14px;margin-top:14px;">
+        <div class="section-title" style="margin-bottom:8px;color:#185FA5;"><i class="ti ti-arrow-back-up"></i> Emitir NF-e de Devolução</div>
+        <div style="font-size:12px;color:#888;margin-bottom:10px;">Será emitida uma NF-e de entrada referenciando a NF original. Todos os itens retornarão ao estoque e um crédito será lançado no financeiro.</div>
+        <div id="ver-nf-devolucao-itens" style="background:#f9f9f7;border-radius:8px;padding:10px;font-size:12px;margin-bottom:10px;max-height:160px;overflow-y:auto;"></div>
+        <div id="ver-nf-devolucao-status" style="font-size:12px;margin-top:8px;min-height:18px;"></div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="btn-primary" id="btn-confirmar-devolucao" onclick="confirmarDevolucao()"><i class="ti ti-send"></i> Emitir NF de devolução</button>
+          <button class="btn-ghost" onclick="document.getElementById('ver-nf-devolucao-area').style.display='none';document.getElementById('ver-nf-footer').style.display='';">Voltar</button>
         </div>
       </div>
     </div>
     <div class="modal-footer" id="ver-nf-footer">
       <button class="btn-ghost" onclick="closeModal('modal-ver-nf')">Fechar</button>
-      <button class="btn-ghost" style="color:#C0392B;" onclick="mostrarCancelarSEFAZ()"><i class="ti ti-file-x"></i> Cancelar NF-e SEFAZ</button>
+      <button class="btn-ghost" style="color:#185FA5;" onclick="mostrarDevolucao()"><i class="ti ti-arrow-back-up"></i> NF Devolução</button>
+      <button class="btn-ghost" style="color:#C0392B;" onclick="mostrarCancelarSEFAZ()"><i class="ti ti-file-x"></i> Cancelar NF-e</button>
       <button class="btn-ghost" onclick="cancelarNFInterno()"><i class="ti ti-x"></i> Remover registro</button>
     </div>
   </div>
@@ -1593,8 +1604,10 @@ window.closeModal = id => {
   }
   if (id === 'modal-ver-nf') {
     document.getElementById('ver-nf-cancelar-area').style.display = 'none';
+    document.getElementById('ver-nf-devolucao-area').style.display = 'none';
     document.getElementById('ver-nf-footer').style.display = '';
     document.getElementById('ver-nf-cancelar-status').textContent = '';
+    document.getElementById('ver-nf-devolucao-status').textContent = '';
   }
 };
 // Modais fecham apenas via botão Cancelar/Salvar
@@ -4006,6 +4019,144 @@ window.confirmarCancelamentoSEFAZ = async () => {
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<i class="ti ti-send"></i> Confirmar cancelamento';
+  }
+};
+
+// ── NF-e de Devolução ──────────────────────────────────────────────────────
+window.mostrarDevolucao = () => {
+  const baseUrl = getFocusFnUrl();
+  if (!baseUrl) { toast('❌ Configure a URL das Cloud Functions em Ajustes antes de emitir.'); return; }
+
+  const p = D.pedidos.find(x => x.id === _pedidoNFId);
+  if (!p) return;
+
+  if (!p.nf_chave) {
+    toast('❌ Chave de acesso da NF original não encontrada. Necessária para referenciar na devolução.');
+    return;
+  }
+
+  // Montar prévia dos itens
+  const itensHtml = (p.itens || []).map(it =>
+    `<div style="padding:4px 0;border-bottom:1px solid #f0f0ec;">
+       <b>${it.produto}</b> — Qtd: ${it.qty} | Unit: ${R$(it.preco)} | Total: ${R$(it.qty * it.preco)}
+     </div>`
+  ).join('');
+
+  document.getElementById('ver-nf-devolucao-itens').innerHTML =
+    itensHtml || '<div style="color:#aaa;">Nenhum item encontrado.</div>';
+  document.getElementById('ver-nf-devolucao-status').textContent = '';
+  document.getElementById('ver-nf-devolucao-area').style.display = 'block';
+  document.getElementById('ver-nf-footer').style.display = 'none';
+};
+
+window.confirmarDevolucao = async () => {
+  const statusEl = document.getElementById('ver-nf-devolucao-status');
+  const btn = document.getElementById('btn-confirmar-devolucao');
+  if (!_pedidoNFId) return;
+
+  const p = D.pedidos.find(x => x.id === _pedidoNFId);
+  if (!p) return;
+
+  const nomePedNF = (p.cliente || '').trim().toLowerCase();
+  const cli = D.clientes.find(c => c.nome === p.cliente)
+           || D.clientes.find(c => c.nome.trim().toLowerCase() === nomePedNF)
+           || {};
+
+  let cidade = cli.cidade || '';
+  let uf = '';
+  if (cidade.includes('/')) {
+    const partes = cidade.split('/');
+    cidade = partes[0].trim();
+    uf = partes[1].trim().toUpperCase();
+  }
+
+  const ref = 'dev-' + p.id + '-' + Date.now();
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Emitindo...';
+  statusEl.innerHTML = '<span style="color:#888;">Emitindo NF-e de devolução...</span>';
+
+  try {
+    const resp = await fetch(_focusEndpoint('emitirNFeDevolucao'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ref,
+        chave_referenciada: p.nf_chave,
+        pedido: { id: p.id, itens: p.itens, data: p.data },
+        cliente: { nome: cli.nome || p.cliente, cnpj: cli.cnpj, cpf: cli.cpf, ie: cli.ie,
+                   endereco: cli.endereco, cidade, uf, cep: cli.cep, tel: cli.tel, email: cli.email }
+      })
+    });
+
+    const data = await resp.json();
+
+    if (!resp.ok || data.erro) {
+      const extra = data.resposta_bruta
+        ? ('<br><small>HTTP ' + (data.status_http||'') + ': ' + String(data.resposta_bruta).slice(0,300) + '</small>')
+        : data.detalhes ? ('<br><small>' + JSON.stringify(data.detalhes).slice(0,200) + '</small>') : '';
+      statusEl.innerHTML = '<span style="color:#C0392B;">❌ ' + (data.erro || 'Erro ao emitir devolução') + extra + '</span>';
+      return;
+    }
+
+    // Aguardar autorização via polling
+    statusEl.innerHTML = '<span style="color:#185FA5;">⏳ Aguardando autorização da SEFAZ...</span>';
+
+    let nfDev = data;
+    for (let i = 0; i < 8; i++) {
+      await new Promise(r => setTimeout(r, 2500));
+      try {
+        const cResp = await fetch(_focusEndpoint('consultarNFe') + '?ref=' + encodeURIComponent(ref));
+        const cData = await cResp.json();
+        if (cData.status === 'autorizado') { nfDev = cData; break; }
+        if (cData.status === 'erro_autorizacao' || cData.status === 'denegado') {
+          statusEl.innerHTML = '<span style="color:#C0392B;">❌ SEFAZ rejeitou: ' + (cData.mensagem || cData.status) + '</span>';
+          return;
+        }
+      } catch(_) {}
+    }
+
+    if (nfDev.status !== 'autorizado') {
+      statusEl.innerHTML = '<span style="color:#185FA5;">⏳ NF ainda processando. Verifique no painel da Focus NFe (ref: ' + ref + ').</span>';
+      return;
+    }
+
+    // Autorizada — devolver estoque
+    for (const it of (p.itens || [])) {
+      const prod = D.produtos.find(x => x.nome === it.produto);
+      if (prod) await upd('produtos', prod.id, { estoque: (parseFloat(prod.estoque)||0) + (parseFloat(it.qty)||0) });
+    }
+
+    // Lançar crédito no financeiro (contas a pagar — valor a devolver ao cliente)
+    const total = totPed(p);
+    const cod = p.id.slice(-6).toUpperCase();
+    await add('pagar', {
+      fornecedor: p.cliente,
+      valor: total,
+      vencimento: today(),
+      desc: 'Crédito devolução NF #' + (p.nf_numero||cod) + ' → NF Dev ' + (nfDev.numero||''),
+      pedidoId: p.id,
+      status: 'pendente'
+    });
+
+    // Registrar devolução no pedido
+    await upd('pedidos', _pedidoNFId, {
+      nf_devolucao: true,
+      nf_dev_numero: nfDev.numero || '',
+      nf_dev_chave:  nfDev.chave_nfe || '',
+      nf_dev_data:   today(),
+      nf_dev_danfe:  nfDev.numero ? _focusDanfeUrl(ref) : '',
+      nf_dev_xml:    nfDev.numero ? _focusXmlUrl(ref)   : '',
+    });
+
+    closeModal('modal-ver-nf');
+    _pedidoNFId = null;
+    toast('✅ NF de devolução ' + (nfDev.numero||'') + ' autorizada! Estoque devolvido e crédito lançado no financeiro.');
+  } catch (err) {
+    statusEl.innerHTML = '<span style="color:#C0392B;">❌ Falha de conexão: ' + String(err.message||err) + '</span>';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-send"></i> Emitir NF de devolução';
   }
 };
 
