@@ -3745,13 +3745,15 @@ window.registrarNF = async () => {
   if (!_pedidoNFId) return;
 
   const modal = document.getElementById('modal-emissao-nf');
+  const focusRef = modal.dataset.focusRef || '';
   await upd('pedidos', _pedidoNFId, {
     nf_emitida: true,
     nf_numero:  numero,
     nf_chave:   document.getElementById('nf-chave').value.trim(),
     nf_data:    today(),
-    nf_danfe:   modal.dataset.focusDanfe || '',
-    nf_xml:     modal.dataset.focusXml   || '',
+    nf_focus_ref: focusRef,
+    nf_danfe:   focusRef ? _focusDanfeUrl(focusRef) : (modal.dataset.focusDanfe || ''),
+    nf_xml:     focusRef ? _focusXmlUrl(focusRef)   : (modal.dataset.focusXml   || ''),
     status:     'Faturado'
   });
 
@@ -3766,6 +3768,10 @@ function _focusEndpoint(nome) {
   if (!base) return null;
   return base + '/' + nome;
 }
+
+// Gera URL do proxy para DANFE/XML (passa pela Cloud Function com autenticação)
+function _focusDanfeUrl(ref) { return _focusEndpoint('downloadDanfe') + '?ref=' + encodeURIComponent(ref); }
+function _focusXmlUrl(ref)   { return _focusEndpoint('downloadXml')   + '?ref=' + encodeURIComponent(ref); }
 
 window.emitirNFeFocus = async () => {
   const baseUrl = getFocusFnUrl();
@@ -3841,10 +3847,10 @@ window.emitirNFeFocus = async () => {
     if (data.status === 'autorizado' && data.numero) {
       document.getElementById('nf-numero').value = data.numero;
       document.getElementById('nf-chave').value  = data.chave_nfe || '';
-      document.getElementById('modal-emissao-nf').dataset.focusDanfe = data.caminho_danfe || '';
-      document.getElementById('modal-emissao-nf').dataset.focusXml   = data.caminho_xml   || '';
-      const danfeLink = data.caminho_danfe ? (' <a href="' + data.caminho_danfe + '" target="_blank" style="color:#1D9E75;font-weight:600;"><i class="ti ti-file-text"></i> Ver DANFE</a>') : '';
-      const xmlLink   = data.caminho_xml   ? (' <a href="' + data.caminho_xml   + '" target="_blank" style="color:#185FA5;font-weight:600;"><i class="ti ti-code"></i> Baixar XML</a>') : '';
+      document.getElementById('modal-emissao-nf').dataset.focusDanfe = _focusDanfeUrl(ref);
+      document.getElementById('modal-emissao-nf').dataset.focusXml   = _focusXmlUrl(ref);
+      const danfeLink = ' <a href="' + _focusDanfeUrl(ref) + '" target="_blank" style="color:#1D9E75;font-weight:600;"><i class="ti ti-file-text"></i> Ver DANFE</a>';
+      const xmlLink   = ' <a href="' + _focusXmlUrl(ref)   + '" target="_blank" style="color:#185FA5;font-weight:600;"><i class="ti ti-code"></i> Baixar XML</a>';
       statusEl.innerHTML = '<span style="color:#1D9E75;">✅ NF-e autorizada! Número ' + data.numero + '.' + danfeLink + xmlLink + ' Clique em "Registrar NF no pedido" para salvar.</span>';
     }
   } catch (err) {
@@ -3879,10 +3885,10 @@ window.consultarNFeFocus = async () => {
       document.getElementById('nf-numero').value = data.numero || '';
       document.getElementById('nf-chave').value  = data.chave_nfe || '';
       const modal = document.getElementById('modal-emissao-nf');
-      modal.dataset.focusDanfe = data.caminho_danfe || '';
-      modal.dataset.focusXml   = data.caminho_xml   || '';
-      const danfeLink = data.caminho_danfe ? (' <a href="' + data.caminho_danfe + '" target="_blank" style="color:#1D9E75;font-weight:600;"><i class="ti ti-file-text"></i> Ver DANFE</a>') : '';
-      const xmlLink   = data.caminho_xml   ? (' <a href="' + data.caminho_xml   + '" target="_blank" style="color:#185FA5;font-weight:600;"><i class="ti ti-code"></i> Baixar XML</a>') : '';
+      modal.dataset.focusDanfe = _focusDanfeUrl(ref);
+      modal.dataset.focusXml   = _focusXmlUrl(ref);
+      const danfeLink = ' <a href="' + _focusDanfeUrl(ref) + '" target="_blank" style="color:#1D9E75;font-weight:600;"><i class="ti ti-file-text"></i> Ver DANFE</a>';
+      const xmlLink   = ' <a href="' + _focusXmlUrl(ref)   + '" target="_blank" style="color:#185FA5;font-weight:600;"><i class="ti ti-code"></i> Baixar XML</a>';
       statusEl.innerHTML = '<span style="color:#1D9E75;">✅ NF-e autorizada! Número ' + (data.numero||'') + '.' + danfeLink + xmlLink + ' Clique em "Registrar NF no pedido" para salvar.</span>';
     } else if (data.status === 'erro_autorizacao' || data.status === 'cancelado' || data.status === 'denegado') {
       statusEl.innerHTML = '<span style="color:#C0392B;">❌ Status: ' + data.status + (data.mensagem ? (' — ' + data.mensagem) : '') + '</span>';
