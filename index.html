@@ -3810,7 +3810,7 @@ window.emitirNFeFocus = async () => {
     uf = partes[1].trim().toUpperCase();
   }
 
-  const ref = 'pedido-' + p.id; // referência única para a Focus NFe
+  const ref = 'pedido-' + p.id + '-' + Date.now(); // ref única — nunca reutiliza a mesma referência
 
   btn.disabled = true;
   btn.innerHTML = '<i class="ti ti-loader-2"></i> Emitindo...';
