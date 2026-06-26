@@ -1727,7 +1727,6 @@ window.salvarPedido = async () => {
   };
   const docRef = await add('pedidos', novoPedido);
 
-  // Se o pedido já nasce como "Entregue" ou "Faturado", lança contas a receber
   if (novoPedido.status === 'Entregue' || novoPedido.status === 'Faturado') {
     await lancarContasReceberPedido({ ...novoPedido, id: docRef?.id }, itens);
     toast('✅ Pedido criado e lançado no contas a receber!');
@@ -1823,7 +1822,6 @@ window.atualizarPedido = async id => {
 
   await upd('pedidos', id, dadosPedido);
 
-  // Subtrair do estoque na primeira transição para status ativo
   const statusesSemEstoque = ['Orçamento', 'Aguardando'];
   const statusesComEstoque = ['Separação', 'Em rota', 'Entregue', 'Faturado'];
   let msg = '✅ Pedido atualizado!';
@@ -1838,7 +1836,6 @@ window.atualizarPedido = async id => {
     msg = '✅ Pedido atualizado e estoque baixado!';
   }
 
-  // Ao virar "Entregue" ou "Faturado" pela primeira vez, lança contas a receber
   const statusesQueGeram = ['Entregue', 'Faturado'];
   const jaGerava = statusesQueGeram.includes(statusAntigo);
   const agoraGera = statusesQueGeram.includes(novoStatus);
@@ -4353,23 +4350,16 @@ window.analisarNF = async () => {
       return;
     }
 
-    // Salvar dados da NF para o lançamento financeiro
     window._nfFornecedorImport = parsed.fornecedor || '—';
     window._nfNumeroImport     = parsed.numero_nf  || '';
 
     // Cruzar com cadastro de produtos
     nfItensAnalisados = parsed.itens.map(it => {
-      const nomeNF = it.nome.toLowerCase();
       const match = D.produtos.find(p => {
-        // 1) código exato (cProd da NF vs cod do cadastro)
         if (it.codigo && p.cod && it.codigo.trim() === p.cod.trim()) return true;
-        // 2) nome: todas as palavras relevantes do produto cadastrado devem estar no nome da NF
-        const nomeP = p.nome.toLowerCase();
-        const wordsP = nomeP.split(' ').filter(w => w.length > 3);
-        const wordsNF = nomeNF.split(' ').filter(w => w.length > 3);
-        if (!wordsP.length || !wordsNF.length) return false;
-        // todas as palavras do produto cadastrado precisam aparecer no nome da NF
-        return wordsP.every(w => nomeNF.includes(w));
+        const nomeNF = it.nome.toLowerCase();
+        const wordsP = p.nome.toLowerCase().split(' ').filter(w => w.length > 2).slice(1);
+        return wordsP.length > 0 && wordsP.every(w => nomeNF.includes(w));
       });
       return { ...it, produtoId: match?.id || null, produtoExiste: !!match, produtoNome: match?.nome || it.nome };
     });
@@ -4424,40 +4414,31 @@ window.confirmarImportacao = async () => {
   btn.textContent = 'Importando...'; btn.disabled = true;
 
   let cadastrados = 0, atualizados = 0, ignorados = 0;
-
-  // Agrupa por produto para evitar múltiplas escritas no mesmo produto
   const acumProduto = {};
   const novos = [];
 
+  const matchProd = (it, p) => {
+    if (it.codigo && p.cod && it.codigo.trim() === p.cod.trim()) return true;
+    const nomeNF = it.nome.toLowerCase();
+    const wordsP = p.nome.toLowerCase().split(' ').filter(w => w.length > 2).slice(1);
+    return wordsP.length > 0 && wordsP.every(w => nomeNF.includes(w));
+  };
+
   for (const it of nfItensAnalisados) {
     const qty  = Number(it.quantidade) || 0;
-    const prod = D.produtos.find(p => {
-      // 1) código exato
-      if (it.codigo && p.cod && it.codigo.trim() === p.cod.trim()) return true;
-      // 2) todas as palavras do produto cadastrado no nome da NF
-      const nomeP  = p.nome.toLowerCase();
-      const nomeNF = it.nome.toLowerCase();
-      const wordsP = nomeP.split(' ').filter(w => w.length > 3);
-      if (!wordsP.length) return false;
-      return wordsP.every(w => nomeNF.includes(w));
-    });
+    const prod = D.produtos.find(p => matchProd(it, p));
 
     if (prod) {
       if (acao === 'entrada' || acao === 'ambos') {
-        if (acumProduto[prod.id]) {
-          acumProduto[prod.id].totalQty += qty;
-        } else {
-          acumProduto[prod.id] = { prod, totalQty: qty };
-        }
+        if (acumProduto[prod.id]) acumProduto[prod.id].totalQty += qty;
+        else acumProduto[prod.id] = { prod, totalQty: qty };
       } else { ignorados++; }
     } else {
-      if (acao === 'cadastrar' || acao === 'ambos') {
-        novos.push(it);
-      } else { ignorados++; }
+      if (acao === 'cadastrar' || acao === 'ambos') novos.push(it);
+      else ignorados++;
     }
   }
 
-  // Uma única escrita por produto com total acumulado
   for (const { prod, totalQty } of Object.values(acumProduto)) {
     const prodAtual = D.produtos.find(p => p.id === prod.id);
     const estoqueAtual = Number((prodAtual || prod).estoque) || 0;
@@ -4465,7 +4446,6 @@ window.confirmarImportacao = async () => {
     atualizados++;
   }
 
-  // Cadastrar produtos novos
   for (const it of novos) {
     const qty = Number(it.quantidade) || 0;
     await add('produtos', {
@@ -4481,16 +4461,13 @@ window.confirmarImportacao = async () => {
     cadastrados++;
   }
 
-  // Lançar conta a pagar com o total da NF
   const _totalNF = nfItensAnalisados.reduce((s, it) => s + (Number(it.total_item) || 0), 0);
-  const _fornNF  = window._nfFornecedorImport || '—';
-  const _numNF   = window._nfNumeroImport || '';
   if (_totalNF > 0) {
     await add('pagar', {
-      fornecedor: _fornNF,
+      fornecedor: window._nfFornecedorImport || '—',
       valor:      _totalNF,
       vencimento: today(),
-      desc:       'Compra NF-e' + (_numNF ? ' nº ' + _numNF : '') + ' — importação de estoque',
+      desc:       'Compra NF-e' + (window._nfNumeroImport ? ' nº ' + window._nfNumeroImport : '') + ' — importação de estoque',
       pago:       false
     });
   }
