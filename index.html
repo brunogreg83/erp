@@ -4326,10 +4326,11 @@ Extraia todos os produtos, mesmo que sejam muitos. Use os valores numéricos exa
 // Normaliza string para comparação: remove acentos, especiais, padroniza unidades
 function normalizarNome(s) {
   return s.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acentos
-    .replace(/c\/|c\/s|com /g, '')                   // remove "c/", "c/s", "com "
-    .replace(/\/|\\|-/g, ' ')                        // separadores viram espaço
-    .replace(/\b(litros?|lts?|kgs?|kilos?|gramas?|grs?|ml|un|unid|pcs?)\b/g, '') // unidades
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/c\/|c\/s|com /g, '')
+    .replace(/\/|\\|-/g, ' ')
+    .replace(/\b(litros?|lts?|kgs?|kilos?|gramas?|grs?|ml|un|unid|pcs?)\b/g, '')
+    .replace(/(\d+)(l|lt|lts|kg|kgs|g|gr|ml|un)\b/g, '$1') // 50L→50, 20kg→20
     .replace(/\s+/g, ' ').trim();
 }
 
@@ -4367,13 +4368,13 @@ window.analisarNF = async () => {
     // Cruzar com cadastro de produtos
     nfItensAnalisados = parsed.itens.map(it => {
       const match = D.produtos.find(p => {
-        // 1) código exato
-        if (it.codigo && p.cod && it.codigo.trim() === p.cod.trim()) return true;
-        // 2) nome normalizado: todas as palavras do cadastro (≥3 chars) presentes no XML
+        // 1) código exato (case-insensitive)
+        if (it.codigo && p.cod && it.codigo.trim().toLowerCase() === p.cod.trim().toLowerCase()) return true;
+        // 2) nome normalizado
         const nNF = normalizarNome(it.nome);
         const nP  = normalizarNome(p.nome);
         const words = nP.split(' ').filter(w => w.length >= 3);
-        if (words.length < 2) return false; // nome muito curto, evita falso positivo
+        if (words.length < 1) return false;
         return words.every(w => nNF.includes(w));
       });
       return { ...it, produtoId: match?.id || null, produtoExiste: !!match, produtoNome: match?.nome || it.nome };
@@ -4435,11 +4436,11 @@ window.confirmarImportacao = async () => {
   for (const it of nfItensAnalisados) {
     const qty  = Number(it.quantidade) || 0;
     const prod = D.produtos.find(p => {
-      if (it.codigo && p.cod && it.codigo.trim() === p.cod.trim()) return true;
+      if (it.codigo && p.cod && it.codigo.trim().toLowerCase() === p.cod.trim().toLowerCase()) return true;
       const nNF = normalizarNome(it.nome);
       const nP  = normalizarNome(p.nome);
       const words = nP.split(' ').filter(w => w.length >= 3);
-      if (words.length < 2) return false;
+      if (words.length < 1) return false;
       return words.every(w => nNF.includes(w));
     });
 
