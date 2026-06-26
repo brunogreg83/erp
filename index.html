@@ -779,7 +779,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <div class="form-group"><label class="form-label">Condição de pagamento (detalhes)</label>
         <input class="form-input" id="ped-cond" placeholder="Ex: 50% na entrega + 50% em 30 dias"></div>
       <div class="form-group"><label class="form-label">Status</label>
-        <select class="form-input" id="ped-status"><option>Aguardando</option><option>Separação</option><option>Em rota</option><option>Entregue</option><option>Faturado</option></select></div>
+        <select class="form-input" id="ped-status"><option>Orçamento</option><option>Separação</option><option>Em rota</option><option>Entregue</option><option>Faturado</option></select></div>
       <div class="section-title" style="margin-top:8px;">Itens do pedido</div>
       <div id="ped-itens"></div>
       <button class="btn-ghost" style="width:100%;margin-top:4px;" onclick="addItem()"><i class="ti ti-plus"></i> Adicionar item</button>
@@ -1527,7 +1527,7 @@ window.marcarRecebido = async (id) => {
 function badge(t) {
   const cls = {Entregue:'green',Ativo:'green',OK:'green',Recebido:'green','No prazo':'green',Pago:'green',Faturado:'green',
     'Em rota':'amber',Baixo:'amber',Pendente:'amber','Em trânsito':'amber',Inativo:'amber',
-    Aguardando:'gray',Separação:'blue',Crítico:'red',Vencido:'red'};
+    Orçamento:'gray',Aguardando:'gray',Separação:'blue',Crítico:'red',Vencido:'red'};
   return `<span class="badge badge-${cls[t]||'gray'}">${t}</span>`;
 }
 function toast(msg) {
@@ -1742,7 +1742,7 @@ window.salvarPedido = async () => {
       id: docRef?.id || 'novo',
       data: today(),
       cliente: document.getElementById('ped-cli')?.value || '',
-      status: 'Aguardando',
+      status: 'Orçamento',
       pgto: 'À vista',
       itens
     };
@@ -1761,7 +1761,7 @@ window.editPedido = id => {
   // preencher campos do cabeçalho
   sel('ped-cli', D.clientes.map(c => c.nome));
   if (p.cliente) document.getElementById('ped-cli').value    = p.cliente;
-  document.getElementById('ped-status').value = p.status || 'Aguardando';
+  document.getElementById('ped-status').value = p.status || 'Orçamento';
   document.getElementById('ped-pgto').value   = p.pgto   || 'À vista';
   document.getElementById('ped-forma').value  = p.forma  || '';
   if (document.getElementById('ped-cond'))
@@ -1808,7 +1808,7 @@ window.atualizarPedido = async id => {
 
   const novoStatus = document.getElementById('ped-status').value;
   const pedidoAntigo = D.pedidos.find(x => x.id === id);
-  const statusAntigo = pedidoAntigo?.status || 'Aguardando';
+  const statusAntigo = pedidoAntigo?.status || 'Orçamento';
 
   const dadosPedido = {
     cliente: document.getElementById('ped-cli').value,
@@ -1823,9 +1823,9 @@ window.atualizarPedido = async id => {
 
   await upd('pedidos', id, dadosPedido);
 
-  // Subtrair do estoque quando sai de "Aguardando" pela primeira vez
+  // Subtrair do estoque quando sai de "Orçamento" pela primeira vez
   let msg = '✅ Pedido atualizado!';
-  if (statusAntigo === 'Aguardando' && novoStatus !== 'Aguardando') {
+  if (['Orçamento','Aguardando'].includes(statusAntigo) && !['Orçamento','Aguardando'].includes(novoStatus)) {
     for (const it of itens) {
       const prod = D.produtos.find(p => p.nome === it.produto);
       if (prod) {
@@ -3191,7 +3191,7 @@ function renderDashboard() {
   const fat  = D.pedidos.filter(p => (p.status==='Entregue' || p.status==='Faturado') && (p.data||'').startsWith(ymAtualDash)).reduce((s,p)=>s+totPed(p),0);
   const mesDash = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][new Date().getMonth()];
   const ab   = D.pedidos.filter(p=>p.status!=='Entregue' && p.status!=='Faturado').length;
-  const ag   = D.pedidos.filter(p=>p.status==='Aguardando').length;
+  const ag   = D.pedidos.filter(p=>p.status==='Orçamento').length;
   const al   = D.produtos.filter(p=>sit(p.estoque,p.minimo)!=='OK');
   const ativos = D.clientes.filter(c=>c.status==='Ativo').length;
 
