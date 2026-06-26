@@ -1727,12 +1727,12 @@ window.salvarPedido = async () => {
   };
   const docRef = await add('pedidos', novoPedido);
 
-  // Se o pedido já nasce como "Faturado", lança automaticamente as contas a receber
-  if (novoPedido.status === 'Faturado') {
+  // Se o pedido já nasce como "Entregue" ou "Faturado", lança contas a receber
+  if (novoPedido.status === 'Entregue' || novoPedido.status === 'Faturado') {
     await lancarContasReceberPedido({ ...novoPedido, id: docRef?.id }, itens);
     toast('✅ Pedido criado e lançado no contas a receber!');
   } else {
-    toast('✅ Pedido criado no Firebase!');
+    toast('✅ Pedido criado!');
   }
 
   closeModal('modal-pedido');
@@ -1823,9 +1823,11 @@ window.atualizarPedido = async id => {
 
   await upd('pedidos', id, dadosPedido);
 
-  // Subtrair do estoque quando sai de "Orçamento" pela primeira vez
+  // Subtrair do estoque na primeira transição para status ativo
+  const statusesSemEstoque = ['Orçamento', 'Aguardando'];
+  const statusesComEstoque = ['Separação', 'Em rota', 'Entregue', 'Faturado'];
   let msg = '✅ Pedido atualizado!';
-  if (['Orçamento','Aguardando'].includes(statusAntigo) && !['Orçamento','Aguardando'].includes(novoStatus)) {
+  if (statusesSemEstoque.includes(statusAntigo) && statusesComEstoque.includes(novoStatus)) {
     for (const it of itens) {
       const prod = D.produtos.find(p => p.nome === it.produto);
       if (prod) {
@@ -1836,8 +1838,11 @@ window.atualizarPedido = async id => {
     msg = '✅ Pedido atualizado e estoque baixado!';
   }
 
-  // Ao virar "Faturado" pela primeira vez, lança automaticamente as contas a receber
-  if (statusAntigo !== 'Faturado' && novoStatus === 'Faturado') {
+  // Ao virar "Entregue" ou "Faturado" pela primeira vez, lança contas a receber
+  const statusesQueGeram = ['Entregue', 'Faturado'];
+  const jaGerava = statusesQueGeram.includes(statusAntigo);
+  const agoraGera = statusesQueGeram.includes(novoStatus);
+  if (!jaGerava && agoraGera) {
     await lancarContasReceberPedido({ ...dadosPedido, id, data: pedidoAntigo?.data || today() }, itens);
     msg = '✅ Pedido atualizado e lançado no contas a receber!';
   }
@@ -4348,6 +4353,10 @@ window.analisarNF = async () => {
       return;
     }
 
+    // Salvar dados da NF para o lançamento financeiro
+    window._nfFornecedorImport = parsed.fornecedor || '—';
+    window._nfNumeroImport     = parsed.numero_nf  || '';
+
     // Cruzar com cadastro de produtos
     nfItensAnalisados = parsed.itens.map(it => {
       const nomeNF = it.nome.toLowerCase();
@@ -4411,6 +4420,10 @@ window.confirmarImportacao = async () => {
 
   let cadastrados = 0, atualizados = 0, ignorados = 0;
 
+  // Agrupa por produto para evitar múltiplas escritas no mesmo produto
+  const acumProduto = {}; // prodId → { prod, totalQty }
+  const novos = [];
+
   for (const it of nfItensAnalisados) {
     const qty  = Number(it.quantidade) || 0;
     const prod = D.produtos.find(p => {
@@ -4421,36 +4434,70 @@ window.confirmarImportacao = async () => {
 
     if (prod) {
       if (acao === 'entrada' || acao === 'ambos') {
-        await upd('produtos', prod.id, { estoque: prod.estoque + qty });
-        atualizados++;
+        if (acumProduto[prod.id]) {
+          acumProduto[prod.id].totalQty += qty;
+        } else {
+          acumProduto[prod.id] = { prod, totalQty: qty };
+        }
       } else {
         ignorados++;
       }
     } else {
       if (acao === 'cadastrar' || acao === 'ambos') {
-        await add('produtos', {
-          cod:       it.codigo || 'NF-' + Date.now().toString().slice(-4),
-          nome:      it.nome,
-          categoria: 'Outros',
-          estoque:   acao === 'ambos' ? qty : 0,
-          minimo:    10,
-          preco:     0,
-          custo:     Number(it.preco_unitario) || 0,
-          obs:       'Importado via NF-e'
-        });
-        cadastrados++;
+        novos.push(it);
       } else {
         ignorados++;
       }
     }
   }
 
+  // Uma única escrita por produto com total acumulado
+  for (const { prod, totalQty } of Object.values(acumProduto)) {
+    const prodAtual = D.produtos.find(p => p.id === prod.id);
+    const estoqueAtual = Number((prodAtual || prod).estoque) || 0;
+    await upd('produtos', prod.id, { estoque: estoqueAtual + totalQty });
+    atualizados++;
+  }
+
+  // Cadastrar produtos novos
+  for (const it of novos) {
+    const qty = Number(it.quantidade) || 0;
+    await add('produtos', {
+      cod:       it.codigo || 'NF-' + Date.now().toString().slice(-4),
+      nome:      it.nome,
+      categoria: 'Outros',
+      estoque:   acao === 'ambos' ? qty : 0,
+      minimo:    10,
+      preco:     0,
+      custo:     Number(it.preco_unitario) || 0,
+      obs:       'Importado via NF-e'
+    });
+    cadastrados++;
+  }
+
+  // Lançar conta a pagar com o total da NF
+  const _totalNF = nfItensAnalisados.reduce((s, it) => s + (Number(it.total_item) || 0), 0);
+  const _fornNF  = window._nfFornecedorImport || '—';
+  const _numNF   = window._nfNumeroImport || '';
+  if (_totalNF > 0) {
+    await add('pagar', {
+      fornecedor: _fornNF,
+      valor:      _totalNF,
+      vencimento: today(),
+      desc:       'Compra NF-e' + (_numNF ? ' nº ' + _numNF : '') + ' — importação de estoque',
+      pago:       false
+    });
+  }
+
   closeModal('modal-importar-nf');
   document.getElementById('nf-file').value = '';
   document.getElementById('nf-preview').style.display = 'none';
   nfItensAnalisados = [];
+  window._nfFornecedorImport = '';
+  window._nfNumeroImport = '';
   btn.textContent = 'Confirmar importação'; btn.disabled = false;
-  toast(`✅ ${cadastrados} cadastrado(s), ${atualizados} com entrada no estoque, ${ignorados} ignorado(s).`);
+  const _msgPagar = _totalNF > 0 ? ' · conta a pagar lançada' : '';
+  toast(`✅ ${cadastrados} cadastrado(s), ${atualizados} com entrada no estoque, ${ignorados} ignorado(s)${_msgPagar}.`);
 };
 
 // ── Chave Anthropic ──────────────────────────────────────────────────────────
