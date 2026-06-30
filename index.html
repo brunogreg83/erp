@@ -1763,7 +1763,17 @@ window.salvarPedido = async () => {
     verPedido(p.id);
   }, 1200);
 };
-window.delPedido = async id => { if(!confirm('Excluir pedido?')) return; await del('pedidos',id); toast('Pedido excluído.'); };
+window.delPedido = async id => {
+  if(!confirm('Excluir pedido? Os lançamentos de contas a receber pendentes vinculados também serão excluídos.')) return;
+  const titulosVinculados = D.receber.filter(r => r.pedidoId === id && r.recebido !== true);
+  await del('pedidos', id);
+  for (const t of titulosVinculados) {
+    await del('receber', t.id);
+  }
+  toast(titulosVinculados.length
+    ? `Pedido excluído e ${titulosVinculados.length} lançamento(s) pendente(s) de contas a receber removido(s).`
+    : 'Pedido excluído.');
+};
 window.editPedido = id => {
   const p = D.pedidos.find(x => x.id === id);
   if (!p) return;
