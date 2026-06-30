@@ -965,6 +965,15 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <div class="form-group"><label class="form-label">Status</label>
         <select class="form-input" id="oc-status"><option>Aguardando</option><option>Em trânsito</option><option>Recebido</option></select>
       </div>
+      <div class="form-group"><label class="form-label">Forma de Pagamento</label>
+        <select class="form-input" id="oc-pgto">
+          <option value="">Não informado</option>
+          <option value="À vista">À vista</option>
+          <option value="30/60">30/60</option>
+          <option value="30/60/90">30/60/90</option>
+          <option value="60/90">60/90</option>
+        </select>
+      </div>
       <div class="form-group"><label class="form-label">Observações</label>
         <input class="form-input" id="oc-obs" placeholder="Observações gerais da OC...">
       </div>
@@ -1490,6 +1499,26 @@ async function lancarContasReceberPedido(pedido, itens) {
   }
 }
 
+// Lança as contas a pagar referentes a uma OC, respeitando a condição de pagamento.
+async function lancarContasPagarOC(oc) {
+  if (!oc.total || isNaN(oc.total) || !oc.pgto) return;
+  const parcelas = gerarParcelasCondPgto(oc.pgto);
+  const cod = (oc.id || '').toString().slice(-6).toUpperCase();
+  const base = oc.data || today();
+  for (let i = 0; i < parcelas.length; i++) {
+    const valor      = parseFloat((oc.total * parcelas[i].pct).toFixed(2));
+    const vencimento = somarDias(base, parcelas[i].dias);
+    const sufixo     = parcelas.length > 1 ? ` (${i+1}/${parcelas.length})` : '';
+    await add('pagar', {
+      fornecedor: oc.fornecedor || '',
+      valor,
+      vencimento,
+      desc: `OC #${cod} · ${oc.pgto}${sufixo}`,
+      ocId: oc.id || null,
+      status: 'pendente'
+    });
+  }
+}
 
 window.marcarPago = async (id) => {
   const item = D.pagar.find(p => p.id === id);
@@ -1563,6 +1592,7 @@ window.openModal = id => {
     document.getElementById('oc-itens').innerHTML = '';
     document.getElementById('oc-forn').value = '';
     document.getElementById('oc-obs').value  = '';
+    document.getElementById('oc-pgto').value = '';
     const fList = document.getElementById('forn-datalist');
     if (fList) {
       fList.innerHTML = D.fornecedores.filter(f=>f.status==='Ativo').map(f=>`<option value="${f.nome}">`).join('');
@@ -2676,9 +2706,10 @@ window.salvarOC = async () => {
   const fornecedor = document.getElementById('oc-forn').value;
   const status     = document.getElementById('oc-status').value;
   const obs        = document.getElementById('oc-obs').value;
+  const pgto       = document.getElementById('oc-pgto').value;
   const total      = itens.reduce((s,i) => s + (parseFloat(i.qty)||0) * (parseFloat(i.custo)||0), 0);
 
-  const docRef = await add('ordens', { fornecedor, itens, status, obs, total, data: today() });
+  const docRef = await add('ordens', { fornecedor, itens, status, obs, pgto, total, data: today() });
 
   // Se recebido, dar entrada no estoque
   if (status === 'Recebido') {
@@ -2688,10 +2719,16 @@ window.salvarOC = async () => {
     }
   }
 
+  // Lançar contas a pagar apenas se status for Em trânsito ou Recebido
+  const statusLancaPagar = ['Em trânsito', 'Recebido'];
+  if (pgto && statusLancaPagar.includes(status)) {
+    await lancarContasPagarOC({ id: docRef?.id, fornecedor, total, pgto, data: today() });
+  }
+
   closeModal('modal-oc');
   window.ocItens = [];
   document.getElementById('oc-itens').innerHTML = '';
-  toast('✅ OC criada!');
+  toast(pgto && statusLancaPagar.includes(status) ? '✅ OC criada e lançada no contas a pagar!' : '✅ OC criada!');
 
   // Abrir template após salvar
   setTimeout(() => {
@@ -2700,7 +2737,15 @@ window.salvarOC = async () => {
   }, 1200);
 };
 
-window.delOC = async id => { if(!confirm('Excluir OC?')) return; await del('ordens',id); toast('OC excluída.'); };
+window.delOC = async id => {
+  if(!confirm('Excluir OC? Os lançamentos de contas a pagar pendentes vinculados também serão excluídos.')) return;
+  const titulosVinculados = D.pagar.filter(p => p.ocId === id && p.pago !== true);
+  await del('ordens', id);
+  for (const t of titulosVinculados) await del('pagar', t.id);
+  toast(titulosVinculados.length
+    ? `OC excluída e ${titulosVinculados.length} lançamento(s) pendente(s) de contas a pagar removido(s).`
+    : 'OC excluída.');
+};
 
 window.editOC = id => {
   const o = D.ordens.find(x => x.id === id);
@@ -2710,6 +2755,7 @@ window.editOC = id => {
   document.getElementById('oc-forn').value   = o.fornecedor || '';
   document.getElementById('oc-status').value = o.status     || 'Aguardando';
   document.getElementById('oc-obs').value    = o.obs        || '';
+  document.getElementById('oc-pgto').value   = o.pgto       || '';
 
   (o.itens || []).forEach(it => {
     const idx = window.ocItens.length;
@@ -2737,16 +2783,37 @@ window.atualizarOC = async id => {
   if (!itens.length) { toast('Adicione ao menos um produto!'); return; }
   const total      = itens.reduce((s,i) => s + (parseFloat(i.qty)||0) * (parseFloat(i.custo)||0), 0);
   const novoStatus = document.getElementById('oc-status').value;
+  const novoPgto   = document.getElementById('oc-pgto').value;
   const ocAntiga   = D.ordens.find(x => x.id === id);
   const statusAnt  = ocAntiga?.status || 'Aguardando';
+  const pgtoAnt    = ocAntiga?.pgto   || '';
   const fornNome   = document.getElementById('oc-forn').value;
 
   await upd('ordens', id, {
     fornecedor: fornNome,
     status:     novoStatus,
     obs:        document.getElementById('oc-obs').value,
+    pgto:       novoPgto,
     itens, total
   });
+
+  // Lançar contas a pagar apenas quando status entra em Em trânsito ou Recebido
+  const statusLancaPagar = ['Em trânsito', 'Recebido'];
+  const jaLancava = statusLancaPagar.includes(statusAnt);
+  const agoraLanca = statusLancaPagar.includes(novoStatus);
+
+  if (novoPgto && agoraLanca) {
+    // Se mudou pgto ou acabou de entrar no status elegível: relançar
+    if (!jaLancava || novoPgto !== pgtoAnt) {
+      const titulosAntigos = D.pagar.filter(p => p.ocId === id && p.pago !== true);
+      for (const t of titulosAntigos) await del('pagar', t.id);
+      await lancarContasPagarOC({ id, fornecedor: fornNome, total, pgto: novoPgto, data: ocAntiga?.data || today() });
+    }
+  } else if (!agoraLanca && jaLancava) {
+    // Voltou para Aguardando: remover lançamentos pendentes
+    const titulosAntigos = D.pagar.filter(p => p.ocId === id && p.pago !== true);
+    for (const t of titulosAntigos) await del('pagar', t.id);
+  }
 
   document.querySelector('#modal-oc .modal-footer').innerHTML =
     '<button class="btn-ghost" onclick="closeModal(\'modal-oc\')">Cancelar</button>' +
