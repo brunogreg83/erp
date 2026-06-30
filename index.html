@@ -822,6 +822,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <option>Ceras e Polidores</option>
         <option>Produtos para Cozinha</option>
         <option>Produtos para Banheiro</option>
+        <option>Descartáveis</option>
         <option>Outros</option>
       </select>
     </div>
@@ -1410,6 +1411,7 @@ function parseValorBR(v) {
 
 const totPed = p => Math.max(0, (p.itens||[]).reduce((s,i) => s + (parseFloat(i.qty)||0) * (parseFloat(i.preco)||0), 0) - (parseFloat(p.desconto)||0));
 const sit    = (e,m) => e <= 0 || e < m * 0.5 ? 'Crítico' : e < m ? 'Baixo' : 'OK';
+const elegivelAlertaEstoque = p => p.categoria !== 'Descartáveis';
 const stFin  = s => { const d=daysTo(s); return d<0?'Vencido':d<=3?'Pendente':'No prazo'; };
 
 // ── Geração de parcelas a partir da condição de pagamento do pedido ────────
@@ -2012,7 +2014,7 @@ window.atualizarProduto = async id => {
 };
 
 function renderEstoque() {
-  const alertas = D.produtos.filter(p => sit(p.estoque,p.minimo) !== 'OK');
+  const alertas = D.produtos.filter(p => elegivelAlertaEstoque(p) && sit(p.estoque,p.minimo) !== 'OK');
   document.getElementById('est-alertas').innerHTML = alertas.length
     ? alertas.map(p => `<div class="stock-item">
         <div class="stock-info"><div class="stock-name">${p.nome}</div><div class="stock-code">${p.cod} · ${p.categoria}</div></div>
@@ -2781,8 +2783,7 @@ window.abrirOCProd = nome => {
 
 // Abre a OC já com todos os produtos sugeridos na reposição automática
 window.abrirOCTodos = () => {
-  const sug = D.produtos.filter(p => sit(p.estoque,p.minimo) !== 'OK');
-  if (!sug.length) { toast('Nenhuma reposição necessária!'); return; }
+  const sug = D.produtos.filter(p => elegivelAlertaEstoque(p) && sit(p.estoque,p.minimo) !== 'OK');
 
   window.ocItens = [];
   document.getElementById('oc-itens').innerHTML = '';
@@ -3074,7 +3075,7 @@ window.verOC = id => {
 };
 
 function renderCompras() {
-  const sug = D.produtos.filter(p => sit(p.estoque,p.minimo) !== 'OK');
+  const sug = D.produtos.filter(p => elegivelAlertaEstoque(p) && sit(p.estoque,p.minimo) !== 'OK');
   document.getElementById('cmp-sugestoes').innerHTML = sug.length
     ? sug.map(p => `<div class="stock-item">
         <div class="stock-info"><div class="stock-name">${p.nome}</div><div class="stock-code">Estoque: ${p.estoque} / Mín: ${p.minimo}</div></div>
@@ -3207,7 +3208,7 @@ function renderDashboard() {
   const mesDash = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][new Date().getMonth()];
   const ab   = D.pedidos.filter(p=>p.status!=='Entregue' && p.status!=='Faturado').length;
   const ag   = D.pedidos.filter(p=>p.status==='Orçamento').length;
-  const al   = D.produtos.filter(p=>sit(p.estoque,p.minimo)!=='OK');
+  const al   = D.produtos.filter(p=>elegivelAlertaEstoque(p) && sit(p.estoque,p.minimo)!=='OK');
   const ativos = D.clientes.filter(c=>c.status==='Ativo').length;
 
   document.getElementById('dash-kpis').innerHTML = `
