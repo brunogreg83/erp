@@ -1727,9 +1727,22 @@ window.salvarPedido = async () => {
   };
   const docRef = await add('pedidos', novoPedido);
 
+  const statusesComEstoque = ['Separação', 'Em rota', 'Entregue', 'Faturado'];
+  if (statusesComEstoque.includes(novoPedido.status)) {
+    for (const it of itens) {
+      const prod = D.produtos.find(p => p.nome === it.produto);
+      if (prod) {
+        const novoEstoque = Math.max(0, prod.estoque - it.qty);
+        await upd('produtos', prod.id, { estoque: novoEstoque });
+      }
+    }
+  }
+
   if (novoPedido.status === 'Entregue' || novoPedido.status === 'Faturado') {
     await lancarContasReceberPedido({ ...novoPedido, id: docRef?.id }, itens);
-    toast('✅ Pedido criado e lançado no contas a receber!');
+    toast('✅ Pedido criado, estoque baixado e lançado no contas a receber!');
+  } else if (statusesComEstoque.includes(novoPedido.status)) {
+    toast('✅ Pedido criado e estoque baixado!');
   } else {
     toast('✅ Pedido criado!');
   }
