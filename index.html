@@ -807,23 +807,16 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     <div class="form-group"><label class="form-label">Categoria</label>
       <select class="form-input" id="pr-cat">
         <option value="">Selecione...</option>
-        <option>Detergentes</option>
-        <option>Desengordurantes</option>
-        <option>Sanitizantes</option>
-        <option>Álcoois e Antissépticos</option>
-        <option>Sabões e Sabonetes</option>
-        <option>Multiuso</option>
-        <option>Limpadores de Piso</option>
-        <option>Limpadores de Vidro</option>
-        <option>Descalcificantes</option>
-        <option>Bactericidas</option>
-        <option>Desinfetantes</option>
-        <option>Aromatizantes</option>
-        <option>Ceras e Polidores</option>
-        <option>Produtos para Cozinha</option>
-        <option>Produtos para Banheiro</option>
+        <option>Cozinha</option>
+        <option>Desinfetantes de Uso Geral</option>
+        <option>Detergentes de Uso Geral</option>
+        <option>Grill e Coifas</option>
+        <option>Lavanderia</option>
+        <option>Limpadores de Uso Geral</option>
+        <option>Odorizantes</option>
+        <option>Pisos e Superfícies</option>
+        <option>Vidros e Espelhos</option>
         <option>Descartáveis</option>
-        <option>Outros</option>
       </select>
     </div>
     <div class="form-group"><label class="form-label">Estoque atual</label><input class="form-input" type="text" inputmode="decimal" id="pr-est" value="0" min="0"></div>
@@ -4558,7 +4551,7 @@ window.confirmarImportacao = async () => {
     await add('produtos', {
       cod:       it.codigo || 'NF-' + Date.now().toString().slice(-4),
       nome:      it.nome,
-      categoria: 'Outros',
+      categoria: 'Limpadores de Uso Geral',
       estoque:   acao === 'ambos' ? qty : 0,
       minimo:    10,
       preco:     0,
