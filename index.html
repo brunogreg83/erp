@@ -1391,6 +1391,7 @@ async function upd(col, id, data) {
 // ── Utils ──────────────────────────────────────────────────────────────────
 const getSessao = () => { try { return JSON.parse(sessionStorage.getItem('abc_auth')); } catch(e){ return null; } };
 const R$     = v => { const n = Number(v); return 'R$ ' + (isNaN(n) ? '0,00' : n.toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2})); };
+const parseBR = v => parseValorBR(v);
 const fmtDt  = s => { if(!s) return '—'; const [y,m,d]=s.split('-'); return `${d}/${m}/${y}`; };
 const today  = () => new Date().toISOString().split('T')[0];
 const daysTo = s => Math.round((new Date(s) - new Date(today())) / 86400000);
@@ -1726,7 +1727,7 @@ window.addItem = () => {
   const opts = D.produtos.map(p => '<option>' + p.nome + '</option>').join('');
   row.innerHTML = '<select class="form-input" onchange="setPI(' + idx + ',this.value)">' + opts + '</select>' +
     '<input type="text" inputmode="decimal" class="form-input" style="max-width:70px;" value="1" onchange="window.pitens[' + idx + '].qty=+this.value">' +
-    '<input type="text" inputmode="decimal" class="form-input" style="max-width:90px;" placeholder="Preço" id="pp-' + idx + '" onchange="window.pitens[' + idx + '].preco=+this.value">' +
+    '<input type="text" inputmode="decimal" class="form-input" style="max-width:90px;" placeholder="Preço" id="pp-' + idx + '" onchange="window.pitens[' + idx + '].preco=parseBR(this.value)">' +
     '<button class="btn-danger" onclick="document.getElementById(\'pi-' + idx + '\').remove();window.pitens[' + idx + ']=null">✕</button>';
   document.getElementById('ped-itens').appendChild(row);
   if (D.produtos[0]) setPI(idx, D.produtos[0].nome);
@@ -1747,7 +1748,7 @@ window.salvarPedido = async () => {
     forma:   document.getElementById('ped-forma').value,
     cond:    document.getElementById('ped-cond')?.value  || '',
     obs:      document.getElementById('ped-obs')?.value      || '',
-    desconto: parseFloat(document.getElementById('ped-desconto')?.value || '0') || 0,
+    desconto: parseBR(document.getElementById('ped-desconto')?.value || '0'),
     itens
   };
   const docRef = await add('pedidos', novoPedido);
@@ -1834,7 +1835,7 @@ window.editPedido = id => {
       '<input type="text" inputmode="decimal" class="form-input" style="max-width:70px;" value="' + it.qty + '" ' +
         'onchange="window.pitens[' + idx + '].qty=+this.value">' +
       '<input type="text" inputmode="decimal" class="form-input" style="max-width:90px;" id="pp-' + idx + '" value="' + it.preco + '" ' +
-        'onchange="window.pitens[' + idx + '].preco=+this.value">' +
+        'onchange="window.pitens[' + idx + '].preco=parseBR(this.value)">' +
       '<button class="btn-danger" onclick="document.getElementById(\'pi-' + idx + '\').remove();window.pitens[' + idx + ']=null">✕</button>';
 
     document.getElementById('ped-itens').appendChild(row);
@@ -1864,7 +1865,7 @@ window.atualizarPedido = async id => {
     forma:   document.getElementById('ped-forma').value,
     cond:    document.getElementById('ped-cond')?.value || '',
     obs:      document.getElementById('ped-obs')?.value      || '',
-    desconto: parseFloat(document.getElementById('ped-desconto')?.value || '0') || 0,
+    desconto: parseBR(document.getElementById('ped-desconto')?.value || '0'),
     itens
   };
 
@@ -1970,10 +1971,10 @@ window.salvarProduto = async () => {
     cod:      document.getElementById('pr-cod').value || 'COD-'+Date.now().toString().slice(-4),
     nome,
     categoria: document.getElementById('pr-cat').value,
-    estoque:  +document.getElementById('pr-est').value,
-    minimo:   +document.getElementById('pr-min').value,
-    preco:    +document.getElementById('pr-preco').value,
-    custo:    +document.getElementById('pr-custo').value,
+    estoque:  parseFloat(document.getElementById('pr-est').value)   || 0,
+    minimo:   parseFloat(document.getElementById('pr-min').value)   || 0,
+    preco:    parseBR(document.getElementById('pr-preco').value),
+    custo:    parseBR(document.getElementById('pr-custo').value),
     obs:      document.getElementById('pr-obs').value,
   });
   closeModal('modal-produto');
@@ -2028,8 +2029,8 @@ window.atualizarProduto = async id => {
     categoria: document.getElementById('pr-cat').value,
     estoque:   parseFloat(document.getElementById('pr-est').value)   || 0,
     minimo:    parseFloat(document.getElementById('pr-min').value)   || 0,
-    preco:     parseFloat(document.getElementById('pr-preco').value) || 0,
-    custo:     parseFloat(document.getElementById('pr-custo').value) || 0,
+    preco:     parseBR(document.getElementById('pr-preco').value),
+    custo:     parseBR(document.getElementById('pr-custo').value),
     obs:       document.getElementById('pr-obs').value,
   };
 
@@ -2679,7 +2680,7 @@ window.addItemOC = () => {
       '<option value="">Selecione...</option>' + opts +
     '</select>' +
     '<input type="text" inputmode="decimal" class="form-input" style="max-width:75px;" value="1" placeholder="Qtd" onchange="window.ocItens[' + idx + '].qty=+this.value">' +
-    '<input type="text" inputmode="decimal" class="form-input" style="max-width:100px;" placeholder="Custo unit." id="oci-preco-' + idx + '" onchange="window.ocItens[' + idx + '].custo=+this.value">' +
+    '<input type="text" inputmode="decimal" class="form-input" style="max-width:100px;" placeholder="Custo unit." id="oci-preco-' + idx + '" onchange="window.ocItens[' + idx + '].custo=parseBR(this.value)">' +
     '<button class="btn-danger" onclick="document.getElementById(\'oci-' + idx + '\').remove();window.ocItens[' + idx + ']=null">✕</button>';
   document.getElementById('oc-itens').appendChild(row);
 };
@@ -2759,7 +2760,7 @@ window.editOC = id => {
     row.innerHTML =
       '<select class="form-input" onchange="window.ocItens[' + idx + '].produto=this.value"><option value="">Selecione...</option>' + opts + '</select>' +
       '<input type="text" inputmode="decimal" class="form-input" style="max-width:75px;" value="' + it.qty + '" onchange="window.ocItens[' + idx + '].qty=+this.value">' +
-      '<input type="text" inputmode="decimal" class="form-input" style="max-width:100px;" value="' + it.custo + '" id="oci-preco-' + idx + '" onchange="window.ocItens[' + idx + '].custo=+this.value">' +
+      '<input type="text" inputmode="decimal" class="form-input" style="max-width:100px;" value="' + it.custo + '" id="oci-preco-' + idx + '" onchange="window.ocItens[' + idx + '].custo=parseBR(this.value)">' +
       '<button class="btn-danger" onclick="document.getElementById(\'oci-' + idx + '\').remove();window.ocItens[' + idx + ']=null">✕</button>';
     document.getElementById('oc-itens').appendChild(row);
   });
@@ -2844,7 +2845,7 @@ window.abrirOCProd = nome => {
   row.innerHTML =
     '<select class="form-input" onchange="window.ocItens[0].produto=this.value;autoPrecoOC(0,this.value)"><option value="">Selecione...</option>' + opts + '</select>' +
     '<input type="text" inputmode="decimal" class="form-input" style="max-width:75px;" value="1" onchange="window.ocItens[0].qty=+this.value">' +
-    '<input type="text" inputmode="decimal" class="form-input" style="max-width:100px;" placeholder="Custo unit." id="oci-preco-0" onchange="window.ocItens[0].custo=+this.value">' +
+    '<input type="text" inputmode="decimal" class="form-input" style="max-width:100px;" placeholder="Custo unit." id="oci-preco-0" onchange="window.ocItens[0].custo=parseBR(this.value)">' +
     '<button class="btn-danger" onclick="document.getElementById(\'oci-0\').remove();window.ocItens[0]=null">✕</button>';
   document.getElementById('oc-itens').appendChild(row);
   autoPrecoOC(0, nome);
@@ -2873,7 +2874,7 @@ window.abrirOCTodos = () => {
     row.innerHTML =
       '<select class="form-input" onchange="window.ocItens[' + idx + '].produto=this.value;autoPrecoOC(' + idx + ',this.value)"><option value="">Selecione...</option>' + opts + '</select>' +
       '<input type="text" inputmode="decimal" class="form-input" style="max-width:75px;" value="' + qty + '" onchange="window.ocItens[' + idx + '].qty=+this.value">' +
-      '<input type="text" inputmode="decimal" class="form-input" style="max-width:100px;" placeholder="Custo unit." id="oci-preco-' + idx + '" value="' + custo + '" onchange="window.ocItens[' + idx + '].custo=+this.value">' +
+      '<input type="text" inputmode="decimal" class="form-input" style="max-width:100px;" placeholder="Custo unit." id="oci-preco-' + idx + '" value="' + custo + '" onchange="window.ocItens[' + idx + '].custo=parseBR(this.value)">' +
       '<button class="btn-danger" onclick="document.getElementById(\'oci-' + idx + '\').remove();window.ocItens[' + idx + ']=null">✕</button>';
     document.getElementById('oc-itens').appendChild(row);
   });
