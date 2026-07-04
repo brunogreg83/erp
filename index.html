@@ -2813,22 +2813,7 @@ window.atualizarOC = async id => {
     '<button class="btn-ghost" onclick="closeModal(\'modal-oc\')">Cancelar</button>' +
     '<button class="btn-primary" onclick="salvarOC()">Salvar OC</button>';
   closeModal('modal-oc');
-
-  // Enviar email ao fornecedor quando status sai de Aguardando
-  if (statusAnt === 'Aguardando' && novoStatus !== 'Aguardando') {
-    const forn = D.fornecedores.find(f => f.nome === fornNome);
-    if (forn?.email) {
-      setTimeout(() => {
-        const oc = D.ordens.find(x => x.id === id);
-        if (oc) enviarOCPorEmail(oc, forn);
-      }, 1000);
-      toast('✅ OC atualizada! Enviando email ao fornecedor...');
-    } else {
-      toast('✅ OC atualizada! (Fornecedor sem email cadastrado)');
-    }
-  } else {
-    toast('✅ OC atualizada!');
-  }
+  toast('✅ OC atualizada!');
 };
 
 window.abrirOCProd = nome => {
