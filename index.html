@@ -4438,14 +4438,9 @@ window.analisarNF = async () => {
     // Cruzar com cadastro de produtos
     nfItensAnalisados = parsed.itens.map(it => {
       const match = D.produtos.find(p => {
-        // 1) código exato (case-insensitive)
+        // somente por código (cProd)
         if (it.codigo && p.cod && it.codigo.trim().toLowerCase() === p.cod.trim().toLowerCase()) return true;
-        // 2) nome normalizado
-        const nNF = normalizarNome(it.nome);
-        const nP  = normalizarNome(p.nome);
-        const words = nP.split(' ').filter(w => w.length >= 3);
-        if (words.length < 1) return false;
-        return words.every(w => nNF.includes(w));
+        return false;
       });
       return { ...it, produtoId: match?.id || null, produtoExiste: !!match, produtoNome: match?.nome || it.nome };
     });
@@ -4507,11 +4502,7 @@ window.confirmarImportacao = async () => {
     const qty  = Number(it.quantidade) || 0;
     const prod = D.produtos.find(p => {
       if (it.codigo && p.cod && it.codigo.trim().toLowerCase() === p.cod.trim().toLowerCase()) return true;
-      const nNF = normalizarNome(it.nome);
-      const nP  = normalizarNome(p.nome);
-      const words = nP.split(' ').filter(w => w.length >= 3);
-      if (words.length < 1) return false;
-      return words.every(w => nNF.includes(w));
+      return false;
     });
 
     if (prod) {
