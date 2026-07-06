@@ -90,6 +90,8 @@ tr:hover td { background: #fafaf8; }
 .form-label { font-size: 12px; color: #666; margin-bottom: 5px; display: block; }
 .form-input { width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 8px 11px; font-size: 13px; background: #fff; }
 .form-input:focus { outline: none; border-color: #1D9E75; }
+.form-input.input-locked { background: #f0f0ec; color: #888; cursor: not-allowed; }
+.form-hint { font-size: 11px; color: #999; margin-top: 4px; display: block; }
 /* Remover spinners nativos de inputs numéricos */
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
@@ -805,7 +807,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <div class="form-group"><label class="form-label">Nome</label><input class="form-input" id="pr-nome" placeholder="Detergente Neutro 5L"></div>
     <div class="form-group"><label class="form-label">Código</label><input class="form-input" id="pr-cod" placeholder="COD-0001"></div>
     <div class="form-group"><label class="form-label">Categoria</label>
-      <select class="form-input" id="pr-cat">
+      <select class="form-input" id="pr-cat" onchange="aplicarRegraPrecoCategoria()">
         <option value="">Selecione...</option>
         <option>Cozinha</option>
         <option>Desinfetantes de Uso Geral</option>
@@ -821,8 +823,8 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     </div>
     <div class="form-group"><label class="form-label">Estoque atual</label><input class="form-input" type="text" inputmode="decimal" id="pr-est" value="0" min="0"></div>
     <div class="form-group"><label class="form-label">Estoque mínimo</label><input class="form-input" type="text" inputmode="decimal" id="pr-min" value="10" min="0"></div>
-    <div class="form-group"><label class="form-label">Preço de venda (R$)</label><input class="form-input" type="text" inputmode="decimal" id="pr-preco" value="0" step="0.01"></div>
-    <div class="form-group"><label class="form-label">Custo (R$)</label><input class="form-input" type="text" inputmode="decimal" id="pr-custo" value="0" step="0.01"></div>
+    <div class="form-group"><label class="form-label">Custo (R$)</label><input class="form-input" type="text" inputmode="decimal" id="pr-custo" value="0" step="0.01" oninput="calcularPrecoVenda()"></div>
+    <div class="form-group"><label class="form-label">Preço de venda (R$)</label><input class="form-input" type="text" inputmode="decimal" id="pr-preco" value="0" step="0.01"><span class="form-hint" id="pr-preco-hint"></span></div>
     <div class="form-group"><label class="form-label">Observações</label><textarea class="form-input" id="pr-obs" rows="3" placeholder="Informações adicionais sobre o produto..." style="resize:vertical;"></textarea></div>
     </div>
     <div class="modal-footer">
@@ -1592,6 +1594,15 @@ window.openModal = id => {
       fList.innerHTML = D.fornecedores.filter(f=>f.status==='Ativo').map(f=>`<option value="${f.nome}">`).join('');
     }
   }
+  if (id === 'modal-produto') {
+    ['pr-nome','pr-cod','pr-obs'].forEach(fid => { const el = document.getElementById(fid); if (el) el.value = ''; });
+    document.getElementById('pr-cat').value  = '';
+    document.getElementById('pr-est').value  = '0';
+    document.getElementById('pr-min').value  = '10';
+    document.getElementById('pr-custo').value = '0';
+    document.getElementById('pr-preco').value = '0';
+    aplicarRegraPrecoCategoria();
+  }
   if (id === 'modal-cliente') {
     // limpar todos os campos para novo cadastro
     ['cl-nome','cl-cnpj','cl-ie','cl-email','cl-tel','cl-resp',
@@ -1964,17 +1975,48 @@ window.exportCSV = () => {
 };
 
 // ── Produtos ───────────────────────────────────────────────────────────────
+// Regra: preço de venda = custo × 2 (200% do custo), fixo e bloqueado.
+// Exceção: categoria "Descartáveis" mantém o preço livre para edição manual.
+function categoriaLivrePreco(cat) {
+  return cat === 'Descartáveis';
+}
+window.aplicarRegraPrecoCategoria = () => {
+  const cat = document.getElementById('pr-cat').value;
+  const precoEl = document.getElementById('pr-preco');
+  const hintEl = document.getElementById('pr-preco-hint');
+  if (categoriaLivrePreco(cat)) {
+    precoEl.readOnly = false;
+    precoEl.classList.remove('input-locked');
+    hintEl.textContent = 'Descartáveis: preço livre para edição.';
+  } else {
+    precoEl.readOnly = true;
+    precoEl.classList.add('input-locked');
+    hintEl.textContent = 'Calculado automaticamente: 200% do custo.';
+    calcularPrecoVenda();
+  }
+};
+window.calcularPrecoVenda = () => {
+  const cat = document.getElementById('pr-cat').value;
+  if (categoriaLivrePreco(cat)) return;
+  const custo = parseBR(document.getElementById('pr-custo').value) || 0;
+  document.getElementById('pr-preco').value = (custo * 2).toFixed(2);
+};
 window.salvarProduto = async () => {
   const nome = document.getElementById('pr-nome').value;
   if (!nome) { toast('Informe o nome do produto.'); return; }
+  const categoria = document.getElementById('pr-cat').value;
+  const custo = parseBR(document.getElementById('pr-custo').value);
+  const preco = categoriaLivrePreco(categoria)
+    ? parseBR(document.getElementById('pr-preco').value)
+    : custo * 2;
   await add('produtos', {
     cod:      document.getElementById('pr-cod').value || 'COD-'+Date.now().toString().slice(-4),
     nome,
-    categoria: document.getElementById('pr-cat').value,
+    categoria,
     estoque:  parseFloat(document.getElementById('pr-est').value)   || 0,
     minimo:   parseFloat(document.getElementById('pr-min').value)   || 0,
-    preco:    parseBR(document.getElementById('pr-preco').value),
-    custo:    parseBR(document.getElementById('pr-custo').value),
+    preco,
+    custo,
     obs:      document.getElementById('pr-obs').value,
   });
   closeModal('modal-produto');
@@ -2010,6 +2052,7 @@ window.editProduto = id => {
     document.getElementById('pr-preco').value = p.preco   !== undefined ? String(p.preco)    : '0';
     document.getElementById('pr-custo').value = p.custo   !== undefined ? String(p.custo)    : '0';
     document.getElementById('pr-obs').value   = p.obs     || '';
+    aplicarRegraPrecoCategoria();
 
     const footer = document.querySelector('#modal-produto .modal-footer');
     footer.innerHTML =
@@ -2023,14 +2066,20 @@ window.atualizarProduto = async id => {
   const nome = document.getElementById('pr-nome').value.trim();
   if (!nome) { toast('Informe o nome do produto.'); return; }
 
+  const categoria = document.getElementById('pr-cat').value;
+  const custo = parseBR(document.getElementById('pr-custo').value);
+  const preco = categoriaLivrePreco(categoria)
+    ? parseBR(document.getElementById('pr-preco').value)
+    : custo * 2;
+
   const dados = {
     nome,
     cod:       document.getElementById('pr-cod').value.trim(),
-    categoria: document.getElementById('pr-cat').value,
+    categoria,
     estoque:   parseFloat(document.getElementById('pr-est').value)   || 0,
     minimo:    parseFloat(document.getElementById('pr-min').value)   || 0,
-    preco:     parseBR(document.getElementById('pr-preco').value),
-    custo:     parseBR(document.getElementById('pr-custo').value),
+    preco,
+    custo,
     obs:       document.getElementById('pr-obs').value,
   };
 
