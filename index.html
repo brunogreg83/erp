@@ -783,8 +783,17 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <div class="form-group"><label class="form-label">Status</label>
         <select class="form-input" id="ped-status"><option>Orçamento</option><option>Separação</option><option>Em rota</option><option>Entregue</option><option>Faturado</option></select></div>
       <div class="section-title" style="margin-top:8px;">Itens do pedido</div>
+      <div class="form-group" style="display:flex;gap:8px;align-items:flex-end;margin-bottom:10px;">
+        <div style="flex:1;">
+          <label class="form-label">Carregar template padrão</label>
+          <select class="form-input" id="ped-template-sel"><option value="">Nenhum...</option></select>
+        </div>
+        <button class="btn-ghost" onclick="carregarTemplatePedido()"><i class="ti ti-download"></i> Carregar</button>
+        <button class="btn-danger" onclick="excluirTemplatePedido()" title="Excluir template selecionado">✕</button>
+      </div>
       <div id="ped-itens"></div>
       <button class="btn-ghost" style="width:100%;margin-top:4px;" onclick="addItem()"><i class="ti ti-plus"></i> Adicionar item</button>
+      <button class="btn-ghost" style="width:100%;margin-top:4px;" onclick="salvarTemplateAtual()"><i class="ti ti-device-floppy"></i> Salvar itens atuais como template</button>
       <div class="form-group" style="margin-top:14px;">
         <label class="form-label">Desconto (R$)</label>
         <input class="form-input" type="text" inputmode="decimal" id="ped-desconto" value="0" placeholder="0,00">
@@ -1335,7 +1344,7 @@ const app = initializeApp(cfg);
 const db  = getFirestore(app);
 
 // ── Cache local ────────────────────────────────────────────────────────────
-const D = { pedidos:[], produtos:[], clientes:[], receber:[], pagar:[], ordens:[], usuarios:[], fornecedores:[] };
+const D = { pedidos:[], produtos:[], clientes:[], receber:[], pagar:[], ordens:[], usuarios:[], fornecedores:[], templatesPedido:[] };
 
 // window.pitens precisa ser global pois é referenciado em onchange de HTML dinâmico
 window.pitens = [];
@@ -1361,13 +1370,14 @@ window.addEventListener('offline', () => syncErr());
 // ── Real-time listeners ────────────────────────────────────────────────────
 let loaded = {};
 let fbReady = false;
-['pedidos','produtos','clientes','receber','pagar','ordens','usuarios','fornecedores'].forEach(col => {
+['pedidos','produtos','clientes','receber','pagar','ordens','usuarios','fornecedores','templatesPedido'].forEach(col => {
   onSnapshot(
     collection(db, col),
     snap => {
       D[col] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       loaded[col] = true;
       if (col === 'usuarios') window._usuariosDB = D.usuarios;
+      if (col === 'templatesPedido') atualizarSelectTemplates();
       fbReady = true;
       syncOk();
       renderAll();
@@ -1729,6 +1739,7 @@ function prepPedido() {
   sel('ped-cli', D.clientes.map(c => c.nome));
   const descEl = document.getElementById('ped-desconto');
   if (descEl) descEl.value = '0';
+  atualizarSelectTemplates();
 }
 window.addItem = () => {
   const idx = window.pitens.length;
@@ -1748,7 +1759,98 @@ window.setPI = (idx, nome) => {
   window.pitens[idx] = { produto:nome, qty:window.pitens[idx]?.qty||1, preco:p?.preco||0 };
   const el = document.getElementById('pp-'+idx); if(el && p) el.value = p.preco;
 };
+
+// ── Templates de pedido (ex: Lavanderia, Restaurante) ───────────────────────
+function atualizarSelectTemplates() {
+  const s = document.getElementById('ped-template-sel');
+  if (!s) return;
+  const atual = s.value;
+  s.innerHTML = '<option value="">Nenhum...</option>' +
+    D.templatesPedido.map(t => '<option value="' + t.id + '">' + t.nome + '</option>').join('');
+  if (D.templatesPedido.some(t => t.id === atual)) s.value = atual;
+}
+window.carregarTemplatePedido = () => {
+  const id = document.getElementById('ped-template-sel').value;
+  if (!id) { toast('Selecione um template.'); return; }
+  const t = D.templatesPedido.find(x => x.id === id);
+  if (!t) return;
+
+  window.pitens = [];
+  document.getElementById('ped-itens').innerHTML = '';
+  let ausentes = 0;
+
+  (t.itens || []).forEach(it => {
+    const idx = window.pitens.length;
+    const prod = D.produtos.find(pr => pr.nome === it.produto);
+
+    const row = document.createElement('div');
+    row.className = 'pi-row'; row.id = 'pi-' + idx;
+
+    if (!prod) {
+      // Produto do template não existe mais no estoque: não seleciona nada
+      // silenciosamente. Mostra aviso explícito e obriga o usuário a escolher
+      // um substituto antes de finalizar o pedido.
+      ausentes++;
+      window.pitens.push({ produto: '', qty: it.qty, preco: it.preco });
+      const opts = '<option value="" selected disabled>⚠️ "' + it.produto + '" não está mais no estoque</option>' +
+        D.produtos.map(pr => '<option>' + pr.nome + '</option>').join('');
+      row.classList.add('pi-row-alerta');
+      row.innerHTML =
+        '<select class="form-input" style="border-color:#e05a3c;" onchange="setPI(' + idx + ',this.value)">' + opts + '</select>' +
+        '<input type="text" inputmode="decimal" class="form-input" style="max-width:70px;" value="' + it.qty + '" ' +
+          'onchange="window.pitens[' + idx + '].qty=+this.value">' +
+        '<input type="text" inputmode="decimal" class="form-input" style="max-width:90px;" id="pp-' + idx + '" value="' + it.preco + '" ' +
+          'onchange="window.pitens[' + idx + '].preco=parseBR(this.value)">' +
+        '<button class="btn-danger" onclick="document.getElementById(\'pi-' + idx + '\').remove();window.pitens[' + idx + ']=null">✕</button>';
+    } else {
+      const preco = prod.preco; // sempre o preço atual do estoque
+      window.pitens.push({ produto: it.produto, qty: it.qty, preco });
+      const opts = D.produtos.map(pr =>
+        '<option' + (pr.nome === it.produto ? ' selected' : '') + '>' + pr.nome + '</option>'
+      ).join('');
+      row.innerHTML =
+        '<select class="form-input" onchange="setPI(' + idx + ',this.value)">' + opts + '</select>' +
+        '<input type="text" inputmode="decimal" class="form-input" style="max-width:70px;" value="' + it.qty + '" ' +
+          'onchange="window.pitens[' + idx + '].qty=+this.value">' +
+        '<input type="text" inputmode="decimal" class="form-input" style="max-width:90px;" id="pp-' + idx + '" value="' + preco + '" ' +
+          'onchange="window.pitens[' + idx + '].preco=parseBR(this.value)">' +
+        '<button class="btn-danger" onclick="document.getElementById(\'pi-' + idx + '\').remove();window.pitens[' + idx + ']=null">✕</button>';
+    }
+    document.getElementById('ped-itens').appendChild(row);
+  });
+
+  if (ausentes > 0) {
+    toast('⚠️ Template "' + t.nome + '" carregado, mas ' + ausentes + ' produto(s) não existe(m) mais no estoque. Escolha um substituto nas linhas marcadas em vermelho.');
+  } else {
+    toast('✅ Template "' + t.nome + '" carregado (' + (t.itens||[]).length + ' itens).');
+  }
+};
+window.salvarTemplateAtual = async () => {
+  const itens = window.pitens.filter(Boolean).filter(i => i.produto);
+  if (!itens.length) { toast('Adicione itens antes de salvar como template.'); return; }
+  const nome = prompt('Nome do template (ex: Lavanderia, Restaurante):');
+  if (!nome || !nome.trim()) return;
+  await add('templatesPedido', {
+    nome: nome.trim(),
+    itens: itens.map(i => ({ produto: i.produto, qty: i.qty, preco: i.preco })),
+  });
+  toast('✅ Template "' + nome.trim() + '" salvo!');
+};
+window.excluirTemplatePedido = async () => {
+  const id = document.getElementById('ped-template-sel').value;
+  if (!id) { toast('Selecione um template para excluir.'); return; }
+  const t = D.templatesPedido.find(x => x.id === id);
+  if (!t) return;
+  if (!confirm('Excluir o template "' + t.nome + '"?')) return;
+  await del('templatesPedido', id);
+  toast('Template excluído.');
+};
 window.salvarPedido = async () => {
+  const pendentes = window.pitens.filter(Boolean).filter(i => !i.produto);
+  if (pendentes.length) {
+    toast('⚠️ Existem ' + pendentes.length + ' item(ns) sem produto selecionado (veja as linhas em vermelho). Escolha um substituto antes de salvar.');
+    return;
+  }
   const itens = window.pitens.filter(Boolean).filter(i => i.produto);
   if (!itens.length) { toast('Adicione ao menos um item!'); return; }
   const novoPedido = {
