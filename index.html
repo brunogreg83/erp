@@ -1404,6 +1404,7 @@ async function upd(col, id, data) {
 const getSessao = () => { try { return JSON.parse(sessionStorage.getItem('abc_auth')); } catch(e){ return null; } };
 const R$     = v => { const n = Number(v); return 'R$ ' + (isNaN(n) ? '0,00' : n.toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2})); };
 const parseBR = v => parseValorBR(v);
+window.parseBR = parseBR;
 const fmtDt  = s => { if(!s) return '—'; const [y,m,d]=s.split('-'); return `${d}/${m}/${y}`; };
 const today  = () => new Date().toISOString().split('T')[0];
 const daysTo = s => Math.round((new Date(s) - new Date(today())) / 86400000);
@@ -1762,8 +1763,8 @@ window.addItem = () => {
   row.className = 'pi-row'; row.id = 'pi-'+idx;
   const opts = D.produtos.map(p => '<option>' + p.nome + '</option>').join('');
   row.innerHTML = '<select class="form-input" onchange="setPI(' + idx + ',this.value)">' + opts + '</select>' +
-    '<input type="text" inputmode="decimal" class="form-input" style="max-width:70px;" value="1" onchange="window.pitens[' + idx + '].qty=+this.value">' +
-    '<input type="text" inputmode="decimal" class="form-input" style="max-width:90px;" placeholder="Preço" id="pp-' + idx + '" onchange="window.pitens[' + idx + '].preco=parseBR(this.value)">' +
+    '<input type="text" inputmode="decimal" class="form-input" style="max-width:70px;" value="1" oninput="window.pitens[' + idx + '].qty=+this.value">' +
+    '<input type="text" inputmode="decimal" class="form-input" style="max-width:90px;" placeholder="Preço" id="pp-' + idx + '" oninput="window.pitens[' + idx + '].preco=parseBR(this.value)">' +
     '<button class="btn-danger" onclick="document.getElementById(\'pi-' + idx + '\').remove();window.pitens[' + idx + ']=null">✕</button>';
   document.getElementById('ped-itens').appendChild(row);
   if (D.produtos[0]) setPI(idx, D.produtos[0].nome);
@@ -1812,9 +1813,9 @@ window.carregarTemplatePedido = () => {
       row.innerHTML =
         '<select class="form-input" style="border-color:#e05a3c;" onchange="setPI(' + idx + ',this.value)">' + opts + '</select>' +
         '<input type="text" inputmode="decimal" class="form-input" style="max-width:70px;" value="' + it.qty + '" ' +
-          'onchange="window.pitens[' + idx + '].qty=+this.value">' +
+          'oninput="window.pitens[' + idx + '].qty=+this.value">' +
         '<input type="text" inputmode="decimal" class="form-input" style="max-width:90px;" id="pp-' + idx + '" value="' + it.preco + '" ' +
-          'onchange="window.pitens[' + idx + '].preco=parseBR(this.value)">' +
+          'oninput="window.pitens[' + idx + '].preco=parseBR(this.value)">' +
         '<button class="btn-danger" onclick="document.getElementById(\'pi-' + idx + '\').remove();window.pitens[' + idx + ']=null">✕</button>';
     } else {
       const preco = prod.preco; // sempre o preço atual do estoque
@@ -1825,9 +1826,9 @@ window.carregarTemplatePedido = () => {
       row.innerHTML =
         '<select class="form-input" onchange="setPI(' + idx + ',this.value)">' + opts + '</select>' +
         '<input type="text" inputmode="decimal" class="form-input" style="max-width:70px;" value="' + it.qty + '" ' +
-          'onchange="window.pitens[' + idx + '].qty=+this.value">' +
+          'oninput="window.pitens[' + idx + '].qty=+this.value">' +
         '<input type="text" inputmode="decimal" class="form-input" style="max-width:90px;" id="pp-' + idx + '" value="' + preco + '" ' +
-          'onchange="window.pitens[' + idx + '].preco=parseBR(this.value)">' +
+          'oninput="window.pitens[' + idx + '].preco=parseBR(this.value)">' +
         '<button class="btn-danger" onclick="document.getElementById(\'pi-' + idx + '\').remove();window.pitens[' + idx + ']=null">✕</button>';
     }
     document.getElementById('ped-itens').appendChild(row);
@@ -1980,9 +1981,9 @@ window.editPedido = id => {
     row.innerHTML =
       '<select class="form-input" onchange="window.pitens[' + idx + '].produto=this.value">' + opts + '</select>' +
       '<input type="text" inputmode="decimal" class="form-input" style="max-width:70px;" value="' + it.qty + '" ' +
-        'onchange="window.pitens[' + idx + '].qty=+this.value">' +
+        'oninput="window.pitens[' + idx + '].qty=+this.value">' +
       '<input type="text" inputmode="decimal" class="form-input" style="max-width:90px;" id="pp-' + idx + '" value="' + it.preco + '" ' +
-        'onchange="window.pitens[' + idx + '].preco=parseBR(this.value)">' +
+        'oninput="window.pitens[' + idx + '].preco=parseBR(this.value)">' +
       '<button class="btn-danger" onclick="document.getElementById(\'pi-' + idx + '\').remove();window.pitens[' + idx + ']=null">✕</button>';
 
     document.getElementById('ped-itens').appendChild(row);
