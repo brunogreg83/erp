@@ -2365,7 +2365,7 @@ window.verCliente = id => {
       <div><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Email</div><div style="font-size:13px;font-weight:500;">${c.email||'—'}</div></div>
       <div><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">CEP</div><div style="font-size:13px;font-weight:500;">${c.cep||'—'}</div></div>
       <div style="grid-column:1/-1;"><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Endereço</div><div style="font-size:13px;font-weight:500;">${[c.endereco,c.cidade].filter(Boolean).join(' — ')||'—'}</div></div>
-      ${c.obs ? `<div style="grid-column:1/-1;background:#f9f9f7;border-radius:8px;padding:10px 12px;"><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Observações</div><div style="font-size:13px;color:#555;">${c.obs}</div></div>` : ''}
+      ${c.obs ? `<div style="grid-column:1/-1;background:#f9f9f7;border-radius:8px;padding:10px 12px;"><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Observações</div><div style="font-size:13px;color:#555;white-space:pre-wrap;">${c.obs}</div></div>` : ''}
     </div>
     <div style="border-top:1px solid #f0f0ec;margin-top:18px;padding-top:14px;display:flex;justify-content:space-between;font-size:12px;color:#888;">
       <span>Total de pedidos: <b style="color:#1a1a18;">${peds.length}</b></span>
@@ -2811,7 +2811,7 @@ window.verFornecedor = id => {
       <div><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Prazo entrega</div><div style="font-size:13px;font-weight:500;">${f.prazo||'—'}</div></div>
       <div><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Condição pgto</div><div style="font-size:13px;font-weight:500;">${f.pgto||'—'}</div></div>
       <div style="grid-column:1/-1;"><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Produtos fornecidos</div><div style="font-size:13px;font-weight:500;">${f.produtos||'—'}</div></div>
-      ${f.obs ? `<div style="grid-column:1/-1;background:#f9f9f7;border-radius:8px;padding:10px 12px;"><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Observações</div><div style="font-size:13px;color:#555;">${f.obs}</div></div>` : ''}
+      ${f.obs ? `<div style="grid-column:1/-1;background:#f9f9f7;border-radius:8px;padding:10px 12px;"><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Observações</div><div style="font-size:13px;color:#555;white-space:pre-wrap;">${f.obs}</div></div>` : ''}
     </div>
     <div style="border-top:1px solid #f0f0ec;margin-top:18px;padding-top:14px;display:flex;justify-content:space-between;font-size:12px;color:#888;">
       <span>Ordens de compra: <b style="color:#1a1a18;">${ocs.length}</b></span>
@@ -3082,7 +3082,7 @@ function enviarOCPorEmail(o, forn) {
       '<table><thead><tr><th>#</th><th>Produto</th><th>Qtd.</th><th style="text-align:right;">Custo unit.</th><th style="text-align:right;">Total</th></tr></thead>' +
       '<tbody>' + itensRows + '</tbody></table>' +
       '<div class="total">Total: R$ ' + Number(parseFloat(total)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</div>' +
-      (o.obs ? '<p style="margin-top:16px;background:#f9f9f7;padding:12px;border-radius:6px;"><b>Observações:</b> ' + o.obs + '</p>' : '') +
+      (o.obs ? '<p style="margin-top:16px;background:#f9f9f7;padding:12px;border-radius:6px;white-space:pre-wrap;"><b>Observações:</b> ' + o.obs + '</p>' : '') +
       '<p style="margin-top:24px;">Aguardamos confirmação do recebimento desta OC.</p>' +
       '<p style="margin-top:8px;">Atenciosamente,<br><b>AB Chemicals</b><br>abchemicalspr@gmail.com — (43) 98871-2001 — Londrina/PR</p>' +
       '<div class="footer">Este email foi gerado automaticamente pelo sistema ERP AB Chemicals.</div>' +
@@ -3141,7 +3141,7 @@ window.__enviarOCEmail = function(ocId, cb) {
     '<table><thead><tr><th>#</th><th>Produto</th><th>Qtd.</th><th style="text-align:right;">Custo unit.</th><th style="text-align:right;">Total</th></tr></thead>' +
     '<tbody>' + itensRows + '</tbody></table>' +
     '<div class="total">Total: R$ ' + Number(parseFloat(total)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</div>' +
-    (o.obs ? '<p style="margin-top:16px;background:#f9f9f7;padding:12px;border-radius:6px;"><b>Obs:</b> ' + o.obs + '</p>' : '') +
+    (o.obs ? '<p style="margin-top:16px;background:#f9f9f7;padding:12px;border-radius:6px;white-space:pre-wrap;"><b>Obs:</b> ' + o.obs + '</p>' : '') +
     '<p style="margin-top:24px;">Aguardamos confirmação. Atenciosamente,<br><b>AB Chemicals</b></p>' +
     '<div class="footer">Email gerado automaticamente pelo ERP AB Chemicals.</div>' +
     '</body></html>';
@@ -3262,7 +3262,7 @@ window.verOC = id => {
 '<div class="total-row final"><span>Total da OC</span><span>R$ ' + Number(parseFloat(total)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span></div>' +
 '</div></div>' +
 
-(o.obs ? '<div style="margin-top:20px;background:#f9f9f7;border-radius:8px;padding:12px 16px;"><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Observações</div><div style="font-size:13px;">' + o.obs + '</div></div>' : '') +
+(o.obs ? '<div style="margin-top:20px;background:#f9f9f7;border-radius:8px;padding:12px 16px;"><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Observações</div><div style="font-size:13px;white-space:pre-wrap;">' + o.obs + '</div></div>' : '') +
 
 '<div class="assinaturas">' +
 '<div class="assin-box">Responsável pela compra \u2014 AB Chemicals</div>' +
@@ -3733,7 +3733,7 @@ function buildPedidoHtml(p, cli, cod, tot, itensRows) {
 '    <div class="field"><div class="fl">Cidade / Estado</div><div class="fv">' + (cli.cidade || '—') + '</div></div>\n' +
 '    <div class="field"><div class="fl">CEP</div><div class="fv">' + (cli.cep || '—') + '</div></div>\n' +
 '    <div class="field"><div class="fl">Status</div><div class="fv">' + (cli.status || '—') + '</div></div>\n' +
-(cli.obs ? '    <div class="field" style="grid-column:1/-1"><div class="fl">Observa\u00e7\u00f5es</div><div class="fv" style="color:#777;">' + cli.obs + '</div></div>\n' : '') +
+(cli.obs ? '    <div class="field" style="grid-column:1/-1"><div class="fl">Observa\u00e7\u00f5es</div><div class="fv" style="color:#777;white-space:pre-wrap;">' + cli.obs + '</div></div>\n' : '') +
 '  </div>\n' +
 '</div>\n' +
 
@@ -3745,7 +3745,7 @@ function buildPedidoHtml(p, cli, cod, tot, itensRows) {
 '    <div class="field"><div class="fl">Status do pedido</div><div class="fv">' + p.status + '</div></div>\n' +
 (p.cond ? '    <div class="field" style="grid-column:1/-1;"><div class="fl">Detalhes da condição</div><div class="fv">' + p.cond + '</div></div>\n' : '') +
 '  </div>\n' +
-(p.obs ? '  <div style="margin-top:12px;background:#f9f9f7;border-radius:8px;padding:10px 14px;"><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Observações</div><div style="font-size:13px;">' + p.obs + '</div></div>\n' : '') +
+(p.obs ? '  <div style="margin-top:12px;background:#f9f9f7;border-radius:8px;padding:10px 14px;"><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Observações</div><div style="font-size:13px;white-space:pre-wrap;">' + p.obs + '</div></div>\n' : '') +
 '</div>\n' +
 
 '<div class="section">\n' +
@@ -3763,7 +3763,7 @@ function buildPedidoHtml(p, cli, cod, tot, itensRows) {
 
 '<div class="totals"><div class="totals-box">\n' +
 '  <div class="total-row"><span>Subtotal</span><span>R$ ' + Number((p.itens||[]).reduce((s,i)=>s+(parseFloat(i.qty)||0)*(parseFloat(i.preco)||0),0)).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span></div>\n' +
-'  <div class="total-row"><span>Desconto</span><span style="color:#D85A30;">- R$ ' + Number(parseFloat(p.desconto)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span></div>\n' +
+(parseFloat(p.desconto) > 0 ? '  <div class="total-row"><span>Desconto</span><span style="color:#D85A30;">- R$ ' + Number(parseFloat(p.desconto)).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span></div>\n' : '') +
 '  <div class="total-row"><span>Total do Pedido</span><span>R$ ' + Number(tot).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span></div>\n' +
 '</div></div>\n' +
 
