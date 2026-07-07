@@ -1842,11 +1842,22 @@ window.salvarTemplateAtual = async () => {
   if (!itens.length) { toast('Adicione itens antes de salvar como template.'); return; }
   const nome = prompt('Nome do template (ex: Lavanderia, Restaurante):');
   if (!nome || !nome.trim()) return;
-  await add('templatesPedido', {
-    nome: nome.trim(),
-    itens: itens.map(i => ({ produto: i.produto, qty: i.qty, preco: i.preco })),
-  });
-  toast('✅ Template "' + nome.trim() + '" salvo!');
+  const nomeLimpo = nome.trim();
+  const itensLimpos = itens.map(i => ({ produto: i.produto, qty: i.qty, preco: i.preco }));
+
+  // Se já existe um template com esse nome (ignorando maiúsc./minúsc.), sobrescreve
+  // os itens dele em vez de criar um duplicado no dropdown.
+  const existente = D.templatesPedido.find(
+    t => t.nome.trim().toLowerCase() === nomeLimpo.toLowerCase()
+  );
+
+  if (existente) {
+    await upd('templatesPedido', existente.id, { nome: nomeLimpo, itens: itensLimpos });
+    toast('✅ Template "' + nomeLimpo + '" já existia — itens atualizados!');
+  } else {
+    await add('templatesPedido', { nome: nomeLimpo, itens: itensLimpos });
+    toast('✅ Template "' + nomeLimpo + '" salvo!');
+  }
 };
 window.excluirTemplatePedido = async () => {
   const id = document.getElementById('ped-template-sel').value;
