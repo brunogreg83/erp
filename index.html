@@ -1736,9 +1736,21 @@ window.closeModal = id => {
 function prepPedido() {
   window.pitens = [];
   document.getElementById('ped-itens').innerHTML = '';
+
+  // Cliente: recarrega a lista e força "Selecione..." (sem herdar o último cliente usado)
   sel('ped-cli', D.clientes.map(c => c.nome));
+  document.getElementById('ped-cli').insertAdjacentHTML('afterbegin', '<option value="">Selecione...</option>');
+  document.getElementById('ped-cli').value = '';
+
+  // Demais campos do cabeçalho voltam ao padrão, nunca ao valor do pedido anterior
+  document.getElementById('ped-pgto').value   = 'À vista';
+  document.getElementById('ped-forma').value  = '';
+  const condEl = document.getElementById('ped-cond');  if (condEl) condEl.value = '';
+  document.getElementById('ped-status').value = 'Orçamento';
+  const obsEl  = document.getElementById('ped-obs');   if (obsEl)  obsEl.value  = '';
   const descEl = document.getElementById('ped-desconto');
   if (descEl) descEl.value = '0';
+
   atualizarSelectTemplates();
 }
 window.addItem = () => {
@@ -1846,6 +1858,10 @@ window.excluirTemplatePedido = async () => {
   toast('Template excluído.');
 };
 window.salvarPedido = async () => {
+  if (!document.getElementById('ped-cli').value) {
+    toast('Selecione o cliente antes de salvar o pedido.');
+    return;
+  }
   const pendentes = window.pitens.filter(Boolean).filter(i => !i.produto);
   if (pendentes.length) {
     toast('⚠️ Existem ' + pendentes.length + ' item(ns) sem produto selecionado (veja as linhas em vermelho). Escolha um substituto antes de salvar.');
