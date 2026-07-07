@@ -1752,6 +1752,8 @@ function prepPedido() {
   if (descEl) descEl.value = '0';
 
   atualizarSelectTemplates();
+  const tplSel = document.getElementById('ped-template-sel');
+  if (tplSel) tplSel.value = '';
 }
 window.addItem = () => {
   const idx = window.pitens.length;
@@ -1831,6 +1833,9 @@ window.carregarTemplatePedido = () => {
     document.getElementById('ped-itens').appendChild(row);
   });
 
+  const obsEl = document.getElementById('ped-obs');
+  if (obsEl) obsEl.value = t.obs || '';
+
   if (ausentes > 0) {
     toast('⚠️ Template "' + t.nome + '" carregado, mas ' + ausentes + ' produto(s) não existe(m) mais no estoque. Escolha um substituto nas linhas marcadas em vermelho.');
   } else {
@@ -1844,6 +1849,8 @@ window.salvarTemplateAtual = async () => {
   if (!nome || !nome.trim()) return;
   const nomeLimpo = nome.trim();
   const itensLimpos = itens.map(i => ({ produto: i.produto, qty: i.qty, preco: i.preco }));
+  const obsEl  = document.getElementById('ped-obs');
+  const obsAtual = obsEl ? obsEl.value : '';
 
   // Se já existe um template com esse nome (ignorando maiúsc./minúsc.), sobrescreve
   // os itens dele em vez de criar um duplicado no dropdown.
@@ -1852,10 +1859,10 @@ window.salvarTemplateAtual = async () => {
   );
 
   if (existente) {
-    await upd('templatesPedido', existente.id, { nome: nomeLimpo, itens: itensLimpos });
-    toast('✅ Template "' + nomeLimpo + '" já existia — itens atualizados!');
+    await upd('templatesPedido', existente.id, { nome: nomeLimpo, itens: itensLimpos, obs: obsAtual });
+    toast('✅ Template "' + nomeLimpo + '" já existia — itens e observações atualizados!');
   } else {
-    await add('templatesPedido', { nome: nomeLimpo, itens: itensLimpos });
+    await add('templatesPedido', { nome: nomeLimpo, itens: itensLimpos, obs: obsAtual });
     toast('✅ Template "' + nomeLimpo + '" salvo!');
   }
 };
