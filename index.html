@@ -2139,8 +2139,9 @@ window.aplicarRegraPrecoCategoria = () => {
   }
 };
 window.calcularPrecoVenda = () => {
-  const cat = document.getElementById('pr-cat').value;
-  if (categoriaLivrePreco(cat)) return;
+  // Sugere sempre preço = custo × 2 ao digitar o custo — inclusive em
+  // "Descartáveis", que continua com o campo destravado/editável, mas assim
+  // não fica esquecido em 0 caso ninguém digite o preço manualmente depois.
   const custo = parseBR(document.getElementById('pr-custo').value) || 0;
   document.getElementById('pr-preco').value = (custo * 2).toFixed(2);
 };
