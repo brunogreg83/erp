@@ -2113,14 +2113,21 @@ window.exportCSV = () => {
 // ── Produtos ───────────────────────────────────────────────────────────────
 // Regra: preço de venda = custo × 2 (200% do custo), fixo e bloqueado.
 // Exceção: categoria "Descartáveis" mantém o preço livre para edição manual.
+// Enquanto nenhuma categoria foi escolhida ainda, o campo também fica livre
+// (senão o usuário pode digitar um preço antes de escolher a categoria e o
+// valor digitado é perdido silenciosamente quando o campo travar depois).
 function categoriaLivrePreco(cat) {
-  return cat === 'Descartáveis';
+  return cat === 'Descartáveis' || !cat;
 }
 window.aplicarRegraPrecoCategoria = () => {
   const cat = document.getElementById('pr-cat').value;
   const precoEl = document.getElementById('pr-preco');
   const hintEl = document.getElementById('pr-preco-hint');
-  if (categoriaLivrePreco(cat)) {
+  if (!cat) {
+    precoEl.readOnly = false;
+    precoEl.classList.remove('input-locked');
+    hintEl.textContent = 'Selecione uma categoria para calcular automaticamente (ou digite manualmente).';
+  } else if (categoriaLivrePreco(cat)) {
     precoEl.readOnly = false;
     precoEl.classList.remove('input-locked');
     hintEl.textContent = 'Descartáveis: preço livre para edição.';
