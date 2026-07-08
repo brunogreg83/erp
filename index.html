@@ -268,6 +268,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     <nav class="nav-section" id="nav-menu">
       <button class="nav-item active" onclick="goTo('dashboard',this)" id="nav-dashboard"><i class="ti ti-layout-dashboard"></i>Dashboard</button>
       <button class="nav-item" onclick="goTo('vendas',this)" id="nav-vendas"><i class="ti ti-shopping-cart"></i>Vendas e Pedidos</button>
+      <button class="nav-item" onclick="goTo('orcamentos',this)" id="nav-orcamentos"><i class="ti ti-file-invoice"></i>Orçamentos</button>
       <button class="nav-item" onclick="goTo('estoque',this)" id="nav-estoque"><i class="ti ti-box"></i>Estoque e Produtos</button>
       <button class="nav-item" onclick="goTo('clientes',this)" id="nav-clientes"><i class="ti ti-users"></i>Clientes e CRM</button>
       <button class="nav-item" onclick="goTo('financeiro',this)" id="nav-financeiro"><i class="ti ti-receipt"></i>Financeiro</button>
@@ -301,6 +302,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <nav style="padding:10px 0;flex:1;" id="mob-nav-menu">
         <button class="nav-item active" onclick="mobGoTo('dashboard')" id="mob-nav-dashboard"><i class="ti ti-layout-dashboard"></i>Dashboard</button>
         <button class="nav-item" onclick="mobGoTo('vendas')" id="mob-nav-vendas"><i class="ti ti-shopping-cart"></i>Vendas e Pedidos</button>
+        <button class="nav-item" onclick="mobGoTo('orcamentos')" id="mob-nav-orcamentos"><i class="ti ti-file-invoice"></i>Orçamentos</button>
         <button class="nav-item" onclick="mobGoTo('estoque')" id="mob-nav-estoque"><i class="ti ti-box"></i>Estoque e Produtos</button>
         <button class="nav-item" onclick="mobGoTo('clientes')" id="mob-nav-clientes"><i class="ti ti-users"></i>Clientes e CRM</button>
         <button class="nav-item" onclick="mobGoTo('financeiro')" id="mob-nav-financeiro"><i class="ti ti-receipt"></i>Financeiro</button>
@@ -383,6 +385,18 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <div class="table-wrap">
           <table><thead><tr><th>Nº Pedido</th><th>Data</th><th>Cliente</th><th>Itens</th><th>Total</th><th>Status</th><th></th></tr></thead>
           <tbody id="tabela-pedidos"></tbody></table>
+        </div>
+      </div>
+
+      <!-- ORÇAMENTOS -->
+      <div class="screen" id="screen-orcamentos">
+        <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center;">
+          <button class="btn-primary" onclick="openModal('modal-pedido')"><i class="ti ti-plus"></i> Novo orçamento</button>
+          <input class="form-input" id="orcamentos-busca" placeholder="🔍 Buscar por cliente ou nº orçamento..." style="max-width:300px;height:36px;margin-left:auto;" oninput="filtrarOrcamentos(this.value)">
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Nº Orçamento</th><th>Data</th><th>Cliente</th><th>Itens</th><th>Total</th><th>Status</th><th></th></tr></thead>
+          <tbody id="tabela-orcamentos"></tbody></table>
         </div>
       </div>
 
@@ -1044,7 +1058,7 @@ window.toggleDrawer = function() {
   overlay.classList.toggle('open', !isOpen);
 };
 
-const MOB_TITLES = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',estoque:'Estoque e Produtos',
+const MOB_TITLES = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',orcamentos:'Orçamentos',estoque:'Estoque e Produtos',
   clientes:'Clientes e CRM',financeiro:'Financeiro',compras:'Compras',relatorios:'Relatórios',ajustes:'Ajustes'};
 
 window.mobGoTo = function(id) {
@@ -1055,8 +1069,8 @@ window.mobGoTo = function(id) {
   const sessao  = verificarSessao();
   const perfil  = sessao?.perfil || 'admin';
   const perms   = perfil === 'admin'
-    ? ['dashboard','vendas','estoque','clientes','financeiro','compras','relatorios','ajustes']
-    : ['vendas','clientes'];
+    ? ['dashboard','vendas','orcamentos','estoque','clientes','financeiro','compras','relatorios','ajustes']
+    : ['vendas','orcamentos','clientes'];
   if (!perms.includes(id)) { alert('Acesso não autorizado.'); return; }
 
   // telas
@@ -1084,7 +1098,7 @@ window.mobGoTo = function(id) {
 
   // FAB: mostrar só em Vendas
   const fab = document.getElementById('mob-fab');
-  if (fab) fab.style.display = id === 'vendas' ? 'flex' : 'none';
+  if (fab) fab.style.display = (id === 'vendas' || id === 'orcamentos') ? 'flex' : 'none';
 
   // redesenhar gráficos ao navegar
   if (id === 'financeiro') {
@@ -1178,10 +1192,10 @@ function aplicarPerfil(perfil, nome) {
 // Restaura a última tela visitada (sidebar, screens, nav mobile inferior, drawer e FAB)
 function restaurarTela(tela) {
   if (!tela) return;
-  const titles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',estoque:'Estoque e Produtos',
+  const titles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',orcamentos:'Orçamentos',estoque:'Estoque e Produtos',
     clientes:'Clientes e CRM',financeiro:'Financeiro e Faturamento',compras:'Compras e Fornecedores',
     relatorios:'Relatórios',ajustes:'Ajustes do Sistema'};
-  const mobTitles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',estoque:'Estoque e Produtos',
+  const mobTitles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',orcamentos:'Orçamentos',estoque:'Estoque e Produtos',
     clientes:'Clientes e CRM',financeiro:'Financeiro',compras:'Compras',relatorios:'Relatórios',ajustes:'Ajustes'};
 
   // telas
@@ -1211,7 +1225,7 @@ function restaurarTela(tela) {
 
   // FAB: mostrar só em Vendas
   const fab = document.getElementById('mob-fab');
-  if (fab) fab.style.display = tela === 'vendas' ? 'flex' : 'none';
+  if (fab) fab.style.display = (tela === 'vendas' || tela === 'orcamentos') ? 'flex' : 'none';
 }
 
 // ao carregar: checar sessão
@@ -2051,7 +2065,7 @@ window.atualizarPedido = async id => {
 };
 
 function renderPedidos() {
-  const rows = [...D.pedidos].sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  const rows = D.pedidos.filter(p => p.status !== 'Orçamento').sort((a,b)=>(b.data||'').localeCompare(a.data||''));
   document.getElementById('tabela-pedidos').innerHTML = rows.length
     ? rows.map(p => {
         const nfBtn = p.nf_emitida
@@ -2075,9 +2089,61 @@ function renderPedidos() {
       }).join('')
     : '<tr><td colspan="7"><div class="empty-state">Nenhum pedido ainda. Crie o primeiro!</div></td></tr>';
 }
+function renderOrcamentos() {
+  const rows = D.pedidos.filter(p => p.status === 'Orçamento').sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  document.getElementById('tabela-orcamentos').innerHTML = rows.length
+    ? rows.map(p => {
+        const nfBtn = p.nf_emitida
+          ? `<button class="btn-nf emitida" title="NF já emitida: ${p.nf_numero||'—'}" onclick="verDadosNF('${p.id}')">
+               <i class="ti ti-file-check"></i> NF ${p.nf_numero||'emitida'}
+             </button>`
+          : `<button class="btn-nf" onclick="abrirEmissaoNF('${p.id}')" title="Faturar / Emitir NF">
+               <i class="ti ti-receipt-2"></i> Faturar
+             </button>`;
+        return `<tr>
+          <td>#${p.id.slice(-6).toUpperCase()}</td>
+          <td>${fmtDt(p.data)}</td><td>${p.cliente}</td>
+          <td>${(p.itens||[]).length}</td><td>${R$(totPed(p))}</td>
+          <td>${badge(p.status)}</td>
+          <td><div class="td-actions">
+            ${nfBtn}
+            <button class="btn-view" onclick="verPedido('${p.id}')" title="Ver orçamento"><i class="ti ti-file-text"></i></button>
+            <button class="btn-edit" onclick="editPedido('${p.id}')">Editar</button>
+            <button class="btn-danger" onclick="delPedido('${p.id}')">Excluir</button>
+          </div></td></tr>`;
+      }).join('')
+    : '<tr><td colspan="7"><div class="empty-state">Nenhum orçamento ainda. Crie o primeiro!</div></td></tr>';
+}
+window.filtrarOrcamentos = (q) => {
+  const lo = q.toLowerCase().trim();
+  const rows = D.pedidos.filter(p => p.status === 'Orçamento').sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  const filtradas = lo ? rows.filter(p =>
+    (p.cliente||'').toLowerCase().includes(lo) ||
+    p.id.slice(-6).toLowerCase().includes(lo)
+  ) : rows;
+
+  document.getElementById('tabela-orcamentos').innerHTML = filtradas.length
+    ? filtradas.map(p => {
+        const nfBtn = p.nf_emitida
+          ? `<button class="btn-nf emitida" title="NF emitida: ${p.nf_numero||'—'}" onclick="verDadosNF('${p.id}')"><i class="ti ti-file-check"></i> NF ${p.nf_numero||'emitida'}</button>`
+          : `<button class="btn-nf" onclick="abrirEmissaoNF('${p.id}')" title="Faturar / Emitir NF"><i class="ti ti-receipt-2"></i> Faturar</button>`;
+        return `<tr>
+          <td>#${p.id.slice(-6).toUpperCase()}</td>
+          <td>${fmtDt(p.data)}</td><td>${p.cliente}</td>
+          <td>${(p.itens||[]).length}</td><td>${R$(totPed(p))}</td>
+          <td>${badge(p.status)}</td>
+          <td><div class="td-actions">
+            ${nfBtn}
+            <button class="btn-view" onclick="verPedido('${p.id}')" title="Ver orçamento"><i class="ti ti-file-text"></i></button>
+            <button class="btn-edit" onclick="editPedido('${p.id}')">Editar</button>
+            <button class="btn-danger" onclick="delPedido('${p.id}')">Excluir</button>
+          </div></td></tr>`;
+      }).join('')
+    : `<tr><td colspan="7"><div class="empty-state">Nenhum orçamento encontrado para "${q}".</div></td></tr>`;
+};
 window.filtrarVendas = (q) => {
   const lo = q.toLowerCase().trim();
-  const rows = [...D.pedidos].sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  const rows = D.pedidos.filter(p => p.status !== 'Orçamento').sort((a,b)=>(b.data||'').localeCompare(a.data||''));
   const filtradas = lo ? rows.filter(p =>
     (p.cliente||'').toLowerCase().includes(lo) ||
     (p.status||'').toLowerCase().includes(lo) ||
@@ -4865,9 +4931,9 @@ function renderUsuarios() {
 }
 
 // ── Navegação com controle de acesso ──────────────────────────────────────
-const ROTAS_ADMIN    = ['dashboard','vendas','estoque','clientes','financeiro','compras','relatorios','ajustes'];
-const ROTAS_VENDEDOR = ['vendas','clientes'];
-const titles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',estoque:'Estoque e Produtos',
+const ROTAS_ADMIN    = ['dashboard','vendas','orcamentos','estoque','clientes','financeiro','compras','relatorios','ajustes'];
+const ROTAS_VENDEDOR = ['vendas','orcamentos','clientes'];
+const titles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',orcamentos:'Orçamentos',estoque:'Estoque e Produtos',
   clientes:'Clientes e CRM',financeiro:'Financeiro e Faturamento',compras:'Compras e Fornecedores',
   relatorios:'Relatórios',ajustes:'Ajustes do Sistema'};
 
@@ -4912,7 +4978,7 @@ window.goTo = (id, btn) => {
 };
 
 function renderAll() {
-  renderDashboard(); renderPedidos(); renderEstoque(); renderClientes(); renderFinanceiro(); renderCompras(); renderUsuarios(); renderFornecedores();
+  renderDashboard(); renderPedidos(); renderOrcamentos(); renderEstoque(); renderClientes(); renderFinanceiro(); renderCompras(); renderUsuarios(); renderFornecedores();
 }
 
 // expor globalmente para o onchange do select funcionar
