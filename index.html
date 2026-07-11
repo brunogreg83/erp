@@ -3523,7 +3523,7 @@ function renderDashboard() {
   const fat  = D.pedidos.filter(p => (p.status==='Entregue' || p.status==='Faturado') && (p.data||'').startsWith(ymAtualDash)).reduce((s,p)=>s+totPed(p),0);
   const mesDash = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][new Date().getMonth()];
   const ab   = D.pedidos.filter(p=>p.status!=='Entregue' && p.status!=='Faturado').length;
-  const ag   = D.pedidos.filter(p=>p.status==='Orçamento').length;
+  const ag   = D.pedidos.filter(p=>p.status==='Separação').length;
   const al   = D.produtos.filter(p=>elegivelAlertaEstoque(p) && sit(p.estoque,p.minimo)!=='OK');
   const ativos = D.clientes.filter(c=>c.status==='Ativo').length;
 
