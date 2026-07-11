@@ -482,7 +482,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <div class="card" style="margin-bottom:22px;">
           <div class="section-title">Fornecedores cadastrados</div>
           <div class="table-wrap" style="margin:0;">
-            <table><thead><tr><th>Empresa</th><th class="col-mobile-hide">CNPJ</th><th>Contato</th><th class="col-mobile-hide">Telefone</th><th class="col-mobile-hide">Email</th><th>Produtos</th><th>Status</th><th></th></tr></thead>
+            <table><thead><tr><th>Empresa</th><th class="col-mobile-hide">CNPJ</th><th class="col-mobile-hide">Contato</th><th class="col-mobile-hide">Telefone</th><th class="col-mobile-hide">Email</th><th class="col-mobile-hide">Produtos</th><th>Status</th><th></th></tr></thead>
             <tbody id="tabela-fornecedores"></tbody></table>
           </div>
         </div>
@@ -2922,10 +2922,10 @@ function renderFornecedores() {
         return `<tr>
           <td><b>${f.nome}</b>${obsIcon}<br><span style="font-size:11px;color:#aaa;">${f.cidade||''}</span></td>
           <td class="col-mobile-hide" style="color:#999;">${f.cnpj||'—'}</td>
-          <td>${f.contato||'—'}</td>
+          <td class="col-mobile-hide">${f.contato||'—'}</td>
           <td class="col-mobile-hide">${f.tel||'—'}</td>
           <td class="col-mobile-hide">${f.email||'—'}</td>
-          <td style="font-size:12px;color:#666;">${f.produtos||'—'}</td>
+          <td class="col-mobile-hide" style="font-size:12px;color:#666;">${f.produtos||'—'}</td>
           <td>${badge(f.status)}</td>
           <td><div class="td-actions">
             <button class="btn-view" onclick="verFornecedor('${f.id}')" title="Visualizar"><i class="ti ti-eye"></i></button>
