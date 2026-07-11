@@ -1245,6 +1245,14 @@ document.addEventListener('click', () => {
   const s = getSessao();
   if (s) salvarSessao(s);
 });
+
+// Garantia extra: sempre salvar a tela que está de fato visível antes de recarregar/fechar,
+// evitando que um clique de navegação que falhe (ou uma atualização assíncrona) deixe
+// 'abc_tela' desatualizado em relação à tela realmente exibida.
+window.addEventListener('beforeunload', () => {
+  const ativa = document.querySelector('.screen.active');
+  if (ativa) sessionStorage.setItem('abc_tela', ativa.id.replace('screen-', ''));
+});
 </script>
 
 <script>
