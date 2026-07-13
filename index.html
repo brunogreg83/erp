@@ -3552,7 +3552,7 @@ function renderDashboard() {
   aDiv.innerHTML = '<div class="section-title">Alertas do sistema</div>';
   const crit  = al.filter(p=>sit(p.estoque,p.minimo)==='Crítico');
   const baixo = al.filter(p=>sit(p.estoque,p.minimo)==='Baixo');
-  const venc  = D.receber.filter(r=>daysTo(r.vencimento)<=3);
+  const venc  = D.receber.filter(r=>{ const d=daysTo(r.vencimento); return d>=0 && d<=3; });
   if (!crit.length && !baixo.length && !venc.length)
     aDiv.innerHTML += '<div class="empty-state">Nenhum alerta no momento!</div>';
   crit.forEach(p  => aDiv.innerHTML += `<div class="alert-box alert-danger"><i class="ti ti-alert-circle"></i>&nbsp; ${p.nome} — ${p.estoque} unid. Reposição urgente!</div>`);
