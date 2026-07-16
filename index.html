@@ -4239,7 +4239,11 @@ window.consultarNFeFocus = async () => {
   btn.innerHTML = '<i class="ti ti-loader-2"></i> Consultando...';
 
   try {
-    const resp = await fetch(_focusEndpoint('consultarNFe') + '?ref=' + encodeURIComponent(ref));
+    const resp = await fetch(_focusEndpoint('consultarNFe'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref })
+    });
     const data = await resp.json();
 
     if (!resp.ok || data.erro) {
