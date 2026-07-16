@@ -407,7 +407,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
           <button class="btn-primary" onclick="openModal('modal-produto')"><i class="ti ti-plus"></i> Novo produto</button>
           <button class="btn-ghost" onclick="openModal('modal-importar-nf')"><i class="ti ti-file-import"></i> Importar XML / NF-e</button>
-          <button class="btn-ghost" id="btn-agrupar-forn" onclick="toggleAgruparPorFornecedor()"><i class="ti ti-building-store"></i> Agrupar por fornecedor</button>
+          <button class="btn-primary" id="btn-agrupar-forn" onclick="toggleAgruparPorFornecedor()"><i class="ti ti-building-store"></i> Agrupar por fornecedor</button>
           <input class="form-input" placeholder="Buscar produto..." style="max-width:220px;height:36px;" oninput="filtrar('tabela-estoque',this.value)">
         </div>
         <div class="two-col">
@@ -2331,11 +2331,14 @@ window.atualizarProduto = async id => {
   }
 };
 
-window.agruparEstoquePorFornecedor = false;
+window.agruparEstoquePorFornecedor = true;
 window.toggleAgruparPorFornecedor = () => {
   window.agruparEstoquePorFornecedor = !window.agruparEstoquePorFornecedor;
   const btn = document.getElementById('btn-agrupar-forn');
-  if (btn) btn.classList.toggle('btn-primary', window.agruparEstoquePorFornecedor);
+  if (btn) {
+    btn.classList.toggle('btn-primary', window.agruparEstoquePorFornecedor);
+    btn.classList.toggle('btn-ghost', !window.agruparEstoquePorFornecedor);
+  }
   renderEstoque();
 };
 
