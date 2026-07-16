@@ -407,6 +407,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
           <button class="btn-primary" onclick="openModal('modal-produto')"><i class="ti ti-plus"></i> Novo produto</button>
           <button class="btn-ghost" onclick="openModal('modal-importar-nf')"><i class="ti ti-file-import"></i> Importar XML / NF-e</button>
+          <button class="btn-ghost" id="btn-agrupar-forn" onclick="toggleAgruparPorFornecedor()"><i class="ti ti-building-store"></i> Agrupar por fornecedor</button>
           <input class="form-input" placeholder="Buscar produto..." style="max-width:220px;height:36px;" oninput="filtrar('tabela-estoque',this.value)">
         </div>
         <div class="two-col">
@@ -414,7 +415,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
           <div class="card"><div class="section-title">Resumo</div><div id="est-resumo"></div></div>
         </div>
         <div class="table-wrap">
-          <table><thead><tr><th>Código</th><th>Produto</th><th>Categoria</th><th>Estoque</th><th>Mínimo</th><th>Situação</th><th></th></tr></thead>
+          <table><thead><tr id="tabela-estoque-head"><th>Código</th><th>Produto</th><th>Categoria</th><th>Fornecedor</th><th>Estoque</th><th>Mínimo</th><th>Situação</th><th></th></tr></thead>
           <tbody id="tabela-estoque"></tbody></table>
         </div>
       </div>
@@ -2330,6 +2331,25 @@ window.atualizarProduto = async id => {
   }
 };
 
+window.agruparEstoquePorFornecedor = false;
+window.toggleAgruparPorFornecedor = () => {
+  window.agruparEstoquePorFornecedor = !window.agruparEstoquePorFornecedor;
+  const btn = document.getElementById('btn-agrupar-forn');
+  if (btn) btn.classList.toggle('btn-primary', window.agruparEstoquePorFornecedor);
+  renderEstoque();
+};
+
+function linhaProduto(p) {
+  const obsIcon = p.obs ? `<span title="${p.obs.replace(/"/g,'&quot;')}" style="cursor:help;margin-left:4px;color:#1D9E75;">💬</span>` : '';
+  return `<tr>
+  <td>${p.cod}</td><td>${p.nome}${obsIcon}</td><td>${p.categoria}</td><td>${p.fornecedor || '—'}</td>
+  <td>${p.estoque}</td><td>${p.minimo}</td><td>${badge(sit(p.estoque,p.minimo))}</td>
+  <td><div class="td-actions">
+    <button class="btn-edit" onclick="editProduto('${p.id}')">Editar</button>
+    <button class="btn-danger" onclick="delProduto('${p.id}')">Excluir</button>
+  </div></td></tr>`;
+}
+
 function renderEstoque() {
   const alertas = D.produtos.filter(p => elegivelAlertaEstoque(p) && sit(p.estoque,p.minimo) !== 'OK');
   document.getElementById('est-alertas').innerHTML = alertas.length
@@ -2345,16 +2365,33 @@ function renderEstoque() {
     <div class="stat-row"><span class="stat-key">Valor em estoque</span><span class="stat-val">${R$(vt)}</span></div>
     <div class="stat-row"><span class="stat-key">Em alerta</span><span class="stat-val" style="color:#D85A30;">${alertas.length} itens</span></div>`;
 
-  document.getElementById('tabela-estoque').innerHTML = D.produtos.map(p => {
-    const obsIcon = p.obs ? `<span title="${p.obs.replace(/"/g,'&quot;')}" style="cursor:help;margin-left:4px;color:#1D9E75;">💬</span>` : '';
-    return `<tr>
-    <td>${p.cod}</td><td>${p.nome}${obsIcon}</td><td>${p.categoria}</td>
-    <td>${p.estoque}</td><td>${p.minimo}</td><td>${badge(sit(p.estoque,p.minimo))}</td>
-    <td><div class="td-actions">
-      <button class="btn-edit" onclick="editProduto('${p.id}')">Editar</button>
-      <button class="btn-danger" onclick="delProduto('${p.id}')">Excluir</button>
-    </div></td></tr>`;
-  }).join('') || '<tr><td colspan="7"><div class="empty-state">Nenhum produto cadastrado.</div></td></tr>';
+  if (!window.agruparEstoquePorFornecedor) {
+    document.getElementById('tabela-estoque').innerHTML = D.produtos.map(linhaProduto).join('')
+      || '<tr><td colspan="8"><div class="empty-state">Nenhum produto cadastrado.</div></td></tr>';
+    return;
+  }
+
+  // Agrupado por fornecedor, em ordem alfabética; produtos sem fornecedor vão para o final
+  const grupos = {};
+  D.produtos.forEach(p => {
+    const key = p.fornecedor || '(sem fornecedor)';
+    (grupos[key] = grupos[key] || []).push(p);
+  });
+  const chaves = Object.keys(grupos).sort((a,b) => {
+    if (a === '(sem fornecedor)') return 1;
+    if (b === '(sem fornecedor)') return -1;
+    return a.localeCompare(b);
+  });
+
+  document.getElementById('tabela-estoque').innerHTML = chaves.map(nomeForn => {
+    const itens = grupos[nomeForn];
+    const cabecalho = `<tr style="background:#f5f5f3;">
+      <td colspan="8" style="font-weight:700;padding:10px 12px;color:#0a1628;">
+        <i class="ti ti-building-store" style="margin-right:6px;"></i>${nomeForn === '(sem fornecedor)' ? 'Sem fornecedor cadastrado' : nomeForn}
+        <span style="font-weight:400;color:#999;font-size:12px;"> — ${itens.length} produto(s)</span>
+      </td></tr>`;
+    return cabecalho + itens.map(linhaProduto).join('');
+  }).join('') || '<tr><td colspan="8"><div class="empty-state">Nenhum produto cadastrado.</div></td></tr>';
 }
 
 // ── Clientes ───────────────────────────────────────────────────────────────
