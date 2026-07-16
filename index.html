@@ -846,6 +846,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <option>Descartáveis</option>
       </select>
     </div>
+    <div class="form-group"><label class="form-label">Fornecedor</label><input class="form-input" id="pr-forn" placeholder="Digite ou selecione..." list="forn-datalist-produto"><datalist id="forn-datalist-produto"></datalist></div>
     <div class="form-group"><label class="form-label">Estoque atual</label><input class="form-input" type="text" inputmode="decimal" id="pr-est" value="0" min="0"></div>
     <div class="form-group"><label class="form-label">Estoque mínimo</label><input class="form-input" type="text" inputmode="decimal" id="pr-min" value="10" min="0"></div>
     <div class="form-group"><label class="form-label">Custo (R$)</label><input class="form-input" type="text" inputmode="decimal" id="pr-custo" value="0" step="0.01" oninput="calcularPrecoVenda()"></div>
@@ -1632,11 +1633,16 @@ window.openModal = id => {
   if (id === 'modal-produto') {
     ['pr-nome','pr-cod','pr-obs'].forEach(fid => { const el = document.getElementById(fid); if (el) el.value = ''; });
     document.getElementById('pr-cat').value  = '';
+    document.getElementById('pr-forn').value = '';
     document.getElementById('pr-est').value  = '0';
     document.getElementById('pr-min').value  = '10';
     document.getElementById('pr-custo').value = '0';
     document.getElementById('pr-preco').value = '0';
     aplicarRegraPrecoCategoria();
+    const fListProd = document.getElementById('forn-datalist-produto');
+    if (fListProd) {
+      fListProd.innerHTML = D.fornecedores.filter(f=>f.status==='Ativo').map(f=>`<option value="${f.nome}">`).join('');
+    }
   }
   if (id === 'modal-cliente') {
     // limpar todos os campos para novo cadastro
@@ -2234,6 +2240,7 @@ window.salvarProduto = async () => {
     cod:      document.getElementById('pr-cod').value || 'COD-'+Date.now().toString().slice(-4),
     nome,
     categoria,
+    fornecedor: document.getElementById('pr-forn').value || '',
     estoque:  parseFloat(document.getElementById('pr-est').value)   || 0,
     minimo:   parseFloat(document.getElementById('pr-min').value)   || 0,
     preco,
@@ -2273,6 +2280,11 @@ window.editProduto = id => {
     document.getElementById('pr-preco').value = p.preco   !== undefined ? String(p.preco)    : '0';
     document.getElementById('pr-custo').value = p.custo   !== undefined ? String(p.custo)    : '0';
     document.getElementById('pr-obs').value   = p.obs     || '';
+    const fListProdEdit = document.getElementById('forn-datalist-produto');
+    if (fListProdEdit) {
+      fListProdEdit.innerHTML = D.fornecedores.filter(f=>f.status==='Ativo').map(f=>`<option value="${f.nome}">`).join('');
+    }
+    document.getElementById('pr-forn').value  = p.fornecedor || '';
     aplicarRegraPrecoCategoria();
 
     const footer = document.querySelector('#modal-produto .modal-footer');
@@ -2297,6 +2309,7 @@ window.atualizarProduto = async id => {
     nome,
     cod:       document.getElementById('pr-cod').value.trim(),
     categoria,
+    fornecedor: document.getElementById('pr-forn').value || '',
     estoque:   parseFloat(document.getElementById('pr-est').value)   || 0,
     minimo:    parseFloat(document.getElementById('pr-min').value)   || 0,
     preco,
@@ -3089,8 +3102,16 @@ window.atualizarOC = async id => {
 window.abrirOCProd = nome => {
   window.ocItens = [];
   document.getElementById('oc-itens').innerHTML = '';
-  document.getElementById('oc-forn').value = '';
+  const fList = document.getElementById('forn-datalist');
+  if (fList) {
+    fList.innerHTML = D.fornecedores.filter(f=>f.status==='Ativo').map(f=>`<option value="${f.nome}">`).join('');
+  }
+  const prodInfo = D.produtos.find(x => x.nome === nome);
+  document.getElementById('oc-forn').value = (prodInfo && prodInfo.fornecedor) || '';
   document.getElementById('oc-obs').value  = '';
+  if (!prodInfo || !prodInfo.fornecedor) {
+    toast('⚠️ Este produto não tem fornecedor cadastrado. Selecione manualmente.');
+  }
   // adicionar o produto sugerido automaticamente
   const idx = 0;
   window.ocItens.push({ produto: nome, qty: 1, custo: 0 });
@@ -3109,12 +3130,36 @@ window.abrirOCProd = nome => {
 
 // Abre a OC já com todos os produtos sugeridos na reposição automática
 window.abrirOCTodos = () => {
-  const sug = D.produtos.filter(p => elegivelAlertaEstoque(p) && sit(p.estoque,p.minimo) !== 'OK');
+  const sugTodos = D.produtos.filter(p => elegivelAlertaEstoque(p) && sit(p.estoque,p.minimo) !== 'OK');
 
   window.ocItens = [];
   document.getElementById('oc-itens').innerHTML = '';
-  document.getElementById('oc-forn').value = '';
   document.getElementById('oc-obs').value  = '';
+  const fList = document.getElementById('forn-datalist');
+  if (fList) {
+    fList.innerHTML = D.fornecedores.filter(f=>f.status==='Ativo').map(f=>`<option value="${f.nome}">`).join('');
+  }
+
+  // Agrupar sugestões por fornecedor cadastrado no produto, para não misturar
+  // itens de fornecedores diferentes numa única OC (e num único e-mail).
+  const grupos = {};
+  sugTodos.forEach(p => {
+    const key = p.fornecedor || '(sem fornecedor)';
+    (grupos[key] = grupos[key] || []).push(p);
+  });
+  const chaves = Object.keys(grupos);
+  // Escolhe o grupo com mais itens para preencher automaticamente a OC
+  let fornEscolhido = chaves.sort((a,b) => grupos[b].length - grupos[a].length)[0] || '';
+  const sug = grupos[fornEscolhido] || [];
+
+  document.getElementById('oc-forn').value = fornEscolhido === '(sem fornecedor)' ? '' : fornEscolhido;
+
+  const restantes = sugTodos.length - sug.length;
+  if (fornEscolhido === '(sem fornecedor)') {
+    toast('⚠️ ' + sug.length + ' produto(s) sem fornecedor cadastrado. Selecione manualmente.');
+  } else if (restantes > 0) {
+    toast('📋 ' + sug.length + ' produto(s) de ' + fornEscolhido + ' adicionados. ' + restantes + ' produto(s) de outro(s) fornecedor(es) precisam de OC separada.');
+  }
 
   sug.forEach((p, idx) => {
     const estoque = parseFloat(p.estoque) || 0;
@@ -3135,7 +3180,6 @@ window.abrirOCTodos = () => {
   });
 
   document.getElementById('modal-oc').classList.add('open');
-  toast('📋 ' + sug.length + ' produto(s) adicionado(s) à ordem de compra');
 };
 
 // ── Envio automático de OC por email ──────────────────────────────────────
