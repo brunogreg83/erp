@@ -4036,9 +4036,12 @@ window.__enviarPedidoEmail = function(pedidoId, cb) {
     '<td style="text-align:right;">R$ ' + Number((parseFloat(it.qty)||0)*(parseFloat(it.preco)||0)).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>'
   ).join('');
 
-  // Reutiliza o mesmo HTML rico do popup — remove apenas os botões no-print
+  // Reutiliza o mesmo HTML rico do popup — remove os botões no-print e a logo
+  // em base64 (o EmailJS tem limite de 50KB para o total de variáveis, e a
+  // imagem sozinha já passa disso). Trocamos por um cabeçalho em texto.
   const htmlCompleto = buildPedidoHtml(p, cli, cod, tot, itensRows)
-    .replace(/<div class="no-print">[\s\S]*?<\/div>\n/, '');
+    .replace(/<div class="no-print">[\s\S]*?<\/div>\n/, '')
+    .replace(/<img src="data:image\/[^"]*"[^>]*>/, '<div style="font-size:22px;font-weight:700;color:#1D9E75;">AB Chemicals</div>');
 
   function doSend() {
     emailjs.send('service_2efwo64', 'template_jfha3la', {
