@@ -480,6 +480,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         </div>
 
         <!-- Fornecedores cadastrados -->
+        <div id="forn-duplicados-aviso"></div>
         <div class="card" style="margin-bottom:22px;">
           <div class="section-title">Fornecedores cadastrados</div>
           <div class="table-wrap" style="margin:0;">
@@ -2969,6 +2970,29 @@ window.verFornecedor = id => {
 function renderFornecedores() {
   const tbody = document.getElementById('tabela-fornecedores');
   if (!tbody) return;
+
+  // Detecta fornecedores com nomes duplicados (mesma razão social cadastrada
+  // mais de uma vez), que podem causar confusão no envio de OC por email.
+  const contagem = {};
+  D.fornecedores.forEach(f => {
+    const key = (f.nome || '').trim().toLowerCase();
+    if (!key) return;
+    (contagem[key] = contagem[key] || []).push(f);
+  });
+  const duplicados = Object.values(contagem).filter(arr => arr.length > 1);
+  const avisoEl = document.getElementById('forn-duplicados-aviso');
+  if (avisoEl) {
+    avisoEl.innerHTML = duplicados.length
+      ? `<div class="card" style="margin-bottom:14px;border:1px solid #D85A30;background:#fff6f2;">
+          <div style="font-weight:700;color:#D85A30;margin-bottom:6px;"><i class="ti ti-alert-triangle"></i> Fornecedor(es) duplicado(s) encontrado(s)</div>
+          <div style="font-size:13px;color:#555;">Os cadastros abaixo têm o mesmo nome. Isso pode fazer com que a Ordem de Compra seja enviada para o email errado. Recomendamos excluir ou renomear os duplicados:</div>
+          <ul style="margin:8px 0 0 18px;font-size:13px;color:#555;">
+            ${duplicados.map(arr => `<li><b>${arr[0].nome}</b> — ${arr.length} cadastros (emails: ${arr.map(f=>f.email||'sem email').join(', ')})</li>`).join('')}
+          </ul>
+        </div>`
+      : '';
+  }
+
   tbody.innerHTML = D.fornecedores.length
     ? D.fornecedores.map(f => {
         const obsIcon = f.obs ? `<span title="${f.obs.replace(/"/g,'&quot;')}" style="cursor:help;margin-left:4px;color:#185FA5;">💬</span>` : '';
@@ -3026,7 +3050,17 @@ window.salvarOC = async () => {
   const pgto       = document.getElementById('oc-pgto').value;
   const total      = itens.reduce((s,i) => s + (parseFloat(i.qty)||0) * (parseFloat(i.custo)||0), 0);
 
-  const docRef = await add('ordens', { fornecedor, itens, status, obs, pgto, total, data: today() });
+  // Grava o ID exato do fornecedor selecionado agora, para que a OC sempre
+  // aponte para o mesmo cadastro (mesmo que existam nomes duplicados ou
+  // o cadastro seja renomeado depois).
+  const fornsComEsseNome = D.fornecedores.filter(f => f.nome === fornecedor);
+  if (fornsComEsseNome.length > 1) {
+    toast('⚠️ Existe mais de um fornecedor cadastrado como "' + fornecedor + '". Verifique o cadastro para evitar envio ao email errado.');
+  }
+  const fornEncontrado = fornsComEsseNome[0];
+  const fornecedorId = fornEncontrado?.id || null;
+
+  const docRef = await add('ordens', { fornecedor, fornecedorId, itens, status, obs, pgto, total, data: today() });
 
   // Se recebido, dar entrada no estoque
   if (status === 'Recebido') {
@@ -3283,7 +3317,8 @@ function enviarOCPorEmail(o, forn) {
 window.__enviarOCEmail = function(ocId, cb) {
   const o    = D.ordens.find(x => x.id === ocId);
   if (!o) { cb(false, 'OC não encontrada'); return; }
-  const forn = D.fornecedores.find(f => f.nome === o.fornecedor) || {};
+  const forn = (o.fornecedorId && D.fornecedores.find(f => f.id === o.fornecedorId))
+            || D.fornecedores.find(f => f.nome === o.fornecedor) || {};
   if (!forn.email) { cb(false, 'Fornecedor sem email cadastrado'); return; }
 
   const cod  = 'OC-' + o.id.slice(-6).toUpperCase();
@@ -3352,7 +3387,8 @@ window.__enviarOCEmail = function(ocId, cb) {
 window.verOC = id => {
   const o = D.ordens.find(x => x.id === id);
   if (!o) { toast('OC não encontrada.'); return; }
-  const forn = D.fornecedores.find(f => f.nome === o.fornecedor) || {};
+  const forn = (o.fornecedorId && D.fornecedores.find(f => f.id === o.fornecedorId))
+            || D.fornecedores.find(f => f.nome === o.fornecedor) || {};
   const cod  = 'OC-' + o.id.slice(-6).toUpperCase();
 
   // compatibilidade com OCs antigas (estrutura de produto único)
