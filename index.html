@@ -6,7 +6,7 @@
 <title>AB Chemicals – ERP Cloud</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<script>emailjs.init('kAwPjAH_jv7lOCqeT');</script>
+<script>emailjs.init('e2QZvVniF5T6aJuRA');</script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a18; min-height: 100vh; }
@@ -3263,7 +3263,7 @@ function enviarOCPorEmail(o, forn) {
   const s = document.createElement('script');
   s.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
   s.onload = () => {
-    emailjs.init('kAwPjAH_jv7lOCqeT');
+    emailjs.init('e2QZvVniF5T6aJuRA');
     const cod  = 'OC-' + o.id.slice(-6).toUpperCase();
     const itens = (o.itens || []);
     const total = o.total || 0;
@@ -3298,7 +3298,8 @@ function enviarOCPorEmail(o, forn) {
       '<div class="footer">Este email foi gerado automaticamente pelo sistema ERP AB Chemicals.</div>' +
       '</body></html>';
 
-    emailjs.send('service_2efwo64', 'template_jfha3la', {
+    emailjs.send('service_pedidos', 'template_xk8fggd', {
+      doc_titulo:   'Ordem de Compra',
       pedido_cod:   cod,
       cliente_nome: forn.nome,
       para_email:   forn.email,
@@ -3358,7 +3359,8 @@ window.__enviarOCEmail = function(ocId, cb) {
     '</body></html>';
 
   function doSend() {
-    emailjs.send('service_2efwo64', 'template_jfha3la', {
+    emailjs.send('service_pedidos', 'template_xk8fggd', {
+      doc_titulo:   'Ordem de Compra',
       pedido_cod:   cod,
       cliente_nome: forn.nome,
       para_email:   forn.email,
@@ -3377,7 +3379,7 @@ window.__enviarOCEmail = function(ocId, cb) {
   } else {
     const s = document.createElement('script');
     s.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
-    s.onload = () => { emailjs.init('kAwPjAH_jv7lOCqeT'); doSend(); };
+    s.onload = () => { emailjs.init('e2QZvVniF5T6aJuRA'); doSend(); };
     s.onerror = () => cb(false, 'Falha ao carregar EmailJS');
     document.head.appendChild(s);
   }
@@ -4044,7 +4046,8 @@ window.__enviarPedidoEmail = function(pedidoId, cb) {
     .replace(/<img src="data:image\/[^"]*"[^>]*>/, '<div style="font-size:22px;font-weight:700;color:#1D9E75;">AB Chemicals</div>');
 
   function doSend() {
-    emailjs.send('service_2efwo64', 'template_jfha3la', {
+    emailjs.send('service_pedidos', 'template_xk8fggd', {
+      doc_titulo:   'Pedido de Venda',
       pedido_cod:   cod,
       cliente_nome: cli.nome || p.cliente,
       para_email:   cli.email,
@@ -4063,7 +4066,7 @@ window.__enviarPedidoEmail = function(pedidoId, cb) {
   } else {
     const s = document.createElement('script');
     s.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
-    s.onload = () => { emailjs.init('kAwPjAH_jv7lOCqeT'); doSend(); };
+    s.onload = () => { emailjs.init('e2QZvVniF5T6aJuRA'); doSend(); };
     s.onerror = () => cb(false, 'Falha ao carregar EmailJS');
     document.head.appendChild(s);
   }
