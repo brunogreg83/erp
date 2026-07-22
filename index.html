@@ -352,8 +352,8 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
               <select id="chart-periodo" onchange="renderDashboard()" style="border:1px solid #e8e7e0;border-radius:8px;padding:4px 10px;font-size:12px;color:#555;background:#fff;cursor:pointer;outline:none;">
                 <option value="1">1 mês</option>
                 <option value="3">3 meses</option>
-                <option value="6">6 meses</option>
-                <option value="12" selected>12 meses</option>
+                <option value="6" selected>6 meses</option>
+                <option value="12">12 meses</option>
               </select>
             </div>
             <div id="bar-chart" style="width:100%;"></div>
@@ -1486,13 +1486,16 @@ function somarDias(dataBase, dias) {
 
 // Lança as contas a receber referentes a um pedido faturado.
 // Usa cliente, valor total e condição de pagamento (pgto) do pedido.
+// Retorna { ok:true, lancadas:N } em caso de sucesso, ou { ok:false, motivo } se nada foi lançado.
 async function lancarContasReceberPedido(pedido, itens) {
   const total = totPed({ ...pedido, itens });
-  if (!pedido.cliente || !total || isNaN(total)) return;
+  if (!pedido.cliente) return { ok:false, motivo:'Pedido sem cliente definido.' };
+  if (!total || isNaN(total)) return { ok:false, motivo:'Valor total do pedido inválido (R$ 0 ou não numérico).' };
 
   const parcelas = gerarParcelasCondPgto(pedido.pgto);
   const cod = (pedido.id || '').toString().slice(-6).toUpperCase();
   const totalParcelas = parcelas.length;
+  let lancadas = 0;
 
   for (let i = 0; i < parcelas.length; i++) {
     const { dias, pct } = parcelas[i];
@@ -1511,7 +1514,7 @@ async function lancarContasReceberPedido(pedido, itens) {
     if (pedido.pgto)  partes.push(pedido.pgto);
     const desc = partes.join(' · ') + sufixo;
 
-    await add('receber', {
+    const ref = await add('receber', {
       cliente: pedido.cliente,
       valor,
       vencimento,
@@ -1520,7 +1523,12 @@ async function lancarContasReceberPedido(pedido, itens) {
       forma: pedido.forma || '',
       pgto: pedido.pgto || '',
     });
+    if (ref) lancadas++;
   }
+
+  if (lancadas === 0) return { ok:false, motivo:'Falha ao gravar no Firestore (verifique a conexão ou as regras de segurança da coleção "receber").' };
+  if (lancadas < totalParcelas) return { ok:false, motivo:`Só ${lancadas} de ${totalParcelas} parcela(s) foram gravadas — verifique o Contas a Receber.` };
+  return { ok:true, lancadas };
 }
 
 // Lança as contas a pagar referentes a uma OC, respeitando a condição de pagamento.
@@ -1831,8 +1839,12 @@ window.salvarPedido = async () => {
   }
 
   if (novoPedido.status === 'Entregue' || novoPedido.status === 'Faturado') {
-    await lancarContasReceberPedido({ ...novoPedido, id: docRef?.id }, itens);
-    toast('✅ Pedido criado, estoque baixado e lançado no contas a receber!');
+    const res = await lancarContasReceberPedido({ ...novoPedido, id: docRef?.id }, itens);
+    if (res.ok) {
+      toast('✅ Pedido criado, estoque baixado e lançado no contas a receber!');
+    } else {
+      toast('⚠️ Pedido criado e estoque baixado, mas NÃO foi lançado no contas a receber: ' + res.motivo);
+    }
   } else if (statusesComEstoque.includes(novoPedido.status)) {
     toast('✅ Pedido criado e estoque baixado!');
   } else {
@@ -1955,8 +1967,10 @@ window.atualizarPedido = async id => {
   const jaGerava = statusesQueGeram.includes(statusAntigo);
   const agoraGera = statusesQueGeram.includes(novoStatus);
   if (!jaGerava && agoraGera) {
-    await lancarContasReceberPedido({ ...dadosPedido, id, data: pedidoAntigo?.data || today() }, itens);
-    msg = '✅ Pedido atualizado e lançado no contas a receber!';
+    const res = await lancarContasReceberPedido({ ...dadosPedido, id, data: pedidoAntigo?.data || today() }, itens);
+    msg = res.ok
+      ? '✅ Pedido atualizado e lançado no contas a receber!'
+      : '⚠️ Pedido atualizado, mas NÃO foi lançado no contas a receber: ' + res.motivo;
   }
 
   toast(msg);
@@ -2620,8 +2634,12 @@ function renderFinanceiro() {
   const tR = D.receber.reduce((s,r) => s+(parseFloat(r.valor)||0), 0);
   const tP = D.pagar.reduce((s,p) => s+(parseFloat(p.valor)||0),   0);
 
-  // popular o seletor de mês único (sempre limpa e repopula para garantir mês atual correto)
-  popularSeletorMeses('fin-mes-global');
+  // popular o seletor de mês só na primeira vez — depois disso preserva o mês
+  // que o usuário escolher, mesmo quando o Firebase reenvia dados (onSnapshot)
+  const selMes = document.getElementById('fin-mes-global');
+  if (selMes && !selMes.options.length) {
+    popularSeletorMeses('fin-mes-global');
+  }
 
   // aplica o mês selecionado a todos os cards da página
   atualizarFinanceiroMes();
