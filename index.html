@@ -510,6 +510,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
           <div class="report-card" onclick="relatorio('fluxo')"><div class="rc-icon"><i class="ti ti-cash"></i></div><div class="rc-title">Fluxo de caixa</div><div class="rc-desc">Entradas, saídas e saldo projetado.</div><div class="rc-cta">Gerar →</div></div>
           <div class="report-card" onclick="relatorio('giro')"><div class="rc-icon"><i class="ti ti-refresh"></i></div><div class="rc-title">Giro de estoque</div><div class="rc-desc">Produtos parados e curva ABC.</div><div class="rc-cta">Gerar →</div></div>
           <div class="report-card" onclick="relatorio('inadimplencia')"><div class="rc-icon"><i class="ti ti-alert-triangle" style="color:#EF9F27;"></i></div><div class="rc-title">Inadimplência</div><div class="rc-desc">Títulos em atraso e projeção.</div><div class="rc-cta">Gerar →</div></div>
+          <div class="report-card" onclick="relatorio('inativos')"><div class="rc-icon"><i class="ti ti-user-off" style="color:#D85A30;"></i></div><div class="rc-title">Clientes sem compra</div><div class="rc-desc">Inatividade por período (7 a 60+ dias).</div><div class="rc-cta">Gerar →</div></div>
           <div class="report-card"><div class="rc-icon"><i class="ti ti-truck"></i></div><div class="rc-title">Desempenho fornecedores</div><div class="rc-desc">Prazo de entrega e volume.</div><div class="rc-cta">Em breve →</div></div>
         </div>
       </div>
@@ -3732,6 +3733,49 @@ function showRel(titulo, html) {
   document.getElementById('rel-corpo').innerHTML = html;
   openModal('modal-rel');
 }
+
+// ── Relatório: Clientes sem compra (inatividade) ───────────────────────────
+function calcularClientesInativos(minDias) {
+  const ultimaPorCliente = {};
+  D.pedidos.forEach(p => {
+    if (!p.cliente || !p.data) return;
+    if (!ultimaPorCliente[p.cliente] || p.data > ultimaPorCliente[p.cliente]) {
+      ultimaPorCliente[p.cliente] = p.data;
+    }
+  });
+  return D.clientes
+    .map(c => {
+      const ultima = ultimaPorCliente[c.nome] || null;
+      const dias = ultima ? Math.abs(daysTo(ultima)) : null; // null = nunca comprou
+      return { nome: c.nome, ultima, dias };
+    })
+    .filter(c => c.dias === null || c.dias >= minDias)
+    .sort((a, b) => (b.dias === null ? 99999 : b.dias) - (a.dias === null ? 99999 : a.dias));
+}
+function renderClientesInativosHtml(minDias) {
+  const lista = calcularClientesInativos(minDias);
+  const opcoes = [7, 15, 30, 45, 60].map(d =>
+    `<option value="${d}" ${minDias === d ? 'selected' : ''}>${d} dias ou mais</option>`).join('');
+  const linhas = lista.map(c => `<tr>
+      <td>${c.nome}</td>
+      <td>${c.ultima ? fmtDt(c.ultima) : '<span style="color:#D85A30">Nunca comprou</span>'}</td>
+      <td>${c.dias === null ? '—' : c.dias + ' dias'}</td>
+    </tr>`).join('');
+  return `
+    <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+      <label style="font-size:12px;color:#888;">Sem compra há:</label>
+      <select id="sel-inativos-dias" onchange="window.atualizarClientesInativos()" style="padding:8px 12px;border:1px solid #e8e7e0;border-radius:8px;font-family:inherit;">
+        ${opcoes}
+      </select>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Última Compra</th><th>Dias sem Comprar</th></tr></thead><tbody>${linhas || '<tr><td colspan="3"><div class="empty-state">Nenhum cliente neste período.</div></td></tr>'}</tbody></table></div>
+    <div class="stat-row"><span class="stat-key">Total de clientes no filtro</span><span class="stat-val">${lista.length}</span></div>`;
+}
+window.atualizarClientesInativos = () => {
+  const dias = parseInt(document.getElementById('sel-inativos-dias').value);
+  document.getElementById('rel-corpo').innerHTML = renderClientesInativosHtml(dias);
+};
+
 window.relatorio = tipo => {
   if (tipo==='vendas') {
     const m={};
@@ -3759,6 +3803,9 @@ window.relatorio = tipo => {
     showRel('Inadimplência', v.length
       ? `<div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Vencimento</th><th>Valor</th><th>Atraso</th></tr></thead><tbody>${l}</tbody></table></div><div class="stat-row"><span class="stat-key">Total em atraso</span><span class="stat-val" style="color:#D85A30">${R$(tot)}</span></div>`
       : '<div class="empty-state" style="padding:24px;">Nenhum título em atraso!</div>');
+  }
+  if (tipo==='inativos') {
+    showRel('Clientes sem Compra', renderClientesInativosHtml(30));
   }
 };
 
