@@ -3735,17 +3735,21 @@ function showRel(titulo, html) {
 }
 
 // ── Relatório: Clientes sem compra (inatividade) ───────────────────────────
+function normalizarNomeCliente(s) {
+  return (s || '').toString().trim().toLowerCase().replace(/\s+/g, ' ');
+}
 function calcularClientesInativos(minDias) {
   const ultimaPorCliente = {};
   D.pedidos.forEach(p => {
     if (!p.cliente || !p.data) return;
-    if (!ultimaPorCliente[p.cliente] || p.data > ultimaPorCliente[p.cliente]) {
-      ultimaPorCliente[p.cliente] = p.data;
+    const chave = normalizarNomeCliente(p.cliente);
+    if (!ultimaPorCliente[chave] || p.data > ultimaPorCliente[chave]) {
+      ultimaPorCliente[chave] = p.data;
     }
   });
   return D.clientes
     .map(c => {
-      const ultima = ultimaPorCliente[c.nome] || null;
+      const ultima = ultimaPorCliente[normalizarNomeCliente(c.nome)] || null;
       const dias = ultima ? Math.abs(daysTo(ultima)) : null; // null = nunca comprou
       return { nome: c.nome, ultima, dias };
     })
