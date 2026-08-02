@@ -19,8 +19,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .login-card h2 { font-size: 15px; font-weight: 600; margin-bottom: 22px; }
 .login-error { background: #FCEBEB; color: #A32D2D; border-radius: 8px; padding: 9px 13px; font-size: 12px; margin-bottom: 14px; display: none; }
 .login-error.show { display: block; }
-.login-btn { width: 100%; background: #1D9E75; color: #fff; border: none; border-radius: 8px; padding: 10px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 6px; }
-.login-btn:hover { background: #0F6E56; }
+.login-btn { width: 100%; background: #185FA5; color: #fff; border: none; border-radius: 8px; padding: 10px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 6px; }
+.login-btn:hover { background: #0F4A7D; }
 
 .shell { display: flex; height: 100vh; }
 .sidebar { width: 210px; min-width: 210px; background: #0a1628; display: flex; flex-direction: column; }
@@ -39,26 +39,26 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .topbar { height: 52px; border-bottom: 1px solid #e8e7e0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: #fff; }
 .topbar-title { font-size: 15px; font-weight: 600; }
 .topbar-actions { display: flex; gap: 8px; align-items: center; }
-.sync-indicator { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: #1D9E75; background: #e8f8f2; border: 1px solid #b2e8d2; border-radius: 999px; padding: 4px 12px; transition: all 0.4s; }
+.sync-indicator { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: #185FA5; background: #E6F1FB; border: 1px solid #b8d4f5; border-radius: 999px; padding: 4px 12px; transition: all 0.4s; }
 .sync-indicator.err { color: #D85A30; background: #fdeee9; border-color: #f5c4b3; }
 .sync-indicator.loading { color: #b07800; background: #fff8e1; border-color: #ffe08a; }
-.sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #1D9E75; flex-shrink: 0; transition: background 0.4s; }
-.sync-dot.ok { background: #1D9E75; }
+.sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #185FA5; flex-shrink: 0; transition: background 0.4s; }
+.sync-dot.ok { background: #185FA5; }
 .sync-dot.err { background: #D85A30; }
 .sync-dot.loading { background: #F0A500; animation: pulse 1s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-.btn-primary { background: #1D9E75; color: #fff; border: none; border-radius: 8px; padding: 7px 16px; font-size: 13px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
-.btn-primary:hover { background: #0F6E56; }
+.btn-primary { background: #185FA5; color: #fff; border: none; border-radius: 8px; padding: 7px 16px; font-size: 13px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+.btn-primary:hover { background: #0F4A7D; }
 .btn-ghost { background: none; border: 1px solid #ddd; border-radius: 8px; padding: 7px 12px; font-size: 13px; color: #555; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
 .btn-ghost:hover { background: #f5f5f3; }
 .btn-danger { background: none; border: 1px solid #f5c6c6; border-radius: 8px; padding: 4px 10px; font-size: 12px; color: #A32D2D; cursor: pointer; }
 .btn-nf { background: none; border: 1px solid #b8d4f5; border-radius: 8px; padding: 4px 10px; font-size: 12px; color: #185FA5; cursor: pointer; display:inline-flex;align-items:center;gap:4px; }
 .btn-nf:hover { background: #E6F1FB; }
-.btn-nf.emitida { border-color: #9FD4B8; color: #0F6E56; }
-.btn-nf.emitida:hover { background: #EAF3DE; }
+.btn-nf.emitida { border-color: #93C5E8; color: #0F4A7D; }
+.btn-nf.emitida:hover { background: #E6F1FB; }
 .btn-danger:hover { background: #FCEBEB; }
-.btn-view { background: none; border: 1px solid #d5e8d4; border-radius: 8px; padding: 4px 8px; font-size: 13px; color: #1D9E75; cursor: pointer; }
-.btn-view:hover { background: #EAF3DE; }
+.btn-view { background: none; border: 1px solid #c6d9f5; border-radius: 8px; padding: 4px 8px; font-size: 13px; color: #185FA5; cursor: pointer; }
+.btn-view:hover { background: #E6F1FB; }
 .btn-edit { background: none; border: 1px solid #c6d9f5; border-radius: 8px; padding: 4px 10px; font-size: 12px; color: #185FA5; cursor: pointer; margin-right: 4px; }
 .btn-edit:hover { background: #E6F1FB; }
 .td-actions { display: flex; gap: 4px; white-space: nowrap; }
@@ -82,7 +82,7 @@ th { padding: 10px 14px; text-align: left; font-weight: 500; color: #888; font-s
 td { padding: 11px 14px; border-top: 1px solid #f0f0ec; }
 tr:hover td { background: #fafaf8; }
 .badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 500; }
-.badge-green { background: #EAF3DE; color: #3B6D11; }
+.badge-green { background: #E6F1FB; color: #185FA5; }
 .badge-amber { background: #FAEEDA; color: #854F0B; }
 .badge-red { background: #FCEBEB; color: #A32D2D; }
 .badge-blue { background: #E6F1FB; color: #185FA5; }
@@ -90,7 +90,7 @@ tr:hover td { background: #fafaf8; }
 .form-group { margin-bottom: 14px; }
 .form-label { font-size: 12px; color: #666; margin-bottom: 5px; display: block; }
 .form-input { width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 8px 11px; font-size: 13px; background: #fff; }
-.form-input:focus { outline: none; border-color: #1D9E75; }
+.form-input:focus { outline: none; border-color: #185FA5; }
 .form-input.input-locked { background: #f0f0ec; color: #888; cursor: not-allowed; }
 .form-hint { font-size: 11px; color: #999; margin-top: 4px; display: block; }
 /* Remover spinners nativos de inputs numéricos */
@@ -105,14 +105,14 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 .alert-box { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; border-radius: 9px; font-size: 12px; margin-bottom: 9px; }
 .alert-warn { background: #FAEEDA; color: #854F0B; }
 .alert-danger { background: #FCEBEB; color: #A32D2D; }
-.c-avatar { width: 32px; height: 32px; border-radius: 50%; background: #E1F5EE; color: #0F6E56; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; min-width: 32px; }
+.c-avatar { width: 32px; height: 32px; border-radius: 50%; background: #E6F1FB; color: #0F4A7D; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; min-width: 32px; }
 .stat-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #f0f0ec; font-size: 13px; }
 .stat-row:last-child { border-bottom: none; }
 .stat-key { color: #777; }
 .stat-val { font-weight: 500; }
 .report-card { background: #fff; border: 1px solid #e8e7e0; border-radius: 12px; padding: 18px; cursor: pointer; transition: border-color 0.15s; }
-.report-card:hover { border-color: #1D9E75; }
-.report-card .rc-icon { font-size: 26px; color: #1D9E75; margin-bottom: 10px; }
+.report-card:hover { border-color: #185FA5; }
+.report-card .rc-icon { font-size: 26px; color: #185FA5; margin-bottom: 10px; }
 
 /* ── MOBILE NAV BAR ─────────────────────────────────────────────────────── */
 .mobile-topbar { display: none; }
@@ -141,7 +141,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   .mobile-topbar .m-logo { font-size: 15px; font-weight: 700; color: #fff; }
   .mobile-topbar .m-right { display: flex; align-items: center; gap: 10px; }
   .mobile-topbar .m-sync { width: 8px; height: 8px; border-radius: 50%; background: #ccc; }
-  .mobile-topbar .m-sync.ok { background: #1D9E75; }
+  .mobile-topbar .m-sync.ok { background: #185FA5; }
   .mobile-topbar .m-sync.loading { background: #F0A500; animation: pulse 1s infinite; }
   .mobile-topbar .m-menu-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; padding: 4px; }
   .mobile-topbar .m-title { font-size: 14px; font-weight: 600; color: #fff; }
@@ -180,7 +180,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     display: flex; align-items: center; justify-content: center;
     position: fixed; bottom: 76px; right: 20px; z-index: 98;
     width: 56px; height: 56px; border-radius: 50%;
-    background: #1D9E75; color: #fff; font-size: 26px;
+    background: #185FA5; color: #fff; font-size: 26px;
     border: none; cursor: pointer; box-shadow: 0 4px 16px rgba(29,158,117,0.45);
   }
 
@@ -196,8 +196,8 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     transition: color 0.15s;
   }
   .mobile-nav .mn-item i { font-size: 20px; }
-  .mobile-nav .mn-item.active { color: #1D9E75; }
-  .mobile-nav .mn-item.active i { color: #1D9E75; }
+  .mobile-nav .mn-item.active { color: #185FA5; }
+  .mobile-nav .mn-item.active i { color: #185FA5; }
 
   /* Form inputs maiores no touch */
   .form-input { padding: 12px 14px; font-size: 16px; }
@@ -212,7 +212,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 
 .report-card .rc-title { font-size: 13px; font-weight: 600; margin-bottom: 5px; }
 .report-card .rc-desc { font-size: 12px; color: #888; }
-.report-card .rc-cta { font-size: 11px; color: #1D9E75; margin-top: 12px; }
+.report-card .rc-cta { font-size: 11px; color: #185FA5; margin-top: 12px; }
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; align-items: center; justify-content: center; }
 .modal-overlay.open { display: flex; }
 .modal {
@@ -244,7 +244,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 <div id="login-screen">
   <div class="login-card">
     <div class="login-logo" style="text-align:center;margin-bottom:8px;">
-      <div style="font-size:24px;font-weight:700;color:#1D9E75;">AB Chemicals</div>
+      <div style="font-size:24px;font-weight:700;color:#185FA5;">AB Chemicals</div>
       <div class="sub" style="margin-bottom:20px;">ERP · Sistema de Gestão</div>
     </div>
     <h2>Entrar na sua conta</h2>
@@ -264,7 +264,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 <div class="shell" id="erp-shell" style="display:none;">
   <div class="sidebar">
     <div class="sidebar-logo" style="padding:10px 14px;background:#fff;">
-      <div style="font-size:20px;font-weight:700;color:#1D9E75;">AB Chemicals</div>
+      <div style="font-size:20px;font-weight:700;color:#185FA5;">AB Chemicals</div>
       <div class="sub" style="font-size:10px;color:#999;margin-top:2px;">ERP v3.0 · Firebase Cloud</div>
     </div>
     <nav class="nav-section" id="nav-menu">
@@ -547,7 +547,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
             </div>
             <div class="card">
               <div class="section-title"><i class="ti ti-cpu" style="margin-right:6px;"></i>Inteligência Artificial</div>
-              <div style="font-size:12px;color:#888;margin-bottom:14px;">Chave necessária para importar NF-e em PDF via IA. Obtenha em <a href="https://console.anthropic.com" target="_blank" style="color:#1D9E75;">console.anthropic.com</a>.</div>
+              <div style="font-size:12px;color:#888;margin-bottom:14px;">Chave necessária para importar NF-e em PDF via IA. Obtenha em <a href="https://console.anthropic.com" target="_blank" style="color:#185FA5;">console.anthropic.com</a>.</div>
               <div class="form-group">
                 <label class="form-label">Chave API Anthropic (Claude)</label>
                 <input class="form-input" id="anthropic-key-input" type="password" placeholder="sk-ant-..." style="font-family:monospace;font-size:12px;">
@@ -940,7 +940,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <!-- Recorrência -->
       <div style="border-top:1px solid #f0f0ec;margin-top:6px;padding-top:14px;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-          <input type="checkbox" id="pag-recorrente" onchange="toggleRecorrencia()" style="width:16px;height:16px;cursor:pointer;accent-color:#1D9E75;">
+          <input type="checkbox" id="pag-recorrente" onchange="toggleRecorrencia()" style="width:16px;height:16px;cursor:pointer;accent-color:#185FA5;">
           <label for="pag-recorrente" style="font-size:13px;font-weight:500;cursor:pointer;">Despesa recorrente</label>
         </div>
         <div id="pag-recorrencia-opts" style="display:none;">
@@ -2255,7 +2255,7 @@ window.toggleAgruparPorFornecedor = () => {
 };
 
 function linhaProduto(p) {
-  const obsIcon = p.obs ? `<span title="${p.obs.replace(/"/g,'&quot;')}" style="cursor:help;margin-left:4px;color:#1D9E75;">💬</span>` : '';
+  const obsIcon = p.obs ? `<span title="${p.obs.replace(/"/g,'&quot;')}" style="cursor:help;margin-left:4px;color:#185FA5;">💬</span>` : '';
   return `<tr>
   <td>${p.cod}</td><td>${p.nome}${obsIcon}</td><td>${p.categoria}</td><td>${p.fornecedor || '—'}</td>
   <td>${p.estoque}</td><td>${p.minimo}</td><td>${badge(sit(p.estoque,p.minimo))}</td>
@@ -2380,7 +2380,7 @@ function renderClientes() {
     const tot  = peds.reduce((s,p) => s + totPed(p), 0);
     const ult  = peds.length ? fmtDt([...peds].sort((a,b)=>(b.data||'').localeCompare(a.data||''))[0].data) : '—';
     const endInfo = [c.endereco, c.cidade, c.cep].filter(Boolean).join(' · ') || '—';
-    const obsIcon = c.obs ? `<span title="${c.obs.replace(/"/g,'&quot;')}" style="cursor:help;margin-left:4px;color:#1D9E75;">💬</span>` : '';
+    const obsIcon = c.obs ? `<span title="${c.obs.replace(/"/g,'&quot;')}" style="cursor:help;margin-left:4px;color:#185FA5;">💬</span>` : '';
     return `<tr>
       <td><div style="display:flex;gap:9px;align-items:center;"><div class="c-avatar">${ini}</div>
         <div><div>${c.nome}${obsIcon}</div><div style="font-size:11px;color:#aaa;">${endInfo}</div></div>
@@ -2408,7 +2408,7 @@ window.verCliente = id => {
 
   document.getElementById('cli-popup-body').innerHTML = `
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
-      <div style="width:52px;height:52px;border-radius:50%;background:#E1F5EE;color:#0F6E56;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0;">${ini}</div>
+      <div style="width:52px;height:52px;border-radius:50%;background:#E6F1FB;color:#0F4A7D;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0;">${ini}</div>
       <div>
         <div style="font-size:16px;font-weight:700;">${c.nome}</div>
         <div style="font-size:12px;color:#aaa;margin-top:2px;">${c.segmento||'—'} · ${badge(c.status)}</div>
@@ -2426,7 +2426,7 @@ window.verCliente = id => {
     </div>
     <div style="border-top:1px solid #f0f0ec;margin-top:18px;padding-top:14px;display:flex;justify-content:space-between;font-size:12px;color:#888;">
       <span>Total de pedidos: <b style="color:#1a1a18;">${peds.length}</b></span>
-      <span>Volume total: <b style="color:#1D9E75;">${R$(tot)}</b></span>
+      <span>Volume total: <b style="color:#185FA5;">${R$(tot)}</b></span>
     </div>`;
 
   // guardar dados para copiar
@@ -2456,7 +2456,7 @@ window.copiarCliente = () => {
   navigator.clipboard.writeText(txt).then(() => {
     const btn = document.getElementById('btn-copiar-cli');
     btn.innerHTML = '<i class="ti ti-check"></i> Copiado!';
-    btn.style.background = '#1D9E75';
+    btn.style.background = '#185FA5';
     btn.style.color = '#fff';
     setTimeout(() => {
       btn.innerHTML = '<i class="ti ti-copy"></i> Copiar dados';
@@ -2688,7 +2688,7 @@ window.filtrarReceberMes = () => {
     <td>${r.recebido === true ? badge('Recebido') : badge(stFin(r.vencimento))}</td>
     <td><div class="td-actions">
       ${r.recebido !== true
-        ? `<button class="btn-edit" style="background:#1D9E75;color:#fff;border-color:#1D9E75;" onclick="marcarRecebido('${r.id}')">✓ Recebido</button>`
+        ? `<button class="btn-edit" style="background:#185FA5;color:#fff;border-color:#185FA5;" onclick="marcarRecebido('${r.id}')">✓ Recebido</button>`
         : `<button class="btn-edit" style="background:#aaa;color:#fff;border-color:#aaa;" onclick="marcarRecebido('${r.id}')">Desfazer</button>`}
       <button class="btn-edit" onclick="editReceber('${r.id}')">Editar</button>
       <button class="btn-danger" onclick="delReceber('${r.id}')">✕</button>
@@ -2697,7 +2697,7 @@ window.filtrarReceberMes = () => {
 
   const totEl = document.getElementById('receber-total-mes');
   if (totEl) totEl.innerHTML = filtradas.length
-    ? 'Total ' + meses[mes-1] + ': <b style="color:#1D9E75;">' + R$(total) + '</b>'
+    ? 'Total ' + meses[mes-1] + ': <b style="color:#185FA5;">' + R$(total) + '</b>'
     : '';
 };
 
@@ -2720,7 +2720,7 @@ window.filtrarPagarMes = () => {
     <td>${fmtDt(p.vencimento)}</td><td>${R$(p.valor)}</td>
     <td>${p.pago === true ? badge('Pago') : badge(stFin(p.vencimento))}</td>
     <td><div class="td-actions">
-      ${p.pago !== true ? `<button class="btn-edit" style="background:#1D9E75;color:#fff;border-color:#1D9E75;" onclick="marcarPago('${p.id}')">✓ Pago</button>` : `<button class="btn-edit" style="background:#aaa;color:#fff;border-color:#aaa;" onclick="marcarPago('${p.id}')">Desfazer</button>`}
+      ${p.pago !== true ? `<button class="btn-edit" style="background:#185FA5;color:#fff;border-color:#185FA5;" onclick="marcarPago('${p.id}')">✓ Pago</button>` : `<button class="btn-edit" style="background:#aaa;color:#fff;border-color:#aaa;" onclick="marcarPago('${p.id}')">Desfazer</button>`}
       <button class="btn-edit" onclick="editPagar('${p.id}')">Editar</button>
       <button class="btn-danger" onclick="delPagar('${p.id}')">✕</button>
     </div></td></tr>`).join('')
@@ -2756,7 +2756,7 @@ window.atualizarSaldoMes = () => {
   // Listar lançamentos do mês
   const recItens = recMes.map(r =>
     `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0ec;font-size:12px;">
-      <span style="color:#3B6D11;">↑ ${r.cliente}</span>
+      <span style="color:#185FA5;">↑ ${r.cliente}</span>
       <span style="font-weight:500;">${R$(r.valor)}</span>
     </div>`).join('');
   const pagItens = pagMes.map(p =>
@@ -2766,14 +2766,14 @@ window.atualizarSaldoMes = () => {
     </div>`).join('');
 
   document.getElementById('fin-saldo-mes').innerHTML = `
-    <div class="kpi-card" style="background:${saldoMes>=0?'#EAF3DE':'#FCEBEB'};">
-      <div class="kpi-label" style="color:${saldoMes>=0?'#3B6D11':'#A32D2D'};">Saldo Projetado</div>
-      <div class="kpi-value" style="color:${saldoMes>=0?'#1D9E75':'#D85A30'}">${R$(saldoMes)}</div>
+    <div class="kpi-card" style="background:${saldoMes>=0?'#E6F1FB':'#FCEBEB'};">
+      <div class="kpi-label" style="color:${saldoMes>=0?'#185FA5':'#A32D2D'};">Saldo Projetado</div>
+      <div class="kpi-value" style="color:${saldoMes>=0?'#185FA5':'#D85A30'}">${R$(saldoMes)}</div>
       <div style="font-size:11px;color:#999;margin-top:4px;">${nomeMes}</div>
     </div>
     <div class="kpi-card" style="background:#f5f5f3;">
-      <div class="kpi-label" style="color:#3B6D11;">↑ Receitas previstas</div>
-      <div class="kpi-value" style="color:#1D9E75;">${R$(tRecMes)}</div>
+      <div class="kpi-label" style="color:#185FA5;">↑ Receitas previstas</div>
+      <div class="kpi-value" style="color:#185FA5;">${R$(tRecMes)}</div>
       <div style="margin-top:8px;max-height:120px;overflow-y:auto;">${recItens || '<div style="font-size:12px;color:#bbb;">Nenhum lançamento</div>'}</div>
     </div>`;
 };
@@ -2876,7 +2876,7 @@ window.verFornecedor = id => {
     </div>
     <div style="border-top:1px solid #f0f0ec;margin-top:18px;padding-top:14px;display:flex;justify-content:space-between;font-size:12px;color:#888;">
       <span>Ordens de compra: <b style="color:#1a1a18;">${ocs.length}</b></span>
-      <span>Volume total: <b style="color:#1D9E75;">${R$(totOC)}</b></span>
+      <span>Volume total: <b style="color:#185FA5;">${R$(totOC)}</b></span>
     </div>`;
   document.getElementById('modal-cli-popup').dataset.clienteId = '_forn_' + id;
   openModal('modal-cli-popup');
@@ -3364,12 +3364,12 @@ window.verOC = id => {
 '</div>' +
 
 '<div class="header">' +
-'<div><div style="font-size:23px;font-weight:700;color:#1D9E75;">AB Chemicals</div>' +
+'<div><div style="font-size:23px;font-weight:700;color:#185FA5;">AB Chemicals</div>' +
 '<div class="address">abchemicalspr@gmail.com<br>(43) 98871-2001</div></div>' +
 '<div class="oc-info"><div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.06em;">Ordem de Compra</div>' +
 '<div class="oc-cod">' + cod + '</div>' +
 '<div style="font-size:13px;color:#888;margin-top:8px;">Data: ' + fmtDt(o.data) + '</div>' +
-'<div style="margin-top:6px;"><span style="background:' + (o.status==='Recebido'?'#EAF3DE':o.status==='Em trânsito'?'#FAEEDA':'#F1EFE8') + ';color:' + (o.status==='Recebido'?'#3B6D11':o.status==='Em trânsito'?'#854F0B':'#5F5E5A') + ';padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;">' + o.status + '</span></div>' +
+'<div style="margin-top:6px;"><span style="background:' + (o.status==='Recebido'?'#E6F1FB':o.status==='Em trânsito'?'#FAEEDA':'#F1EFE8') + ';color:' + (o.status==='Recebido'?'#185FA5':o.status==='Em trânsito'?'#854F0B':'#5F5E5A') + ';padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;">' + o.status + '</span></div>' +
 '</div></div>' +
 
 '<div class="section"><div class="section-title">Dados do Fornecedor</div>' +
@@ -3415,7 +3415,7 @@ window.verOC = id => {
 '    window.opener.__enviarOCEmail(_ocId, function(ok, msg) {' +
 '      if (ok) {' +
 '        btn.textContent = "\u2705 Enviado para " + _emailForn;' +
-'        btn.style.background = "#1D9E75";' +
+'        btn.style.background = "#185FA5";' +
 '      } else {' +
 '        btn.textContent = "\u274C Erro: " + msg;' +
 '        btn.style.background = "#D85A30";' +
@@ -3499,7 +3499,7 @@ function desenharRxD(containerId, legendaId, badgeId, receitas, despesas, ym) {
     const nomesMes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
     const _nm = ym ? nomesMes[Number(ym.split('-')[1]) - 1] : nomesMes[new Date().getMonth()];
     badge.innerHTML = '<span style="font-size:10px;color:#aaa;margin-right:6px;">' + _nm + '</span>' + R$(saldo);
-    badge.style.color = saldo >= 0 ? '#1D9E75' : '#D85A30';
+    badge.style.color = saldo >= 0 ? '#185FA5' : '#D85A30';
   }
 
   const W = 460, H = 160;
@@ -3529,8 +3529,8 @@ function desenharRxD(containerId, legendaId, badgeId, receitas, despesas, ym) {
   `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:${H}px;display:block;">
     <defs>
       <linearGradient id="gR_${uid}" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#1D9E75"/>
-        <stop offset="100%" stop-color="#9FE1CB"/>
+        <stop offset="0%" stop-color="#185FA5"/>
+        <stop offset="100%" stop-color="#B8D4F5"/>
       </linearGradient>
       <linearGradient id="gD_${uid}" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="#D85A30"/>
@@ -3539,14 +3539,14 @@ function desenharRxD(containerId, legendaId, badgeId, receitas, despesas, ym) {
     </defs>
     <line x1="${PAD.l}" y1="${PAD.top + chartH}" x2="${W - PAD.r}" y2="${PAD.top + chartH}" stroke="#f0f0ec" stroke-width="1"/>
     <rect x="${xR}" y="${yR}" width="${barW}" height="${hR}" rx="6" ry="6" fill="url(#gR_${uid})"/>
-    <text x="${xR + barW/2}" y="${yR - 6}" text-anchor="middle" font-size="11" font-weight="600" fill="#0F6E56">${fmtV(receitas)}</text>
+    <text x="${xR + barW/2}" y="${yR - 6}" text-anchor="middle" font-size="11" font-weight="600" fill="#0F4A7D">${fmtV(receitas)}</text>
     <text x="${xR + barW/2}" y="${PAD.top + chartH + 16}" text-anchor="middle" font-size="11" fill="#888">Receitas</text>
     <rect x="${xD}" y="${yD}" width="${barW}" height="${hD}" rx="6" ry="6" fill="url(#gD_${uid})"/>
     <text x="${xD + barW/2}" y="${yD - 6}" text-anchor="middle" font-size="11" font-weight="600" fill="#A32D2D">${fmtV(despesas)}</text>
     <text x="${xD + barW/2}" y="${PAD.top + chartH + 16}" text-anchor="middle" font-size="11" fill="#888">Despesas</text>
     <line x1="${xR}" y1="${PAD.top + chartH - Math.round(Math.min(receitas,despesas)/mx*chartH)}"
           x2="${xD + barW}" y2="${PAD.top + chartH - Math.round(Math.min(receitas,despesas)/mx*chartH)}"
-          stroke="${saldo >= 0 ? '#1D9E75' : '#D85A30'}" stroke-width="1.5" stroke-dasharray="4 3"/>
+          stroke="${saldo >= 0 ? '#185FA5' : '#D85A30'}" stroke-width="1.5" stroke-dasharray="4 3"/>
   </svg>`;
 
   container.innerHTML = svg;
@@ -3554,12 +3554,12 @@ function desenharRxD(containerId, legendaId, badgeId, receitas, despesas, ym) {
   if (legenda) {
     legenda.innerHTML =
       '<span style="display:flex;align-items:center;gap:4px;">' +
-        '<span style="width:10px;height:10px;border-radius:2px;background:#1D9E75;display:inline-block;"></span>' +
+        '<span style="width:10px;height:10px;border-radius:2px;background:#185FA5;display:inline-block;"></span>' +
         'Receitas · ' + R$(receitas) + '</span>' +
       '<span style="display:flex;align-items:center;gap:4px;">' +
         '<span style="width:10px;height:10px;border-radius:2px;background:#D85A30;display:inline-block;"></span>' +
         'Despesas · ' + R$(despesas) + '</span>' +
-      '<span style="display:flex;align-items:center;gap:4px;font-weight:600;color:' + (saldo>=0?'#1D9E75':'#D85A30') + ';">' +
+      '<span style="display:flex;align-items:center;gap:4px;font-weight:600;color:' + (saldo>=0?'#185FA5':'#D85A30') + ';">' +
         'Saldo · ' + R$(saldo) + '</span>';
   }
 }
@@ -3649,9 +3649,9 @@ function renderDashboard() {
     const slot   = chartW / n;
 
     const COLORS = {
-      bar: ['#C0E8FF','#93C5E8','#6DCBB5','#3BAED4','#2E8FBF','#1D9E75','#166F52','#0F6E56','#1D9E75','#6DCBB5','#93C5E8','#C0E8FF'],
-      line:'#0F6E56', grid:'#f0f0ec',
-      up:'#1D9E75', dn:'#D85A30', txt:'#888'
+      bar: ['#C0E8FF','#93C5E8','#4FA8D8','#3BAED4','#2E8FBF','#185FA5','#0D3B66','#0F4A7D','#185FA5','#4FA8D8','#93C5E8','#C0E8FF'],
+      line:'#0F4A7D', grid:'#f0f0ec',
+      up:'#185FA5', dn:'#D85A30', txt:'#888'
     };
 
     const fmtK = v => v === 0 ? 'R$0' : v >= 1000 ? 'R$'+(v/1000).toFixed(1)+'k' : 'R$'+v;
@@ -3675,7 +3675,7 @@ function renderDashboard() {
       const x    = cx[i] - barW/2;
       const y    = padTop + chartH - bH;
       const isAt = ym === ymAtual;
-      const col  = isAt ? '#1D9E75' : COLORS.bar[Math.floor(i * 11 / Math.max(n-1,1))];
+      const col  = isAt ? '#185FA5' : COLORS.bar[Math.floor(i * 11 / Math.max(n-1,1))];
       const gid  = 'bg'+i;
       return `
         <defs>
@@ -3811,7 +3811,7 @@ window.relatorio = tipo => {
   }
   if (tipo==='fluxo') {
     const tR=D.receber.reduce((s,r)=>s+(parseFloat(r.valor)||0),0), tP=D.pagar.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
-    showRel('Fluxo de caixa',`<div class="stat-row"><span class="stat-key">Total a receber</span><span class="stat-val" style="color:#1D9E75">${R$(tR)}</span></div><div class="stat-row"><span class="stat-key">Total a pagar</span><span class="stat-val" style="color:#D85A30">${R$(tP)}</span></div><div class="stat-row"><span class="stat-key">Saldo projetado</span><span class="stat-val" style="font-size:16px;color:${tR-tP>=0?'#1D9E75':'#D85A30'}">${R$(tR-tP)}</span></div>`);
+    showRel('Fluxo de caixa',`<div class="stat-row"><span class="stat-key">Total a receber</span><span class="stat-val" style="color:#185FA5">${R$(tR)}</span></div><div class="stat-row"><span class="stat-key">Total a pagar</span><span class="stat-val" style="color:#D85A30">${R$(tP)}</span></div><div class="stat-row"><span class="stat-key">Saldo projetado</span><span class="stat-val" style="font-size:16px;color:${tR-tP>=0?'#185FA5':'#D85A30'}">${R$(tR-tP)}</span></div>`);
   }
   if (tipo==='giro') {
     const l=D.produtos.map(p=>{const v=D.pedidos.flatMap(pe=>pe.itens||[]).filter(i=>i.produto===p.nome).reduce((s,i)=>s+(parseFloat(i.qty)||0),0);return `<tr><td>${p.nome}</td><td>${p.estoque}</td><td>${v}</td><td>${p.estoque>0?(v/p.estoque).toFixed(1):'—'}</td></tr>`;}).join('');
@@ -3843,8 +3843,8 @@ function buildPedidoHtml(p, cli, cod, tot, itensRows) {
 '@import url(\'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap\');\n' +
 '* { box-sizing: border-box; margin: 0; padding: 0; }\n' +
 'body { font-family: \'Inter\', sans-serif; color: #1a1a18; background: #fff; padding: 48px; font-size: 13px; }\n' +
-'.header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 36px; padding-bottom: 24px; border-bottom: 2px solid #1D9E75; }\n' +
-'.logo-area .company { font-size: 22px; font-weight: 700; color: #1D9E75; }\n' +
+'.header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 36px; padding-bottom: 24px; border-bottom: 2px solid #185FA5; }\n' +
+'.logo-area .company { font-size: 22px; font-weight: 700; color: #185FA5; }\n' +
 '.logo-area .tagline { font-size: 11px; color: #999; margin-top: 3px; }\n' +
 '.logo-area .address { font-size: 11px; color: #888; margin-top: 6px; line-height: 1.6; }\n' +
 '.pedido-info { text-align: right; }\n' +
@@ -3852,7 +3852,7 @@ function buildPedidoHtml(p, cli, cod, tot, itensRows) {
 '.pedido-info .label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }\n' +
 '.pedido-info .val { font-size: 13px; margin-top: 2px; }\n' +
 '.section { margin-bottom: 28px; }\n' +
-'.section-title { font-size: 11px; font-weight: 600; color: #1D9E75; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #e8e7e0; }\n' +
+'.section-title { font-size: 11px; font-weight: 600; color: #185FA5; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #e8e7e0; }\n' +
 '.client-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }\n' +
 '.field .fl { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }\n' +
 '.field .fv { font-size: 13px; font-weight: 500; }\n' +
@@ -3864,10 +3864,10 @@ function buildPedidoHtml(p, cli, cod, tot, itensRows) {
 '.totals { margin-top: 20px; display: flex; justify-content: flex-end; }\n' +
 '.totals-box { width: 260px; }\n' +
 '.total-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: 13px; border-bottom: 1px solid #f0f0ec; }\n' +
-'.total-row:last-child { border-bottom: none; border-top: 2px solid #1D9E75; margin-top: 4px; padding-top: 10px; font-size: 15px; font-weight: 700; color: #1D9E75; }\n' +
+'.total-row:last-child { border-bottom: none; border-top: 2px solid #185FA5; margin-top: 4px; padding-top: 10px; font-size: 15px; font-weight: 700; color: #185FA5; }\n' +
 '.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }\n' +
 '.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }\n' +
-'.badge-green { background: #EAF3DE; color: #3B6D11; }\n' +
+'.badge-green { background: #E6F1FB; color: #185FA5; }\n' +
 '.badge-amber { background: #FAEEDA; color: #854F0B; }\n' +
 '.badge-blue  { background: #E6F1FB; color: #185FA5; }\n' +
 '.badge-gray  { background: #F1EFE8; color: #5F5E5A; }\n' +
@@ -3881,14 +3881,14 @@ function buildPedidoHtml(p, cli, cod, tot, itensRows) {
 '<body>\n' +
 
 '<div class="no-print">\n' +
-'  <button onclick="window.print()" style="background:#1D9E75;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;">\uD83D\uDDB8 Imprimir / Salvar PDF</button>\n' +
+'  <button onclick="window.print()" style="background:#185FA5;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;">\uD83D\uDDB8 Imprimir / Salvar PDF</button>\n' +
 '  <button id="btn-email" onclick="enviarEmail()" style="background:#185FA5;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;">\u2709\uFE0F Enviar por Email</button>\n' +
 '  <button onclick="window.close()" style="background:none;border:1px solid #ddd;border-radius:8px;padding:9px 14px;font-size:13px;cursor:pointer;">Fechar</button>\n' +
 '</div>\n' +
 
 '<div class="header">\n' +
 '  <div class="logo-area">\n' +
-'    <div style="font-size:24px;font-weight:700;color:#1D9E75;">AB Chemicals</div>\n' +
+'    <div style="font-size:24px;font-weight:700;color:#185FA5;">AB Chemicals</div>\n' +
 '    <div class="address" style="font-size:11px;color:#888;line-height:1.6;">abchemicalspr@gmail.com<br>(43) 98871-2001</div>\n' +
 '  </div>\n' +
 '  <div class="pedido-info">\n' +
@@ -3970,7 +3970,7 @@ function buildPedidoHtml(p, cli, cod, tot, itensRows) {
 '      window.opener.__enviarPedidoEmail(_pedidoId, function(ok, msg) {\n' +
 '        if (ok) {\n' +
 '          btn.textContent = "\u2705 Email enviado!";\n' +
-'          btn.style.background = "#1D9E75";\n' +
+'          btn.style.background = "#185FA5";\n' +
 '        } else {\n' +
 '          btn.textContent = "\u274C Erro: " + msg;\n' +
 '          btn.style.background = "#D85A30";\n' +
@@ -4015,7 +4015,7 @@ window.__enviarPedidoEmail = function(pedidoId, cb) {
   // imagem sozinha já passa disso). Trocamos por um cabeçalho em texto.
   const htmlCompleto = buildPedidoHtml(p, cli, cod, tot, itensRows)
     .replace(/<div class="no-print">[\s\S]*?<\/div>\n/, '')
-    .replace(/<img src="data:image\/[^"]*"[^>]*>/, '<div style="font-size:22px;font-weight:700;color:#1D9E75;">AB Chemicals</div>');
+    .replace(/<img src="data:image\/[^"]*"[^>]*>/, '<div style="font-size:22px;font-weight:700;color:#185FA5;">AB Chemicals</div>');
 
   function doSend() {
     emailjs.send('service_pedidos', 'template_xk8fggd', {
@@ -4313,9 +4313,9 @@ window.emitirNFeFocus = async () => {
       document.getElementById('nf-chave').value  = data.chave_nfe || '';
       document.getElementById('modal-emissao-nf').dataset.focusDanfe = _focusDanfeUrl(ref);
       document.getElementById('modal-emissao-nf').dataset.focusXml   = _focusXmlUrl(ref);
-      const danfeLink = ' <a href="' + _focusDanfeUrl(ref) + '" target="_blank" style="color:#1D9E75;font-weight:600;"><i class="ti ti-file-text"></i> Ver DANFE</a>';
+      const danfeLink = ' <a href="' + _focusDanfeUrl(ref) + '" target="_blank" style="color:#185FA5;font-weight:600;"><i class="ti ti-file-text"></i> Ver DANFE</a>';
       const xmlLink   = ' <a href="' + _focusXmlUrl(ref)   + '" target="_blank" style="color:#185FA5;font-weight:600;"><i class="ti ti-code"></i> Baixar XML</a>';
-      statusEl.innerHTML = '<span style="color:#1D9E75;">✅ NF-e autorizada! Número ' + data.numero + '.' + danfeLink + xmlLink + ' Clique em "Registrar NF no pedido" para salvar.</span>';
+      statusEl.innerHTML = '<span style="color:#185FA5;">✅ NF-e autorizada! Número ' + data.numero + '.' + danfeLink + xmlLink + ' Clique em "Registrar NF no pedido" para salvar.</span>';
     }
   } catch (err) {
     statusEl.innerHTML = '<span style="color:#C0392B;">❌ Falha de conexão com a Cloud Function: ' + String(err.message||err) + '</span>';
@@ -4355,9 +4355,9 @@ window.consultarNFeFocus = async () => {
       const modal = document.getElementById('modal-emissao-nf');
       modal.dataset.focusDanfe = _focusDanfeUrl(ref);
       modal.dataset.focusXml   = _focusXmlUrl(ref);
-      const danfeLink = ' <a href="' + _focusDanfeUrl(ref) + '" target="_blank" style="color:#1D9E75;font-weight:600;"><i class="ti ti-file-text"></i> Ver DANFE</a>';
+      const danfeLink = ' <a href="' + _focusDanfeUrl(ref) + '" target="_blank" style="color:#185FA5;font-weight:600;"><i class="ti ti-file-text"></i> Ver DANFE</a>';
       const xmlLink   = ' <a href="' + _focusXmlUrl(ref)   + '" target="_blank" style="color:#185FA5;font-weight:600;"><i class="ti ti-code"></i> Baixar XML</a>';
-      statusEl.innerHTML = '<span style="color:#1D9E75;">✅ NF-e autorizada! Número ' + (data.numero||'') + '.' + danfeLink + xmlLink + ' Clique em "Registrar NF no pedido" para salvar.</span>';
+      statusEl.innerHTML = '<span style="color:#185FA5;">✅ NF-e autorizada! Número ' + (data.numero||'') + '.' + danfeLink + xmlLink + ' Clique em "Registrar NF no pedido" para salvar.</span>';
     } else if (data.status === 'erro_autorizacao' || data.status === 'cancelado' || data.status === 'denegado') {
       statusEl.innerHTML = '<span style="color:#C0392B;">❌ Status: ' + data.status + (data.mensagem ? (' — ' + data.mensagem) : '') + '</span>';
     } else {
@@ -4379,7 +4379,7 @@ window.verDadosNF = id => {
   document.getElementById('ver-nf-corpo').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 20px;margin-bottom:16px;">
       <div><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">NF-e Número</div>
-           <div style="font-size:18px;font-weight:700;color:#1D9E75;">${p.nf_numero||'—'}</div></div>
+           <div style="font-size:18px;font-weight:700;color:#185FA5;">${p.nf_numero||'—'}</div></div>
       <div><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Data emissão</div>
            <div style="font-size:14px;font-weight:500;">${fmtDt(p.nf_data)||'—'}</div></div>
       <div style="grid-column:1/-1;"><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Chave de acesso</div>
@@ -4391,7 +4391,7 @@ window.verDadosNF = id => {
       <div><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Total</div>
            <div style="font-size:13px;font-weight:600;">${R$(totPed(p))}</div></div>
     </div>
-    <div style="background:#EAF3DE;border-radius:8px;padding:10px 14px;font-size:12px;color:#3B6D11;">
+    <div style="background:#E6F1FB;border-radius:8px;padding:10px 14px;font-size:12px;color:#185FA5;">
       <i class="ti ti-check"></i> NF-e registrada com sucesso no pedido.
     </div>
     ${(p.nf_danfe || p.nf_xml) ? `
@@ -4828,8 +4828,8 @@ window.analisarNF = async () => {
       <tbody>`;
 
     nfItensAnalisados.forEach(it => {
-      const cor = it.produtoExiste ? '#3B6D11' : '#854F0B';
-      const bg  = it.produtoExiste ? '#EAF3DE' : '#FAEEDA';
+      const cor = it.produtoExiste ? '#185FA5' : '#854F0B';
+      const bg  = it.produtoExiste ? '#E6F1FB' : '#FAEEDA';
       const status = it.produtoExiste ? '✅ ' + it.produtoNome : '🆕 Novo produto';
       html += `<tr>
         <td style="font-size:12px;max-width:200px;word-break:break-word;">${it.nome}</td>
@@ -4847,7 +4847,7 @@ window.analisarNF = async () => {
 
     document.getElementById('nf-itens-preview').innerHTML = html;
     document.getElementById('nf-status').innerHTML =
-      '<span style="color:#1D9E75;font-weight:500;">✅ Análise concluída! Escolha a ação e confirme.</span>';
+      '<span style="color:#185FA5;font-weight:500;">✅ Análise concluída! Escolha a ação e confirme.</span>';
     document.getElementById('btn-confirmar-nf').style.display = 'inline-flex';
 
   } catch(err) {
@@ -4937,7 +4937,7 @@ window.salvarAnthropicKey = () => {
   const key = document.getElementById('anthropic-key-input').value.trim();
   if (!key.startsWith('sk-ant-')) { toast('❌ Chave inválida. Deve começar com sk-ant-'); return; }
   localStorage.setItem('anthropic_api_key', key);
-  document.getElementById('anthropic-key-status').innerHTML = '<span style="color:#1D9E75;">✅ Chave salva!</span>';
+  document.getElementById('anthropic-key-status').innerHTML = '<span style="color:#185FA5;">✅ Chave salva!</span>';
   setTimeout(() => { const el = document.getElementById('anthropic-key-status'); if(el) el.textContent = ''; }, 3000);
 };
 
@@ -4950,7 +4950,7 @@ window.salvarFocusFnUrl = () => {
   const url = document.getElementById('focus-fn-url-input').value.trim().replace(/\/$/, '');
   if (url && !/^https:\/\/.+/.test(url)) { toast('❌ URL inválida. Deve começar com https://'); return; }
   localStorage.setItem('focus_fn_url', url);
-  document.getElementById('focus-fn-url-status').innerHTML = '<span style="color:#1D9E75;">✅ URL salva!</span>';
+  document.getElementById('focus-fn-url-status').innerHTML = '<span style="color:#185FA5;">✅ URL salva!</span>';
   setTimeout(() => { const el = document.getElementById('focus-fn-url-status'); if(el) el.textContent = ''; }, 3000);
 };
 
@@ -5066,11 +5066,11 @@ window.goTo = (id, btn) => {
       const k = getOpenAIKey();
       const el = document.getElementById('anthropic-key-input');
       const st = document.getElementById('anthropic-key-status');
-      if (el && k) { el.value = k; if (st) st.innerHTML = '<span style="color:#1D9E75;">✅ Chave configurada</span>'; }
+      if (el && k) { el.value = k; if (st) st.innerHTML = '<span style="color:#185FA5;">✅ Chave configurada</span>'; }
       const fu = getFocusFnUrl();
       const elF = document.getElementById('focus-fn-url-input');
       const stF = document.getElementById('focus-fn-url-status');
-      if (elF && fu) { elF.value = fu; if (stF) stF.innerHTML = '<span style="color:#1D9E75;">✅ URL configurada</span>'; }
+      if (elF && fu) { elF.value = fu; if (stF) stF.innerHTML = '<span style="color:#185FA5;">✅ URL configurada</span>'; }
     }, 50);
   }
   // redesenhar gráficos que dependem de visibilidade
@@ -5132,7 +5132,7 @@ function gerarAlertasInteligentes(){
       el.innerHTML='<div class="section-title">Alertas do sistema</div>' +
         (alertas.length
           ? '<div style="font-size:13px;">'+alertas.map(a=>'<div style="margin:6px 0;">'+a+'</div>').join('')+'</div>'
-          : '<div style="color:#1D9E75;font-size:13px;">✅ Nenhum alerta crítico.</div>');
+          : '<div style="color:#185FA5;font-size:13px;">✅ Nenhum alerta crítico.</div>');
     }
   }catch(e){console.error(e);}
 }
