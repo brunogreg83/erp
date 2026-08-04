@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AB Chemicals · Modo de Uso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --azul-950:#0A2A3D;
+  --azul-800:#0F3E5A;
+  --azul-600:#1B6390;
+  --aco-200:#C9D6DD;
+  --aco-100:#EEF2F4;
+  --papel:#F7F5F0;
+  --amarelo-seg:#F2A93B;
+  --tinta:#12232C;
+  --verde-ok:#2F7A52;
+  --vermelho:#B3402C;
+  --radius:2px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--papel);
+  color:var(--tinta);
+  min-height:100vh;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(10,42,61,0.06) 1px, transparent 0);
+  background-size:22px 22px;
+}
+.eyebrow{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--azul-600);
+  font-weight:600;
+}
+h1,h2,h3{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.02em;}
+button{font-family:'Inter',sans-serif;cursor:pointer;border:none;}
+input,select,textarea{font-family:'Inter',sans-serif;}
+
+/* ---------- LOGIN ---------- */
+#tela-login{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+}
+.painel-login{
+  background:var(--azul-950);color:#fff;width:100%;max-width:380px;
+  padding:40px 32px;border-radius:var(--radius);
+  border-top:4px solid var(--amarelo-seg);
+}
+.painel-login h1{font-size:22px;margin-bottom:4px;}
+.painel-login .eyebrow{color:var(--amarelo-seg);margin-bottom:10px;display:block;}
+.campo{margin-top:18px;}
+.campo label{display:block;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--aco-200);margin-bottom:6px;}
+.campo input{
+  width:100%;padding:11px 12px;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:var(--radius);font-size:14px;
+}
+.campo input:focus{outline:none;border-color:var(--amarelo-seg);}
+.btn-primario{
+  margin-top:24px;width:100%;background:var(--amarelo-seg);color:var(--azul-950);
+  font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:13px;
+  padding:13px;border-radius:var(--radius);
+}
+.erro-msg{color:#FF9E85;font-size:12.5px;margin-top:12px;min-height:16px;}
+
+/* ---------- HEADER ADMIN ---------- */
+#app-admin{display:none;}
+header.topo{
+  background:var(--azul-950);color:#fff;padding:18px 28px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+  border-bottom:4px solid var(--amarelo-seg);
+}
+header.topo .marca{display:flex;flex-direction:column;}
+header.topo .marca .eyebrow{color:var(--amarelo-seg);}
+header.topo .marca h1{font-size:19px;}
+header.topo .acoes-topo{display:flex;gap:10px;align-items:center;}
+.btn-sair{background:transparent;color:var(--aco-200);font-size:12px;text-decoration:underline;}
+.btn-novo{
+  background:var(--amarelo-seg);color:var(--azul-950);font-weight:700;
+  padding:10px 18px;border-radius:var(--radius);font-size:13px;text-transform:uppercase;letter-spacing:.05em;
+}
+.btn-importar{
+  background:transparent;color:#fff;font-weight:600;border:1px solid rgba(255,255,255,.35);
+  padding:9px 16px;border-radius:var(--radius);font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;
+}
+
+main.conteudo{max-width:1100px;margin:0 auto;padding:28px 20px 60px;}
+.barra-busca{display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap;}
+.barra-busca input, .barra-busca select{
+  padding:11px 12px;border:1px solid var(--aco-200);border-radius:var(--radius);font-size:14px;background:#fff;
+}
+.barra-busca input{flex:1;min-width:200px;}
+
+.grade-produtos{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+.card-produto{
+  background:#fff;border:1px solid var(--aco-200);border-radius:var(--radius);
+  padding:18px;position:relative;border-left:4px solid var(--azul-600);
+}
+.card-produto .categoria{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--azul-600);text-transform:uppercase;letter-spacing:.08em;}
+.card-produto h3{font-size:17px;margin:6px 0 10px;line-height:1.2;}
+.card-produto .diluicao-chip{
+  display:inline-block;background:var(--aco-100);color:var(--azul-800);
+  font-family:'JetBrains Mono',monospace;font-size:11.5px;padding:4px 8px;border-radius:var(--radius);margin-bottom:12px;
+}
+.linha-acoes{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
+.linha-acoes button{
+  flex:1;padding:8px 6px;font-size:12px;border-radius:var(--radius);font-weight:600;
+  text-transform:uppercase;letter-spacing:.03em;
+}
+.btn-qr{background:var(--azul-950);color:#fff;}
+.btn-editar{background:var(--aco-100);color:var(--azul-950);}
+.btn-excluir{background:#fff;color:var(--vermelho);border:1px solid var(--vermelho)!important;}
+.vazio{text-align:center;padding:60px 20px;color:var(--azul-600);}
+.vazio .eyebrow{display:block;margin-bottom:8px;}
+
+/* ---------- MODAIS ---------- */
+.overlay{
+  display:none;position:fixed;inset:0;background:rgba(10,42,61,.55);
+  align-items:center;justify-content:center;padding:20px;z-index:50;
+}
+.overlay.ativo{display:flex;}
+.modal{
+  background:#fff;width:100%;max-width:480px;border-radius:var(--radius);
+  max-height:90vh;overflow-y:auto;border-top:4px solid var(--amarelo-seg);
+}
+.modal-cabecalho{padding:20px 24px 0;}
+.modal-cabecalho h2{font-size:18px;}
+.modal-corpo{padding:18px 24px 24px;}
+.campo-form{margin-bottom:14px;}
+.campo-form label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--azul-800);margin-bottom:5px;font-weight:600;}
+.campo-form input, .campo-form select, .campo-form textarea{
+  width:100%;padding:10px 11px;border:1px solid var(--aco-200);border-radius:var(--radius);font-size:14px;
+}
+.campo-form textarea{resize:vertical;min-height:80px;font-family:'Inter',sans-serif;}
+.dica-campo{font-size:11.5px;color:#6B7C85;margin-top:4px;}
+.item-import{
+  display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--aco-100);font-size:13.5px;
+}
+.item-import input{width:auto;}
+.item-import .cat-import{
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--azul-600);
+  text-transform:uppercase;margin-left:auto;
+}
+.item-import.ja-existe{opacity:.5;}
+.acoes-modal{display:flex;gap:10px;margin-top:20px;}
+.acoes-modal button{flex:1;padding:12px;border-radius:var(--radius);font-weight:700;text-transform:uppercase;font-size:12.5px;letter-spacing:.04em;}
+.btn-cancelar{background:var(--aco-100);color:var(--azul-950);}
+.btn-salvar{background:var(--azul-950);color:#fff;}
+
+/* modal QR */
+.modal-qr .modal-corpo{text-align:center;}
+.etiqueta-qr{text-align:center;margin-bottom:16px;}
+.etiqueta-nome{
+  font-family:'Oswald',sans-serif;font-weight:600;font-size:28px;
+  color:#000000;line-height:1.2;padding:0 6px;
+}
+.etiqueta-legenda{
+  font-family:'JetBrains Mono',monospace;font-size:17px;letter-spacing:.14em;
+  text-transform:uppercase;color:#000000;font-weight:700;margin-top:10px;
+}
+.moldura-qr{
+  display:inline-block;position:relative;padding:26px;background:#fff;margin:10px 0 18px;
+}
+.moldura-qr::before,.moldura-qr::after,.moldura-qr .mc2,.moldura-qr .mc3{
+  content:'';position:absolute;width:18px;height:18px;border-color:var(--azul-950);
+}
+.moldura-qr::before{top:0;left:0;border-top:3px solid;border-left:3px solid;}
+.moldura-qr::after{bottom:0;right:0;border-bottom:3px solid;border-right:3px solid;}
+.moldura-qr .mc2{top:0;right:0;border-top:3px solid var(--azul-950);border-right:3px solid var(--azul-950);}
+.moldura-qr .mc3{bottom:0;left:0;border-bottom:3px solid var(--azul-950);border-left:3px solid var(--azul-950);}
+#qr-canvas-area{display:inline-block;}
+#qr-canvas-area canvas,#qr-canvas-area img{width:200px!important;height:200px!important;}
+.link-qr{
+  font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--azul-600);
+  word-break:break-all;background:var(--aco-100);padding:8px;border-radius:var(--radius);margin-bottom:16px;
+}
+
+/* ---------- PÁGINA PÚBLICA (PLACA) ---------- */
+#app-publico{display:none;min-height:100vh;padding:20px;}
+.placa{
+  max-width:520px;margin:0 auto;background:#fff;border-radius:var(--radius);
+  border-top:6px solid var(--amarelo-seg);overflow:hidden;
+}
+.placa-topo{background:var(--azul-950);color:#fff;padding:26px 26px 20px;text-align:center;}
+.placa-topo .eyebrow{color:var(--amarelo-seg);}
+.placa-topo h1{font-size:24px;margin-top:6px;line-height:1.15;}
+.placa-topo .cat{font-size:12px;color:var(--aco-200);margin-top:6px;letter-spacing:.06em;text-transform:uppercase;}
+.placa-corpo{padding:24px 26px 28px;}
+.bloco-diluicao{
+  background:var(--aco-100);border-radius:var(--radius);padding:14px 16px;margin-bottom:22px;
+  display:flex;align-items:baseline;justify-content:space-between;
+}
+.bloco-diluicao .rotulo{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--azul-800);font-weight:600;}
+.bloco-diluicao .valor{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:600;color:var(--azul-950);}
+.titulo-secao{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--azul-800);font-weight:700;margin-bottom:12px;border-bottom:2px solid var(--aco-100);padding-bottom:6px;}
+.lista-passos{list-style:none;margin-bottom:24px;}
+.lista-passos li{
+  display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--aco-100);font-size:14.5px;line-height:1.4;
+}
+.lista-passos li:last-child{border-bottom:none;}
+.num-passo{
+  font-family:'JetBrains Mono',monospace;font-weight:700;color:#fff;background:var(--azul-600);
+  width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:12px;flex-shrink:0;
+}
+.bloco-cuidados{
+  background:#FEF6E9;border:1px solid var(--amarelo-seg);border-radius:var(--radius);
+  padding:14px 16px;font-size:13.5px;line-height:1.5;color:#6B4A0E;
+}
+.bloco-cuidados .titulo-secao{color:#8A5A0E;border-bottom-color:#F2DDB0;}
+.placa-rodape{
+  text-align:center;padding:16px;font-family:'JetBrains Mono',monospace;font-size:10.5px;
+  color:#8A99A1;letter-spacing:.06em;text-transform:uppercase;
+}
+.nao-encontrado{
+  max-width:400px;margin:80px auto;text-align:center;color:var(--azul-800);
+}
+</style>
+</head>
+<body>
+
+<!-- ============ TELA DE LOGIN ============ -->
+<div id="tela-login">
+  <div class="painel-login">
+    <span class="eyebrow">AB Chemicals</span>
+    <h1>Modo de Uso · Acesso</h1>
+    <form id="form-login">
+      <div class="campo">
+        <label>E-mail</label>
+        <input type="email" id="login-email" required>
+      </div>
+      <div class="campo">
+        <label>Senha</label>
+        <input type="password" id="login-senha" required>
+      </div>
+      <div class="erro-msg" id="login-erro"></div>
+      <button type="submit" class="btn-primario">Entrar</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ APP ADMIN ============ -->
+<div id="app-admin">
+  <header class="topo">
+    <div class="marca">
+      <span class="eyebrow">AB Chemicals</span>
+      <h1>Gerador de QR · Modo de Uso</h1>
+    </div>
+    <div class="acoes-topo">
+      <button class="btn-importar" id="btn-importar-catalogo">Importar do Catálogo</button>
+      <button class="btn-novo" id="btn-novo-produto">+ Novo produto</button>
+      <button class="btn-sair" id="btn-sair">Sair</button>
+    </div>
+  </header>
+  <main class="conteudo">
+    <div class="barra-busca">
+      <input type="text" id="busca-produto" placeholder="Buscar produto...">
+      <select id="filtro-categoria">
+        <option value="">Todas categorias</option>
+        <option>Detergentes</option>
+        <option>Desengordurantes</option>
+        <option>Desinfetantes</option>
+        <option>Limpeza Geral</option>
+        <option>Tratamento de Piso</option>
+        <option>Lavanderia</option>
+        <option>Lava Car</option>
+        <option>Descartáveis</option>
+      </select>
+    </div>
+    <div class="grade-produtos" id="grade-produtos"></div>
+    <div class="vazio" id="estado-vazio" style="display:none;">
+      <span class="eyebrow">Nenhum produto</span>
+      <p>Cadastre um produto para gerar o primeiro QR Code.</p>
+    </div>
+  </main>
+</div>
+
+<!-- ============ MODAL PRODUTO ============ -->
+<div class="overlay" id="overlay-produto">
+  <div class="modal">
+    <div class="modal-cabecalho"><h2 id="titulo-modal-produto">Novo produto</h2></div>
+    <div class="modal-corpo">
+      <form id="form-produto">
+        <input type="hidden" id="produto-id">
+        <div class="campo-form">
+          <label>Nome do produto</label>
+          <input type="text" id="produto-nome" required>
+        </div>
+        <div class="campo-form">
+          <label>Categoria</label>
+          <select id="produto-categoria" required>
+            <option value="">Selecione</option>
+            <option>Detergentes</option>
+            <option>Desengordurantes</option>
+            <option>Desinfetantes</option>
+            <option>Limpeza Geral</option>
+            <option>Tratamento de Piso</option>
+            <option>Lavanderia</option>
+            <option>Lava Car</option>
+            <option>Descartáveis</option>
+          </select>
+        </div>
+        <div class="campo-form">
+          <label>Diluição</label>
+          <input type="text" id="produto-diluicao" placeholder="Ex: 1:40">
+        </div>
+        <div class="campo-form">
+          <label>Modo de uso (passos)</label>
+          <textarea id="produto-passos" placeholder="Um passo por linha. Ex:&#10;Dilua o produto conforme indicado&#10;Aplique sobre a superfície&#10;Deixe agir por 10 minutos&#10;Enxágue com água limpa" required></textarea>
+          <div class="dica-campo">Cada linha vira um passo numerado na página do QR Code.</div>
+        </div>
+        <div class="campo-form">
+          <label>Cuidados / EPI (opcional)</label>
+          <textarea id="produto-cuidados" placeholder="Ex: Use luvas e óculos de proteção. Não misture com outros produtos químicos."></textarea>
+        </div>
+        <div class="acoes-modal">
+          <button type="button" class="btn-cancelar" id="btn-cancelar-produto">Cancelar</button>
+          <button type="submit" class="btn-salvar">Salvar produto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL IMPORTAR DO CATÁLOGO ============ -->
+<div class="overlay" id="overlay-importar">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-cabecalho"><h2>Importar do Catálogo</h2></div>
+    <div class="modal-corpo">
+      <div class="campo-form">
+        <label>Nome da coleção no Firestore do Catálogo</label>
+        <input type="text" id="import-colecao" value="produtos">
+        <div class="dica-campo">Se a busca não trouxer nada, tente outro nome (ex: "catalogo", "products").</div>
+      </div>
+      <div class="acoes-modal" style="margin-top:0;margin-bottom:16px;">
+        <button type="button" class="btn-cancelar" id="btn-buscar-catalogo" style="flex:none;padding:10px 18px;">Buscar produtos</button>
+      </div>
+      <div id="import-status" class="dica-campo"></div>
+      <div id="import-lista" style="max-height:320px;overflow-y:auto;"></div>
+      <div class="acoes-modal">
+        <button type="button" class="btn-cancelar" id="btn-cancelar-importar">Fechar</button>
+        <button type="button" class="btn-salvar" id="btn-confirmar-importar" style="display:none;">Importar selecionados</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL QR ============ -->
+<div class="overlay" id="overlay-qr">
+  <div class="modal modal-qr">
+    <div class="modal-cabecalho"><h2 id="titulo-modal-qr">QR Code</h2></div>
+    <div class="modal-corpo">
+      <div class="etiqueta-qr">
+        <div class="etiqueta-nome" id="etiqueta-nome">Nome do produto</div>
+        <div class="etiqueta-legenda">MODO DE USO</div>
+      </div>
+      <div class="moldura-qr">
+        <span class="mc2"></span><span class="mc3"></span>
+        <div id="qr-canvas-area"></div>
+      </div>
+      <div class="link-qr" id="link-qr-texto"></div>
+      <div class="acoes-modal">
+        <button type="button" class="btn-cancelar" id="btn-fechar-qr">Fechar</button>
+        <button type="button" class="btn-salvar" id="btn-baixar-qr">Baixar PNG</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PÁGINA PÚBLICA (visitante que escaneia o QR) ============ -->
+<div id="app-publico">
+  <div id="placa-conteudo"></div>
+</div>
+
+<script>
+// ---------------------------------------------------------------
+// CONFIGURAÇÃO FIREBASE — substitua pelos dados do SEU projeto novo
+// (Console Firebase > Configurações do projeto > Seus apps > SDK setup)
+// ---------------------------------------------------------------
+const firebaseConfig = {
+  apiKey: "AIzaSyBtAFSaiKzoGy8p79U30y1G493gqnKp-Gc",
+  authDomain: "qrcode-a0f2a.firebaseapp.com",
+  projectId: "qrcode-a0f2a",
+  storageBucket: "qrcode-a0f2a.firebasestorage.app",
+  messagingSenderId: "322218234968",
+  appId: "1:322218234968:web:e82ef64d8a0925fe06e62d"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const COLECAO = "produtos_modo_uso";
+
+// App Firebase secundário: projeto do Gerador de Catálogo (somente leitura, para importação)
+const catalogoConfig = {
+  apiKey: "AIzaSyC8oIu9BJBmM2QMQHPKqIEegYtUny1uDJE",
+  authDomain: "catalogo-68e13.firebaseapp.com",
+  projectId: "catalogo-68e13",
+  storageBucket: "catalogo-68e13.firebasestorage.app",
+  messagingSenderId: "946056802788",
+  appId: "1:946056802788:web:a9d30721fb48a7a85f57f1"
+};
+const appCatalogo = firebase.initializeApp(catalogoConfig, "catalogo");
+const dbCatalogo = appCatalogo.firestore();
+const CATEGORIA_EXCLUIDA = "Descartáveis";
+
+let produtosCache = [];
+let qrAtualCanvas = null;
+
+// ---------------------------------------------------------------
+// ROTEAMENTO: ?id=XXX abre a placa pública, senão abre o admin
+// ---------------------------------------------------------------
+const params = new URLSearchParams(window.location.search);
+const idProduto = params.get("id");
+
+if (idProduto) {
+  document.getElementById("tela-login").style.display = "none";
+  document.getElementById("app-publico").style.display = "block";
+  carregarPlacaPublica(idProduto);
+} else {
+  auth.onAuthStateChanged(function(usuario){
+    if (usuario) {
+      document.getElementById("tela-login").style.display = "none";
+      document.getElementById("app-admin").style.display = "block";
+      carregarProdutos();
+    } else {
+      document.getElementById("tela-login").style.display = "flex";
+      document.getElementById("app-admin").style.display = "none";
+    }
+  });
+}
+
+// ---------------------------------------------------------------
+// LOGIN
+// ---------------------------------------------------------------
+document.getElementById("form-login").addEventListener("submit", function(e){
+  e.preventDefault();
+  const email = document.getElementById("login-email").value;
+  const senha = document.getElementById("login-senha").value;
+  const erroEl = document.getElementById("login-erro");
+  erroEl.textContent = "";
+  auth.signInWithEmailAndPassword(email, senha).catch(function(err){
+    erroEl.textContent = "E-mail ou senha inválidos.";
+  });
+});
+document.getElementById("btn-sair").addEventListener("click", function(){
+  auth.signOut();
+});
+
+// ---------------------------------------------------------------
+// CARREGAR / RENDERIZAR PRODUTOS (ADMIN)
+// ---------------------------------------------------------------
+function carregarProdutos(){
+  db.collection(COLECAO).orderBy("nome").onSnapshot(function(snap){
+    produtosCache = [];
+    snap.forEach(function(doc){
+      produtosCache.push(Object.assign({id: doc.id}, doc.data()));
+    });
+    renderizarGrade();
+  });
+}
+
+function renderizarGrade(){
+  const termo = document.getElementById("busca-produto").value.toLowerCase();
+  const categoria = document.getElementById("filtro-categoria").value;
+  const grade = document.getElementById("grade-produtos");
+  const vazio = document.getElementById("estado-vazio");
+
+  const filtrados = produtosCache.filter(function(p){
+    const bateBusca = p.nome.toLowerCase().indexOf(termo) !== -1;
+    const bateCategoria = !categoria || p.categoria === categoria;
+    return bateBusca && bateCategoria;
+  });
+
+  grade.innerHTML = "";
+  vazio.style.display = filtrados.length ? "none" : "block";
+
+  filtrados.forEach(function(p){
+    const card = document.createElement("div");
+    card.className = "card-produto";
+    card.innerHTML =
+      '<div class="categoria">' + (p.categoria || "—") + '</div>' +
+      '<h3>' + escapeHtml(p.nome) + '</h3>' +
+      (p.diluicao ? '<span class="diluicao-chip">Diluição ' + escapeHtml(p.diluicao) + '</span>' : '') +
+      '<div class="linha-acoes">' +
+        '<button class="btn-qr" data-id="' + p.id + '">QR Code</button>' +
+        '<button class="btn-editar" data-id="' + p.id + '">Editar</button>' +
+        '<button class="btn-excluir" data-id="' + p.id + '">Excluir</button>' +
+      '</div>';
+    grade.appendChild(card);
+  });
+
+  grade.querySelectorAll(".btn-qr").forEach(function(b){
+    b.addEventListener("click", function(){ abrirModalQr(b.dataset.id); });
+  });
+  grade.querySelectorAll(".btn-editar").forEach(function(b){
+    b.addEventListener("click", function(){ abrirModalProduto(b.dataset.id); });
+  });
+  grade.querySelectorAll(".btn-excluir").forEach(function(b){
+    b.addEventListener("click", function(){ excluirProduto(b.dataset.id); });
+  });
+}
+
+document.getElementById("busca-produto").addEventListener("input", renderizarGrade);
+document.getElementById("filtro-categoria").addEventListener("change", renderizarGrade);
+
+// ---------------------------------------------------------------
+// IMPORTAR DO GERADOR DE CATÁLOGO
+// ---------------------------------------------------------------
+let produtosCatalogoEncontrados = [];
+
+document.getElementById("btn-importar-catalogo").addEventListener("click", function(){
+  document.getElementById("import-status").textContent = "";
+  document.getElementById("import-lista").innerHTML = "";
+  document.getElementById("btn-confirmar-importar").style.display = "none";
+  document.getElementById("overlay-importar").classList.add("ativo");
+});
+document.getElementById("btn-cancelar-importar").addEventListener("click", function(){
+  document.getElementById("overlay-importar").classList.remove("ativo");
+});
+
+document.getElementById("btn-buscar-catalogo").addEventListener("click", function(){
+  const colecao = document.getElementById("import-colecao").value.trim();
+  const statusEl = document.getElementById("import-status");
+  const listaEl = document.getElementById("import-lista");
+  statusEl.textContent = "Buscando...";
+  listaEl.innerHTML = "";
+  document.getElementById("btn-confirmar-importar").style.display = "none";
+
+  dbCatalogo.collection(colecao).get().then(function(snap){
+    if (snap.empty) {
+      statusEl.textContent = 'Nenhum produto encontrado na coleção "' + colecao + '". Tente outro nome.';
+      return;
+    }
+    const nomesJaImportados = produtosCache.map(function(p){ return (p.nome || "").toLowerCase().trim(); });
+
+    produtosCatalogoEncontrados = [];
+    snap.forEach(function(doc){
+      const d = doc.data();
+      if ((d.categoria || "") === CATEGORIA_EXCLUIDA) return;
+      if (!d.nome) return;
+      const nomeCurto = d.nome.split("-")[0].trim();
+      const descricao = (d.descricao || "").trim();
+      const passosDescricao = descricao ? descricao.split("\n").map(function(s){return s.trim();}).filter(Boolean) : [];
+      produtosCatalogoEncontrados.push({
+        nome: nomeCurto,
+        categoria: d.categoria || "",
+        passos: passosDescricao
+      });
+    });
+
+    if (!produtosCatalogoEncontrados.length) {
+      statusEl.textContent = "Nenhum produto elegível encontrado (fora da categoria Descartáveis).";
+      return;
+    }
+
+    statusEl.textContent = produtosCatalogoEncontrados.length + " produto(s) encontrado(s). Desmarcados os que já existem aqui.";
+    listaEl.innerHTML = "";
+    produtosCatalogoEncontrados.forEach(function(p, i){
+      const jaExiste = nomesJaImportados.indexOf(p.nome.toLowerCase().trim()) !== -1;
+      const linha = document.createElement("label");
+      linha.className = "item-import" + (jaExiste ? " ja-existe" : "");
+      linha.innerHTML =
+        '<input type="checkbox" data-idx="' + i + '"' + (jaExiste ? "" : " checked") + '>' +
+        '<span>' + escapeHtml(p.nome) + '</span>' +
+        '<span class="cat-import">' + escapeHtml(p.categoria) + (jaExiste ? " · já existe" : "") + '</span>';
+      listaEl.appendChild(linha);
+    });
+    document.getElementById("btn-confirmar-importar").style.display = "block";
+  }).catch(function(err){
+    statusEl.textContent = "Erro ao buscar: " + err.message;
+  });
+});
+
+document.getElementById("btn-confirmar-importar").addEventListener("click", function(){
+  const checkboxes = document.querySelectorAll('#import-lista input[type="checkbox"]:checked');
+  if (!checkboxes.length) return;
+  const statusEl = document.getElementById("import-status");
+  statusEl.textContent = "Importando...";
+
+  const lote = [];
+  checkboxes.forEach(function(cb){
+    const p = produtosCatalogoEncontrados[Number(cb.dataset.idx)];
+    lote.push(db.collection(COLECAO).add({
+      nome: p.nome,
+      categoria: p.categoria,
+      diluicao: "",
+      passos: p.passos || [],
+      cuidados: ""
+    }));
+  });
+
+  Promise.all(lote).then(function(){
+    statusEl.textContent = lote.length + " produto(s) importado(s) com o modo de uso preenchido a partir da descrição do catálogo.";
+    document.getElementById("btn-confirmar-importar").style.display = "none";
+  }).catch(function(err){
+    statusEl.textContent = "Erro ao importar: " + err.message;
+  });
+});
+
+// ---------------------------------------------------------------
+// MODAL PRODUTO (criar / editar)
+// ---------------------------------------------------------------
+document.getElementById("btn-novo-produto").addEventListener("click", function(){
+  abrirModalProduto(null);
+});
+document.getElementById("btn-cancelar-produto").addEventListener("click", fecharModalProduto);
+
+function abrirModalProduto(id){
+  const overlay = document.getElementById("overlay-produto");
+  const form = document.getElementById("form-produto");
+  form.reset();
+  document.getElementById("produto-id").value = "";
+
+  if (id) {
+    const p = produtosCache.find(function(x){ return x.id === id; });
+    document.getElementById("titulo-modal-produto").textContent = "Editar produto";
+    document.getElementById("produto-id").value = p.id;
+    document.getElementById("produto-nome").value = p.nome || "";
+    document.getElementById("produto-categoria").value = p.categoria || "";
+    document.getElementById("produto-diluicao").value = p.diluicao || "";
+    document.getElementById("produto-passos").value = (p.passos || []).join("\n");
+    document.getElementById("produto-cuidados").value = p.cuidados || "";
+  } else {
+    document.getElementById("titulo-modal-produto").textContent = "Novo produto";
+  }
+  overlay.classList.add("ativo");
+}
+function fecharModalProduto(){
+  document.getElementById("overlay-produto").classList.remove("ativo");
+}
+
+document.getElementById("form-produto").addEventListener("submit", function(e){
+  e.preventDefault();
+  const id = document.getElementById("produto-id").value;
+  const passos = document.getElementById("produto-passos").value
+    .split("\n").map(function(s){return s.trim();}).filter(Boolean);
+
+  const dados = {
+    nome: document.getElementById("produto-nome").value.trim(),
+    categoria: document.getElementById("produto-categoria").value,
+    diluicao: document.getElementById("produto-diluicao").value.trim(),
+    passos: passos,
+    cuidados: document.getElementById("produto-cuidados").value.trim()
+  };
+
+  const promessa = id
+    ? db.collection(COLECAO).doc(id).update(dados)
+    : db.collection(COLECAO).add(dados);
+
+  promessa.then(fecharModalProduto).catch(function(err){
+    alert("Erro ao salvar: " + err.message);
+  });
+});
+
+function excluirProduto(id){
+  const p = produtosCache.find(function(x){ return x.id === id; });
+  if (confirm('Excluir "' + p.nome + '"? Essa ação não pode ser desfeita.')) {
+    db.collection(COLECAO).doc(id).delete();
+  }
+}
+
+// ---------------------------------------------------------------
+// MODAL QR CODE
+// ---------------------------------------------------------------
+let nomeProdutoAtualQr = "";
+
+function abrirModalQr(id){
+  const p = produtosCache.find(function(x){ return x.id === id; });
+  const url = window.location.origin + window.location.pathname + "?id=" + id;
+
+  nomeProdutoAtualQr = p.nome;
+  document.getElementById("titulo-modal-qr").textContent = p.nome;
+  document.getElementById("link-qr-texto").textContent = url;
+  document.getElementById("etiqueta-nome").textContent = p.nome;
+
+  const area = document.getElementById("qr-canvas-area");
+  area.innerHTML = "";
+  new QRCode(area, {
+    text: url,
+    width: 440,
+    height: 440,
+    colorDark: "#000000",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  document.getElementById("overlay-qr").classList.add("ativo");
+}
+document.getElementById("btn-fechar-qr").addEventListener("click", function(){
+  document.getElementById("overlay-qr").classList.remove("ativo");
+});
+document.getElementById("btn-baixar-qr").addEventListener("click", function(){
+  const canvasQr = document.querySelector("#qr-canvas-area canvas");
+  if (!canvasQr) return;
+
+  const TAMANHO = 500;
+  const margemLateral = 30;
+  const areaTitulo = 132;
+
+  const canvasFinal = document.createElement("canvas");
+  canvasFinal.width = TAMANHO;
+  canvasFinal.height = TAMANHO;
+
+  const ctx = canvasFinal.getContext("2d");
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, TAMANHO, TAMANHO);
+
+  const centroX = TAMANHO / 2;
+
+  // Nome do produto (reduz a fonte automaticamente se o nome for muito longo)
+  ctx.fillStyle = "#000000";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  let tamanhoFonte = 42;
+  const larguraMaxNome = TAMANHO - margemLateral * 2;
+  do {
+    ctx.font = "600 " + tamanhoFonte + "px Oswald, sans-serif";
+    tamanhoFonte -= 1;
+  } while (ctx.measureText(nomeProdutoAtualQr || "").width > larguraMaxNome && tamanhoFonte > 18);
+  ctx.fillText(nomeProdutoAtualQr || "", centroX, 52);
+
+  // Legenda "Modo de Uso"
+  ctx.fillStyle = "#000000";
+  ctx.font = "700 28px 'JetBrains Mono', monospace";
+  let legenda = "MODO DE USO", xLeg = centroX, larguraLeg = 0;
+  for (let i = 0; i < legenda.length; i++){ larguraLeg += ctx.measureText(legenda[i]).width + 3; }
+  xLeg = centroX - larguraLeg / 2;
+  ctx.textAlign = "left";
+  for (let i = 0; i < legenda.length; i++){
+    ctx.fillText(legenda[i], xLeg, 100);
+    xLeg += ctx.measureText(legenda[i]).width + 3;
+  }
+
+  // QR Code, escalado para caber no espaço restante e centralizado
+  const margemInferior = 30;
+  const tamanhoQr = TAMANHO - areaTitulo - margemInferior;
+  const xQr = (TAMANHO - tamanhoQr) / 2;
+  const yQr = areaTitulo;
+  ctx.drawImage(canvasQr, xQr, yQr, tamanhoQr, tamanhoQr);
+
+  const link = document.createElement("a");
+  const nomeArquivo = (nomeProdutoAtualQr || "produto")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase();
+  link.download = nomeArquivo + ".png";
+  link.href = canvasFinal.toDataURL("image/png");
+  link.click();
+});
+
+// ---------------------------------------------------------------
+// PLACA PÚBLICA (visitante escaneou o QR)
+// ---------------------------------------------------------------
+function carregarPlacaPublica(id){
+  db.collection(COLECAO).doc(id).get().then(function(doc){
+    const container = document.getElementById("placa-conteudo");
+    if (!doc.exists) {
+      container.innerHTML =
+        '<div class="nao-encontrado"><span class="eyebrow">AB Chemicals</span>' +
+        '<h2 style="margin-top:8px;">Produto não encontrado</h2>' +
+        '<p style="margin-top:8px;">Verifique se o QR Code está correto.</p></div>';
+      return;
+    }
+    const p = doc.data();
+    let passosHtml = "";
+    (p.passos || []).forEach(function(passo, i){
+      passosHtml += '<li><span class="num-passo">' + (i+1) + '</span><span>' + escapeHtml(passo) + '</span></li>';
+    });
+
+    container.innerHTML =
+      '<div class="placa">' +
+        '<div class="placa-topo">' +
+          '<span class="eyebrow">AB Chemicals</span>' +
+          '<h1>' + escapeHtml(p.nome) + '</h1>' +
+          '<div class="cat">' + (p.categoria || "") + '</div>' +
+        '</div>' +
+        '<div class="placa-corpo">' +
+          (p.diluicao ? '<div class="bloco-diluicao"><span class="rotulo">Diluição recomendada</span><span class="valor">' + escapeHtml(p.diluicao) + '</span></div>' : '') +
+          '<div class="titulo-secao">Modo de uso</div>' +
+          '<ul class="lista-passos">' + passosHtml + '</ul>' +
+          (p.cuidados ? '<div class="bloco-cuidados"><div class="titulo-secao">Cuidados e EPI</div>' + escapeHtml(p.cuidados) + '</div>' : '') +
+        '</div>' +
+        '<div class="placa-rodape">AB Chemicals · (43) 98871-2001</div>' +
+      '</div>';
+  }).catch(function(err){
+    document.getElementById("placa-conteudo").innerHTML =
+      '<div class="nao-encontrado">Erro ao carregar o produto.</div>';
+  });
+}
+
+// ---------------------------------------------------------------
+// UTIL
+// ---------------------------------------------------------------
+function escapeHtml(str){
+  const div = document.createElement("div");
+  div.textContent = str || "";
+  return div.innerHTML;
+}
+</script>
+</body>
+</html>
