@@ -558,8 +558,8 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
               </div>
             </div>
             <div class="card">
-              <div class="section-title"><i class="ti ti-receipt-2" style="margin-right:6px;"></i>Emissão de NF-e (Focus NFe)</div>
-              <div style="font-size:12px;color:#888;margin-bottom:14px;">Informe a URL da Cloud Function que faz a integração com a Focus NFe. Ambiente atual configurado no servidor: <b>produção</b>.</div>
+              <div class="section-title"><i class="ti ti-receipt-2" style="margin-right:6px;"></i>Emissão de NF-e (Brasil NFe)</div>
+              <div style="font-size:12px;color:#888;margin-bottom:14px;">Informe a URL da Cloud Function que faz a integração com a Brasil NFe. Ambiente atual configurado no servidor: <b>produção</b>.</div>
               <div class="form-group">
                 <label class="form-label">URL base das Cloud Functions</label>
                 <input class="form-input" id="focus-fn-url-input" placeholder="https://us-central1-SEU-PROJETO.cloudfunctions.net" style="font-family:monospace;font-size:12px;">
@@ -673,10 +673,10 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <div id="nf-dados-pedido" style="background:#f9f9f7;border-radius:8px;padding:14px;font-size:13px;line-height:1.8;margin-bottom:16px;"></div>
 
       <div style="border-top:1px solid #f0f0ec;padding-top:14px;margin-bottom:16px;">
-        <div class="section-title" style="margin-bottom:10px;">Emissão automática (Focus NFe)</div>
+        <div class="section-title" style="margin-bottom:10px;">Emissão automática (Brasil NFe)</div>
         <div id="nf-focus-aviso" style="background:#FFF6E0;border-radius:8px;padding:10px 14px;font-size:12px;color:#8A6300;margin-bottom:10px;display:none;"></div>
         <div id="nf-focus-status" style="font-size:12px;color:#666;margin-bottom:10px;"></div>
-        <button class="btn-primary" id="btn-emitir-focus" onclick="emitirNFeFocus()"><i class="ti ti-send"></i> Emitir NF-e (Focus NFe)</button>
+        <button class="btn-primary" id="btn-emitir-focus" onclick="emitirNFeFocus()"><i class="ti ti-send"></i> Emitir NF-e (Brasil NFe)</button>
         <button class="btn-ghost" id="btn-consultar-focus" onclick="consultarNFeFocus()" style="display:none;"><i class="ti ti-refresh"></i> Consultar status</button>
       </div>
 
@@ -4159,7 +4159,7 @@ window.abrirEmissaoNF = id => {
   delete document.getElementById('modal-emissao-nf').dataset.focusDanfe;
   delete document.getElementById('modal-emissao-nf').dataset.focusXml;
 
-  // Resetar área de emissão Focus NFe
+  // Resetar área de emissão Brasil NFe
   document.getElementById('nf-focus-aviso').style.display = 'none';
   document.getElementById('nf-focus-status').textContent = '';
   document.getElementById('btn-consultar-focus').style.display = 'none';
@@ -4216,7 +4216,7 @@ window.registrarNF = async () => {
   toast('✅ NF ' + numero + ' registrada no pedido!');
 };
 
-// ── Emissão automática via Focus NFe ────────────────────────────────────────
+// ── Emissão automática via Brasil NFe ───────────────────────────────────────
 function _focusEndpoint(nome) {
   const base = getFocusFnUrl();
   if (!base) return null;
@@ -4245,7 +4245,7 @@ window.emitirNFeFocus = async () => {
 
   if (!baseUrl) {
     aviso.style.display = 'block';
-    aviso.innerHTML = '<i class="ti ti-alert-triangle"></i> Configure a URL das Cloud Functions em <b>Ajustes → Emissão de NF-e (Focus NFe)</b> antes de emitir.';
+    aviso.innerHTML = '<i class="ti ti-alert-triangle"></i> Configure a URL das Cloud Functions em <b>Ajustes → Emissão de NF-e (Brasil NFe)</b> antes de emitir.';
     return;
   }
   aviso.style.display = 'none';
@@ -4278,7 +4278,7 @@ window.emitirNFeFocus = async () => {
 
   btn.disabled = true;
   btn.innerHTML = '<i class="ti ti-loader-2"></i> Emitindo...';
-  statusEl.textContent = 'Enviando dados para a Focus NFe (produção)...';
+  statusEl.textContent = 'Enviando dados para emissão da NF-e...';
 
   try {
     const resp = await fetch(_focusEndpoint('emitirNFe'), {
@@ -4322,7 +4322,7 @@ window.emitirNFeFocus = async () => {
     toast('❌ Falha de conexão ao emitir NF-e.');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<i class="ti ti-send"></i> Emitir NF-e (Focus NFe)';
+    btn.innerHTML = '<i class="ti ti-send"></i> Emitir NF-e (Brasil NFe)';
   }
 };
 
@@ -4572,7 +4572,7 @@ window.confirmarDevolucao = async () => {
     }
 
     if (nfDev.status !== 'autorizado') {
-      statusEl.innerHTML = '<span style="color:#185FA5;">⏳ NF ainda processando. Verifique no painel da Focus NFe (ref: ' + ref + ').</span>';
+      statusEl.innerHTML = '<span style="color:#185FA5;">⏳ NF ainda processando. Verifique no painel da Brasil NFe (ref: ' + ref + ').</span>';
       return;
     }
 
@@ -4945,7 +4945,7 @@ function getOpenAIKey() {
   return localStorage.getItem('anthropic_api_key') || '';
 }
 
-// ── Cloud Function URL (Focus NFe) ───────────────────────────────────────────
+// ── Cloud Function URL (Brasil NFe) ──────────────────────────────────────────
 window.salvarFocusFnUrl = () => {
   const url = document.getElementById('focus-fn-url-input').value.trim().replace(/\/$/, '');
   if (url && !/^https:\/\/.+/.test(url)) { toast('❌ URL inválida. Deve começar com https://'); return; }
