@@ -348,6 +348,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
             </div>
           </div>
           <div id="dash-inativos-preview" style="font-size:12px;color:#888;">Carregando...</div>
+          <div id="dash-inativos-postergados" style="margin-top:10px;font-size:11px;color:#777;"></div>
         </div>
         <div class="kpi-grid" id="dash-kpis">
           <div class="kpi-card"><div class="kpi-label">Aguardando Firebase...</div><div class="kpi-value">—</div></div>
@@ -637,42 +638,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   </div>
 </div>
 
-<div class="modal-overlay" id="modal-adiar-cliente">
-  <div class="modal" style="width:480px;">
-    <div class="modal-header">
-      <span class="modal-header-title">Postergar alerta — <span id="adiar-cliente-nome"></span></span>
-      <span class="modal-drag-hint"><i class="ti ti-arrows-move"></i> mover</span>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">Adiar por</label>
-        <select class="form-input" id="adiar-dias">
-          <option value="7">7 dias</option>
-          <option value="15">15 dias</option>
-          <option value="30">30 dias</option>
-          <option value="45">45 dias</option>
-          <option value="60">60 dias</option>
-          <option value="90">90 dias</option>
-        </select>
-        <span class="form-hint">O alerta some do dashboard até essa data.</span>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Motivo da não compra até o momento</label>
-        <textarea class="form-input" id="adiar-motivo" rows="3" placeholder="Ex: cliente em negociação de preço, aguardando estoque do fornecedor, período sazonal de baixa..."></textarea>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Histórico de comentários</label>
-        <div id="adiar-historico" style="max-height:160px;overflow-y:auto;border:1px solid #e8e7e0;border-radius:8px;padding:0 10px;"></div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-danger" id="adiar-btn-reativar" style="display:none;margin-right:auto;" onclick="reativarAlertaCliente(document.getElementById('modal-adiar-cliente').dataset.clienteId);closeModal('modal-adiar-cliente')">Reativar agora</button>
-      <button class="btn-ghost" onclick="closeModal('modal-adiar-cliente')">Cancelar</button>
-      <button class="btn-primary" onclick="salvarAdiamento()">Salvar adiamento</button>
-    </div>
-  </div>
-</div>
-
 <div class="modal-overlay" id="modal-fornecedor">
   <div class="modal">
     <div class="modal-header"><span class="modal-header-title">Novo Fornecedor</span><span class="modal-drag-hint"><i class="ti ti-arrows-move"></i> mover</span></div>
@@ -802,6 +767,24 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <button class="btn-ghost" id="btn-analisar-nf" onclick="analisarNF()" style="display:none;"><i class="ti ti-cpu"></i> Analisar com IA</button>
       <button class="btn-primary" id="btn-confirmar-nf" onclick="confirmarImportacao()" style="display:none;">Confirmar importação</button>
     </div>
+  </div>
+</div>
+
+<!-- Modal Postergar alerta de cliente sem compra -->
+<div class="modal-overlay" id="modal-postergar-inativo">
+  <div class="modal" style="width:520px;">
+    <div class="modal-header"><span class="modal-header-title">Postergar alerta de cliente</span><span class="modal-drag-hint"><i class="ti ti-arrows-move"></i> mover</span></div>
+    <div class="modal-body">
+      <div id="postergar-cliente-nome" style="font-size:15px;font-weight:600;margin-bottom:16px;"></div>
+      <div class="form-group"><label class="form-label">Motivo da não compra</label>
+        <select class="form-input" id="postergar-motivo">
+          <option>Sem demanda no momento</option><option>Estoque ainda alto</option><option>Comprou de outro fornecedor</option><option>Aguardando aprovação</option><option>Problema financeiro</option><option>Cliente pediu retorno posteriormente</option><option>Negociação em andamento</option><option>Outro</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Comentário / observação</label><textarea class="form-input" id="postergar-comentario" rows="4" placeholder="Registre o motivo e o contexto do acompanhamento..." style="resize:vertical;"></textarea></div>
+      <div class="form-group"><label class="form-label">Voltar a alertar em</label><input class="form-input" type="date" id="postergar-data"><span class="form-hint">O cliente ficará fora dos alertas até esta data.</span></div>
+    </div>
+    <div class="modal-footer"><button class="btn-ghost" onclick="closeModal('modal-postergar-inativo')">Cancelar</button><button class="btn-primary" onclick="salvarPostergacaoInativo()"><i class="ti ti-clock-pause"></i> Postergar alerta</button></div>
   </div>
 </div>
 
@@ -1460,8 +1443,20 @@ async function del(col, id) {
   catch(e) { syncErr(); toast('Erro ao excluir.'); }
 }
 async function upd(col, id, data) {
-  try { await updateDoc(doc(db, col, id), data); }
-  catch(e) { syncErr(); }
+  try {
+    await updateDoc(doc(db, col, id), data);
+    // Mantém a interface sincronizada imediatamente, sem depender do onSnapshot.
+    if (D[col]) {
+      const idx = D[col].findIndex(x => x.id === id);
+      if (idx >= 0) D[col][idx] = { ...D[col][idx], ...data };
+    }
+    return true;
+  } catch(e) {
+    console.error('Erro ao atualizar', col, id, e);
+    syncErr();
+    toast('Não foi possível salvar a alteração no Firebase.');
+    return false;
+  }
 }
 
 // ── Utils ──────────────────────────────────────────────────────────────────
@@ -3617,12 +3612,19 @@ function renderDashboard() {
     <div class="kpi-card"><div class="kpi-label">Clientes ativos</div><div class="kpi-value">${ativos}</div></div>
     <div class="kpi-card"><div class="kpi-label">Itens em alerta</div><div class="kpi-value">${al.length}</div><div class="kpi-delta">Estoque mínimo atingido</div></div>`;
 
-  const inativosDash = calcularClientesInativos(30).filter(c => !c.emAdiamento);
+  const inativosDash = calcularClientesInativos(30);
+  const postergadosDash = D.clientes.filter(c => c.alertaInativoPostergado && c.alertaInativoPostergado.ate > today()).length;
   document.getElementById('dash-inativos-count').textContent = inativosDash.length;
   document.getElementById('dash-inativos-preview').innerHTML = inativosDash.length
-    ? inativosDash.slice(0,3).map(c => c.nome + ' <span style="color:#D85A30;">(' + (c.ultima ? c.dias + ' dias' : 'nunca comprou') + ')</span>').join(' &nbsp;•&nbsp; ')
-      + (inativosDash.length > 3 ? ` &nbsp;e mais ${inativosDash.length - 3}...` : '')
-    : 'Nenhum cliente sem compra pendente de ação.';
+    ? inativosDash.slice(0,3).map(c => c.nome + ' <span style="color:#D85A30;">(' + (c.ultima ? c.dias + ' dias' : 'nunca comprou') + ')</span>').join(' &nbsp;•&nbsp; ') + (inativosDash.length > 3 ? ` &nbsp;e mais ${inativosDash.length - 3}...` : '')
+    : 'Nenhum cliente sem compra no período.';
+  const postEl = document.getElementById('dash-inativos-postergados');
+  if(postEl){
+    const ps = D.clientes.filter(c => c.alertaInativoPostergado && c.alertaInativoPostergado.ate > today());
+    postEl.innerHTML = ps.length
+      ? `<b>${ps.length} alerta(s) postergado(s)</b>: ` + ps.slice(0,3).map(c => `${c.nome} — até ${fmtDt(c.alertaInativoPostergado.ate)}${c.alertaInativoPostergado.motivo ? ' · '+c.alertaInativoPostergado.motivo : ''}`).join(' &nbsp;•&nbsp; ') + (ps.length>3 ? ` &nbsp;e mais ${ps.length-3}...` : '')
+      : '';
+  }
 
   const ults = [...D.pedidos].sort((a,b)=>(b.data||'').localeCompare(a.data||'')).slice(0,4);
   document.getElementById('dash-pedidos').innerHTML = ults.map(p =>
@@ -3793,119 +3795,86 @@ function normalizarNomeCliente(s) {
   return (s || '').toString().trim().toLowerCase().replace(/\s+/g, ' ');
 }
 function calcularClientesInativos(minDias) {
+  const hoje = today();
   const ultimaPorCliente = {};
   D.pedidos.forEach(p => {
     if (!p.cliente || !p.data) return;
     const chave = normalizarNomeCliente(p.cliente);
-    if (!ultimaPorCliente[chave] || p.data > ultimaPorCliente[chave]) {
-      ultimaPorCliente[chave] = p.data;
-    }
+    if (!ultimaPorCliente[chave] || p.data > ultimaPorCliente[chave]) ultimaPorCliente[chave] = p.data;
   });
-  const hoje = today();
-  return D.clientes
-    .map(c => {
-      const ultima = ultimaPorCliente[normalizarNomeCliente(c.nome)] || null;
-      const dias = ultima ? Math.abs(daysTo(ultima)) : null; // null = nunca comprou
-      const adiadoAte = c.alertaAdiadoAte || null;
-      const emAdiamento = !!(adiadoAte && adiadoAte >= hoje);
-      return {
-        id: c.id, nome: c.nome, ultima, dias,
-        adiadoAte, emAdiamento,
-        motivo: c.alertaMotivo || '',
-        historico: c.alertaHistorico || []
-      };
-    })
-    .filter(c => c.dias === null || c.dias >= minDias)
-    .sort((a, b) => (b.dias === null ? 99999 : b.dias) - (a.dias === null ? 99999 : a.dias));
+  return D.clientes.map(c => {
+    const ultima = ultimaPorCliente[normalizarNomeCliente(c.nome)] || null;
+    const dias = ultima ? Math.abs(daysTo(ultima)) : null;
+    const post = c.alertaInativoPostergado || null;
+    const postAtivo = post && post.ate && post.ate > hoje;
+    return { ...c, ultima, dias, post, postAtivo };
+  }).filter(c => (c.dias === null || c.dias >= minDias) && !c.postAtivo)
+    .sort((a,b) => (b.dias === null ? 99999 : b.dias) - (a.dias === null ? 99999 : a.dias));
 }
 function renderClientesInativosHtml(minDias) {
   const lista = calcularClientesInativos(minDias);
-  const opcoes = [7, 15, 30, 45, 60].map(d =>
-    `<option value="${d}" ${minDias === d ? 'selected' : ''}>${d} dias ou mais</option>`).join('');
-  const linhas = lista.map(c => {
-    const situacao = c.emAdiamento
-      ? `<span class="badge badge-amber">Adiado até ${fmtDt(c.adiadoAte)}</span>`
-      : `<span class="badge badge-red">Aguardando ação</span>`;
-    const motivoLinha = c.motivo
-      ? `<div style="font-size:11px;color:#999;margin-top:3px;max-width:240px;">💬 ${c.motivo}</div>`
-      : '';
-    const acoes = c.emAdiamento
-      ? '<button class="btn-nf" onclick="abrirAdiarCliente(\'' + c.id + '\')">Editar</button>' +
-        '<button class="btn-danger" onclick="reativarAlertaCliente(\'' + c.id + '\')">Reativar</button>'
-      : '<button class="btn-nf" onclick="abrirAdiarCliente(\'' + c.id + '\')"><i class="ti ti-clock"></i> Postergar</button>';
-    return `<tr>
-      <td>${c.nome}${motivoLinha}</td>
-      <td>${c.ultima ? fmtDt(c.ultima) : '<span style="color:#D85A30">Nunca comprou</span>'}</td>
-      <td>${c.dias === null ? '—' : c.dias + ' dias'}</td>
-      <td>${situacao}</td>
-      <td><div class="td-actions">${acoes}</div></td>
-    </tr>`;
-  }).join('');
-  const pendentes = lista.filter(c => !c.emAdiamento).length;
-  const adiados   = lista.length - pendentes;
-  return `
-    <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;">
-      <label style="font-size:12px;color:#888;">Sem compra há:</label>
-      <select id="sel-inativos-dias" onchange="window.atualizarClientesInativos()" style="padding:8px 12px;border:1px solid #e8e7e0;border-radius:8px;font-family:inherit;">
-        ${opcoes}
-      </select>
-    </div>
-    <div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Última Compra</th><th>Dias sem Comprar</th><th>Situação</th><th>Ações</th></tr></thead><tbody>${linhas || '<tr><td colspan="5"><div class="empty-state">Nenhum cliente neste período.</div></td></tr>'}</tbody></table></div>
-    <div class="stat-row"><span class="stat-key">Total de clientes no filtro</span><span class="stat-val">${lista.length}</span></div>
-    <div class="stat-row"><span class="stat-key">Aguardando ação</span><span class="stat-val" style="color:#D85A30">${pendentes}</span></div>
-    <div class="stat-row"><span class="stat-key">Adiados</span><span class="stat-val" style="color:#854F0B">${adiados}</span></div>`;
+  const opcoes = [7,15,30,45,60].map(d => `<option value="${d}" ${minDias===d?'selected':''}>${d} dias ou mais</option>`).join('');
+  const linhas = lista.map(c => `<tr><td><b>${c.nome}</b></td><td>${c.ultima ? fmtDt(c.ultima) : '<span style="color:#D85A30">Nunca comprou</span>'}</td><td>${c.dias===null?'—':c.dias+' dias'}</td><td><div class="td-actions"><button class="btn-ghost" style="padding:5px 9px;color:#185FA5;" onclick="abrirPostergacaoInativo('${c.id}')"><i class="ti ti-clock-pause"></i> Postergar</button><button class="btn-view" title="Ver histórico" onclick="verHistoricoInativo('${c.id}')"><i class="ti ti-history"></i></button></div></td></tr>`).join('');
+  return `<div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><label style="font-size:12px;color:#888;">Sem compra há:</label><select id="sel-inativos-dias" onchange="window.atualizarClientesInativos()" style="padding:8px 12px;border:1px solid #e8e7e0;border-radius:8px;font-family:inherit;">${opcoes}</select><span style="font-size:11px;color:#999;margin-left:auto;">${lista.length} cliente(s) no alerta</span></div><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Última Compra</th><th>Dias sem Comprar</th><th>Ação</th></tr></thead><tbody>${linhas || '<tr><td colspan="4"><div class="empty-state">Nenhum cliente neste período.</div></td></tr>'}</tbody></table></div><div class="stat-row"><span class="stat-key">Total de clientes no filtro</span><span class="stat-val">${lista.length}</span></div>`;
 }
-
-// ── Postergar alerta de cliente sem compra ─────────────────────────────────
-window.abrirAdiarCliente = (clienteId) => {
-  const c = D.clientes.find(x => x.id === clienteId);
-  if (!c) { toast('Cliente não encontrado.'); return; }
-  const modal = document.getElementById('modal-adiar-cliente');
-  modal.dataset.clienteId = clienteId;
-  document.getElementById('adiar-cliente-nome').textContent = c.nome;
-  document.getElementById('adiar-dias').value = '7';
-  document.getElementById('adiar-motivo').value = '';
-  const hist = c.alertaHistorico || [];
-  document.getElementById('adiar-historico').innerHTML = hist.length
-    ? [...hist].reverse().map(h =>
-        '<div style="padding:8px 0;border-bottom:1px solid #f0f0ec;font-size:12px;">' +
-          '<div style="color:#999;">' + fmtDt(h.data) + ' — adiado até ' + fmtDt(h.adiadoAte) + '</div>' +
-          '<div style="margin-top:2px;">' + h.motivo + '</div>' +
-        '</div>').join('')
-    : '<div style="font-size:12px;color:#bbb;">Nenhum comentário registrado ainda.</div>';
-  const btnReativar = document.getElementById('adiar-btn-reativar');
-  if (btnReativar) btnReativar.style.display = (c.alertaAdiadoAte && c.alertaAdiadoAte >= today()) ? 'inline-flex' : 'none';
-  openModal('modal-adiar-cliente');
+window.abrirPostergacaoInativo = id => {
+  const c = D.clientes.find(x=>x.id===id); if(!c) return;
+  const m = document.getElementById('modal-postergar-inativo');
+  m.dataset.clienteId = id;
+  document.getElementById('postergar-cliente-nome').textContent = c.nome;
+  document.getElementById('postergar-motivo').value = c.alertaInativoPostergado?.motivo || 'Sem demanda no momento';
+  document.getElementById('postergar-comentario').value = c.alertaInativoPostergado?.comentario || '';
+  const d = new Date(); d.setDate(d.getDate()+15);
+  document.getElementById('postergar-data').value = c.alertaInativoPostergado?.ate || d.toISOString().split('T')[0];
+  openModal('modal-postergar-inativo');
 };
 
-window.salvarAdiamento = async () => {
-  const modal = document.getElementById('modal-adiar-cliente');
-  const clienteId = modal.dataset.clienteId;
-  const c = D.clientes.find(x => x.id === clienteId);
-  if (!c) { toast('Cliente não encontrado.'); return; }
-  const dias = parseInt(document.getElementById('adiar-dias').value);
-  const motivo = document.getElementById('adiar-motivo').value.trim();
-  if (!motivo) { toast('Descreva o motivo da não compra até o momento.'); return; }
-  const dt = new Date();
-  dt.setDate(dt.getDate() + dias);
-  const adiadoAte = dt.toISOString().slice(0, 10);
-  const historico = [...(c.alertaHistorico || []), { data: today(), motivo, adiadoAte }];
-  await upd('clientes', clienteId, { alertaAdiadoAte: adiadoAte, alertaMotivo: motivo, alertaHistorico: historico });
-  closeModal('modal-adiar-cliente');
-  toast('✅ Alerta adiado até ' + fmtDt(adiadoAte) + '.');
-  if (document.getElementById('sel-inativos-dias')) window.atualizarClientesInativos();
+window.salvarPostergacaoInativo = async () => {
+  const m = document.getElementById('modal-postergar-inativo');
+  const id = m.dataset.clienteId;
+  const data = document.getElementById('postergar-data').value;
+  const motivo = document.getElementById('postergar-motivo').value;
+  const comentario = document.getElementById('postergar-comentario').value.trim();
+  const c = D.clientes.find(x=>x.id===id);
+  if(!id || !c){ toast('Cliente não encontrado.'); return; }
+  if(!data){ toast('Informe a data para voltar a alertar.'); return; }
+  if(data <= today()){ toast('A data precisa ser futura.'); return; }
+  if(!comentario){ toast('Informe um comentário sobre o motivo da não compra.'); return; }
+
+  const registro = { em: today(), ate: data, motivo, comentario };
+  const historico = Array.isArray(c.alertaInativoHistorico) ? [...c.alertaInativoHistorico] : [];
+  historico.unshift(registro);
+
+  const ok = await upd('clientes', id, {
+    alertaInativoPostergado: registro,
+    alertaInativoHistorico: historico.slice(0,30)
+  });
+  if(!ok) return;
+
+  closeModal('modal-postergar-inativo');
+  toast('✓ Alerta de '+c.nome+' postergado até '+fmtDt(data)+'.');
   renderDashboard();
+  const sel = document.getElementById('sel-inativos-dias');
+  if(sel) window.atualizarClientesInativos();
 };
 
-window.reativarAlertaCliente = async (clienteId) => {
-  const c = D.clientes.find(x => x.id === clienteId);
-  if (!c) { toast('Cliente não encontrado.'); return; }
-  const historico = [...(c.alertaHistorico || []), { data: today(), motivo: '(alerta reativado manualmente)', adiadoAte: today() }];
-  await upd('clientes', clienteId, { alertaAdiadoAte: null, alertaHistorico: historico });
-  toast('Alerta reativado.');
-  if (document.getElementById('sel-inativos-dias')) window.atualizarClientesInativos();
-  renderDashboard();
+window.verHistoricoInativo = id => {
+  const c = D.clientes.find(x=>x.id===id); if(!c) return;
+  const hist = Array.isArray(c.alertaInativoHistorico) ? c.alertaInativoHistorico : [];
+  const atual = c.alertaInativoPostergado;
+  const rows = hist.map(h => `<div style="border-bottom:1px solid #f0f0ec;padding:10px 0;">
+    <div style="display:flex;justify-content:space-between;gap:10px;font-size:11px;color:#999;"><span>Registrado em ${fmtDt(h.em)}</span><b style="color:#185FA5;">Alerta até ${fmtDt(h.ate)}</b></div>
+    <div style="font-size:12px;font-weight:600;margin-top:4px;">${h.motivo||'—'}</div>
+    <div style="font-size:12px;color:#666;margin-top:3px;white-space:pre-wrap;">${h.comentario||'Sem comentário.'}</div>
+  </div>`).join('');
+  showRel('Histórico de acompanhamento — '+c.nome,
+    `<div class="card" style="padding:12px;margin-bottom:14px;background:#f9f9f7;">
+      <div class="stat-row"><span class="stat-key">Última compra</span><span class="stat-val">${c.ultimaCompra ? fmtDt(c.ultimaCompra) : '—'}</span></div>
+      ${atual ? `<div class="stat-row"><span class="stat-key">Alerta atual</span><span class="stat-val">até ${fmtDt(atual.ate)}</span></div>` : ''}
+    </div>
+    ${rows || '<div class="empty-state">Nenhum histórico de postergação registrado.</div>'}`);
 };
+
 window.atualizarClientesInativos = () => {
   const dias = parseInt(document.getElementById('sel-inativos-dias').value);
   document.getElementById('rel-corpo').innerHTML = renderClientesInativosHtml(dias);
