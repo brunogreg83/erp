@@ -769,6 +769,24 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   </div>
 </div>
 
+<!-- Modal Postergar alerta de cliente sem compra -->
+<div class="modal-overlay" id="modal-postergar-inativo">
+  <div class="modal" style="width:520px;">
+    <div class="modal-header"><span class="modal-header-title">Postergar alerta de cliente</span><span class="modal-drag-hint"><i class="ti ti-arrows-move"></i> mover</span></div>
+    <div class="modal-body">
+      <div id="postergar-cliente-nome" style="font-size:15px;font-weight:600;margin-bottom:16px;"></div>
+      <div class="form-group"><label class="form-label">Motivo da não compra</label>
+        <select class="form-input" id="postergar-motivo">
+          <option>Sem demanda no momento</option><option>Estoque ainda alto</option><option>Comprou de outro fornecedor</option><option>Aguardando aprovação</option><option>Problema financeiro</option><option>Cliente pediu retorno posteriormente</option><option>Negociação em andamento</option><option>Outro</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Comentário / observação</label><textarea class="form-input" id="postergar-comentario" rows="4" placeholder="Registre o motivo e o contexto do acompanhamento..." style="resize:vertical;"></textarea></div>
+      <div class="form-group"><label class="form-label">Voltar a alertar em</label><input class="form-input" type="date" id="postergar-data"><span class="form-hint">O cliente ficará fora dos alertas até esta data.</span></div>
+    </div>
+    <div class="modal-footer"><button class="btn-ghost" onclick="closeModal('modal-postergar-inativo')">Cancelar</button><button class="btn-primary" onclick="salvarPostergacaoInativo()"><i class="ti ti-clock-pause"></i> Postergar alerta</button></div>
+  </div>
+</div>
+
 <!-- MODAIS -->
 <div class="modal-overlay" id="modal-pedido">
   <div class="modal">
@@ -3582,11 +3600,11 @@ function renderDashboard() {
     <div class="kpi-card"><div class="kpi-label">Itens em alerta</div><div class="kpi-value">${al.length}</div><div class="kpi-delta">Estoque mínimo atingido</div></div>`;
 
   const inativosDash = calcularClientesInativos(30);
+  const postergadosDash = D.clientes.filter(c => c.alertaInativoPostergado && c.alertaInativoPostergado.ate > today()).length;
   document.getElementById('dash-inativos-count').textContent = inativosDash.length;
   document.getElementById('dash-inativos-preview').innerHTML = inativosDash.length
-    ? inativosDash.slice(0,3).map(c => c.nome + ' <span style="color:#D85A30;">(' + (c.ultima ? c.dias + ' dias' : 'nunca comprou') + ')</span>').join(' &nbsp;•&nbsp; ')
-      + (inativosDash.length > 3 ? ` &nbsp;e mais ${inativosDash.length - 3}...` : '')
-    : 'Nenhum cliente sem compra no período.';
+    ? inativosDash.slice(0,3).map(c => c.nome + ' <span style="color:#D85A30;">(' + (c.ultima ? c.dias + ' dias' : 'nunca comprou') + ')</span>').join(' &nbsp;•&nbsp; ') + (inativosDash.length > 3 ? ` &nbsp;e mais ${inativosDash.length - 3}...` : '') + (postergadosDash ? ` <span style="color:#999;">· ${postergadosDash} postergado(s)</span>` : '')
+    : (postergadosDash ? `Nenhum cliente no alerta agora. ${postergadosDash} alerta(s) postergado(s).` : 'Nenhum cliente sem compra no período.');
 
   const ults = [...D.pedidos].sort((a,b)=>(b.data||'').localeCompare(a.data||'')).slice(0,4);
   document.getElementById('dash-pedidos').innerHTML = ults.map(p =>
@@ -3757,42 +3775,43 @@ function normalizarNomeCliente(s) {
   return (s || '').toString().trim().toLowerCase().replace(/\s+/g, ' ');
 }
 function calcularClientesInativos(minDias) {
+  const hoje = today();
   const ultimaPorCliente = {};
   D.pedidos.forEach(p => {
     if (!p.cliente || !p.data) return;
     const chave = normalizarNomeCliente(p.cliente);
-    if (!ultimaPorCliente[chave] || p.data > ultimaPorCliente[chave]) {
-      ultimaPorCliente[chave] = p.data;
-    }
+    if (!ultimaPorCliente[chave] || p.data > ultimaPorCliente[chave]) ultimaPorCliente[chave] = p.data;
   });
-  return D.clientes
-    .map(c => {
-      const ultima = ultimaPorCliente[normalizarNomeCliente(c.nome)] || null;
-      const dias = ultima ? Math.abs(daysTo(ultima)) : null; // null = nunca comprou
-      return { nome: c.nome, ultima, dias };
-    })
-    .filter(c => c.dias === null || c.dias >= minDias)
-    .sort((a, b) => (b.dias === null ? 99999 : b.dias) - (a.dias === null ? 99999 : a.dias));
+  return D.clientes.map(c => {
+    const ultima = ultimaPorCliente[normalizarNomeCliente(c.nome)] || null;
+    const dias = ultima ? Math.abs(daysTo(ultima)) : null;
+    const post = c.alertaInativoPostergado || null;
+    const postAtivo = post && post.ate && post.ate > hoje;
+    return { ...c, ultima, dias, post, postAtivo };
+  }).filter(c => (c.dias === null || c.dias >= minDias) && !c.postAtivo)
+    .sort((a,b) => (b.dias === null ? 99999 : b.dias) - (a.dias === null ? 99999 : a.dias));
 }
 function renderClientesInativosHtml(minDias) {
   const lista = calcularClientesInativos(minDias);
-  const opcoes = [7, 15, 30, 45, 60].map(d =>
-    `<option value="${d}" ${minDias === d ? 'selected' : ''}>${d} dias ou mais</option>`).join('');
-  const linhas = lista.map(c => `<tr>
-      <td>${c.nome}</td>
-      <td>${c.ultima ? fmtDt(c.ultima) : '<span style="color:#D85A30">Nunca comprou</span>'}</td>
-      <td>${c.dias === null ? '—' : c.dias + ' dias'}</td>
-    </tr>`).join('');
-  return `
-    <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;">
-      <label style="font-size:12px;color:#888;">Sem compra há:</label>
-      <select id="sel-inativos-dias" onchange="window.atualizarClientesInativos()" style="padding:8px 12px;border:1px solid #e8e7e0;border-radius:8px;font-family:inherit;">
-        ${opcoes}
-      </select>
-    </div>
-    <div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Última Compra</th><th>Dias sem Comprar</th></tr></thead><tbody>${linhas || '<tr><td colspan="3"><div class="empty-state">Nenhum cliente neste período.</div></td></tr>'}</tbody></table></div>
-    <div class="stat-row"><span class="stat-key">Total de clientes no filtro</span><span class="stat-val">${lista.length}</span></div>`;
+  const opcoes = [7,15,30,45,60].map(d => `<option value="${d}" ${minDias===d?'selected':''}>${d} dias ou mais</option>`).join('');
+  const linhas = lista.map(c => `<tr><td><b>${c.nome}</b></td><td>${c.ultima ? fmtDt(c.ultima) : '<span style="color:#D85A30">Nunca comprou</span>'}</td><td>${c.dias===null?'—':c.dias+' dias'}</td><td><button class="btn-ghost" style="padding:5px 9px;color:#185FA5;" onclick="abrirPostergacaoInativo('${c.id}')"><i class="ti ti-clock-pause"></i> Postergar</button></td></tr>`).join('');
+  return `<div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><label style="font-size:12px;color:#888;">Sem compra há:</label><select id="sel-inativos-dias" onchange="window.atualizarClientesInativos()" style="padding:8px 12px;border:1px solid #e8e7e0;border-radius:8px;font-family:inherit;">${opcoes}</select><span style="font-size:11px;color:#999;margin-left:auto;">${lista.length} cliente(s) no alerta</span></div><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Última Compra</th><th>Dias sem Comprar</th><th>Ação</th></tr></thead><tbody>${linhas || '<tr><td colspan="4"><div class="empty-state">Nenhum cliente neste período.</div></td></tr>'}</tbody></table></div><div class="stat-row"><span class="stat-key">Total de clientes no filtro</span><span class="stat-val">${lista.length}</span></div>`;
 }
+window.abrirPostergacaoInativo = id => {
+  const c=D.clientes.find(x=>x.id===id); if(!c)return;
+  const m=document.getElementById('modal-postergar-inativo'); m.dataset.clienteId=id;
+  document.getElementById('postergar-cliente-nome').textContent=c.nome;
+  document.getElementById('postergar-motivo').value=c.alertaInativoPostergado?.motivo||'Sem demanda no momento';
+  document.getElementById('postergar-comentario').value=c.alertaInativoPostergado?.comentario||'';
+  const d=new Date(); d.setDate(d.getDate()+15); document.getElementById('postergar-data').value=c.alertaInativoPostergado?.ate||d.toISOString().split('T')[0];
+  openModal('modal-postergar-inativo');
+};
+window.salvarPostergacaoInativo = async () => {
+  const m=document.getElementById('modal-postergar-inativo'), id=m.dataset.clienteId, data=document.getElementById('postergar-data').value, motivo=document.getElementById('postergar-motivo').value, comentario=document.getElementById('postergar-comentario').value.trim();
+  if(!id||!data){toast('Informe a data para voltar a alertar.');return;} if(data<=today()){toast('A data precisa ser futura.');return;}
+  await upd('clientes',id,{alertaInativoPostergado:{em:today(),ate:data,motivo,comentario}}); closeModal('modal-postergar-inativo'); toast('✅ Alerta postergado até '+fmtDt(data)+'.');
+};
+
 window.atualizarClientesInativos = () => {
   const dias = parseInt(document.getElementById('sel-inativos-dias').value);
   document.getElementById('rel-corpo').innerHTML = renderClientesInativosHtml(dias);
