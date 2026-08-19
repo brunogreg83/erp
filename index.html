@@ -215,8 +215,9 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 .report-card .rc-cta { font-size: 11px; color: #185FA5; margin-top: 12px; }
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; align-items: center; justify-content: center; }
 /* Modal de postergação sempre em primeiro plano */
-#modal-postergar-inativo { z-index: 10000 !important; }
-#modal-postergar-inativo .modal { position: relative; z-index: 10001; }
+#modal-postergar-inativo { position: fixed !important; inset: 0 !important; z-index: 2147483647 !important; display: none; align-items: center !important; justify-content: center !important; background: rgba(0,0,0,.55) !important; }
+#modal-postergar-inativo.open { display: flex !important; }
+#modal-postergar-inativo .modal { position: relative !important; z-index: 2147483647 !important; margin: auto; }
 .modal-overlay.open { display: flex; }
 .modal {
   background: #fff; border-radius: 14px; padding: 0; width: 480px; max-width: 95vw;
@@ -1654,6 +1655,14 @@ window.filtrar = (id, q) => {
 
 // ── Modais ─────────────────────────────────────────────────────────────────
 window.openModal = id => {
+  // A janela de postergação é elevada para o body para nunca ficar presa
+  // ao contexto de empilhamento do relatório de clientes sem compra.
+  if (id === 'modal-postergar-inativo') {
+    const pm = document.getElementById(id);
+    if (pm && pm.parentElement !== document.body) document.body.appendChild(pm);
+    pm.style.position = 'fixed';
+    pm.style.zIndex = '2147483647';
+  }
   if (id === 'modal-pedido')  prepPedido();
   if (id === 'modal-receber') { document.getElementById('rec-venc').value = today(); sel('rec-cli', D.clientes.map(c=>c.nome)); }
   if (id === 'modal-pagar') {
