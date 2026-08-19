@@ -3814,9 +3814,26 @@ function calcularClientesInativos(minDias) {
 function renderClientesInativosHtml(minDias) {
   const lista = calcularClientesInativos(minDias);
   const opcoes = [7,15,30,45,60].map(d => `<option value="${d}" ${minDias===d?'selected':''}>${d} dias ou mais</option>`).join('');
-  const linhas = lista.map(c => `<tr><td><b>${c.nome}</b></td><td>${c.ultima ? fmtDt(c.ultima) : '<span style="color:#D85A30">Nunca comprou</span>'}</td><td>${c.dias===null?'—':c.dias+' dias'}</td><td><div class="td-actions"><button class="btn-ghost" style="padding:5px 9px;color:#185FA5;" onclick="abrirPostergacaoInativo('${c.id}')"><i class="ti ti-clock-pause"></i> Postergar</button><button class="btn-view" title="Ver histórico" onclick="verHistoricoInativo('${c.id}')"><i class="ti ti-history"></i></button></div></td></tr>`).join('');
+  const linhas = lista.map(c => `<tr><td><b>${c.nome}</b></td><td>${c.ultima ? fmtDt(c.ultima) : '<span style="color:#D85A30">Nunca comprou</span>'}</td><td>${c.dias===null?'—':c.dias+' dias'}</td><td><div class="td-actions"><button type="button" class="btn-ghost js-postergar-inativo" data-cliente-id="${String(c.id).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}" style="padding:5px 9px;color:#185FA5;"><i class="ti ti-clock-pause"></i> Postergar</button><button type="button" class="btn-view js-historico-inativo" data-cliente-id="${String(c.id).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}" title="Ver histórico"><i class="ti ti-history"></i></button></div></td></tr>`).join('');
   return `<div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><label style="font-size:12px;color:#888;">Sem compra há:</label><select id="sel-inativos-dias" onchange="window.atualizarClientesInativos()" style="padding:8px 12px;border:1px solid #e8e7e0;border-radius:8px;font-family:inherit;">${opcoes}</select><span style="font-size:11px;color:#999;margin-left:auto;">${lista.length} cliente(s) no alerta</span></div><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Última Compra</th><th>Dias sem Comprar</th><th>Ação</th></tr></thead><tbody>${linhas || '<tr><td colspan="4"><div class="empty-state">Nenhum cliente neste período.</div></td></tr>'}</tbody></table></div><div class="stat-row"><span class="stat-key">Total de clientes no filtro</span><span class="stat-val">${lista.length}</span></div>`;
 }
+// Delegação de eventos: evita falhas dos onclick inline quando o ID do cliente contém caracteres especiais.
+document.addEventListener('click', function(e) {
+  const postBtn = e.target.closest('.js-postergar-inativo');
+  if (postBtn) {
+    e.preventDefault();
+    e.stopPropagation();
+    window.abrirPostergacaoInativo(postBtn.dataset.clienteId);
+    return;
+  }
+  const histBtn = e.target.closest('.js-historico-inativo');
+  if (histBtn) {
+    e.preventDefault();
+    e.stopPropagation();
+    window.verHistoricoInativo(histBtn.dataset.clienteId);
+  }
+});
+
 window.abrirPostergacaoInativo = id => {
   const c = D.clientes.find(x=>x.id===id); if(!c) return;
   const m = document.getElementById('modal-postergar-inativo');
