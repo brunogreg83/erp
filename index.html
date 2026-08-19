@@ -258,11 +258,11 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     <div class="login-error" id="login-error">Usuário ou senha incorretos.</div>
     <div class="form-group">
       <label class="form-label">Usuário</label>
-      <input class="form-input" type="text" id="inp-login" placeholder="Digite seu usuário"Enter')fazerLogin()">
+      <input class="form-input" type="text" id="inp-login" placeholder="Digite seu usuário" onkeydown="if(event.key==='Enter')fazerLogin()">
     </div>
     <div class="form-group">
       <label class="form-label">Senha</label>
-      <input class="form-input" type="password" id="inp-senha" placeholder="Digite sua senha"Enter')fazerLogin()">
+      <input class="form-input" type="password" id="inp-senha" placeholder="Digite sua senha" onkeydown="if(event.key==='Enter')fazerLogin()">
     </div>
     <button class="login-btn" onclick="fazerLogin()">Entrar</button>
   </div>
@@ -3257,18 +3257,7 @@ function enviarOCPorEmail(o, forn) {
       '<p style="margin-top:24px;">Aguardamos confirmação do recebimento desta OC.</p>' +
       '<p style="margin-top:8px;">Atenciosamente,<br><b>AB Chemicals</b><br>abchemicalspr@gmail.com — (43) 98871-2001 — Londrina/PR</p>' +
       '<div class="footer">Este email foi gerado automaticamente pelo sistema ERP AB Chemicals.</div>' +
-      '
-<script>
-(function(){
-  function limparResumoPostergados(){
-    document.querySelectorAll('#dash-inativos-preview, #dash-inativos-postergados, #dash-postergados, .dash-postergados, [data-postergados="true"]').forEach(function(el){
-      if(el.id !== 'dash-inativos-preview' || /posterg/i.test(el.textContent)) el.remove();
-    });
-  }
-  document.addEventListener('DOMContentLoaded', limparResumoPostergados);
-})();
-</script>
-</body></html>';
+      '</body></html>';
 
     emailjs.send('service_pedidos', 'template_xk8fggd', {
       doc_titulo:   'Ordem de Compra',
