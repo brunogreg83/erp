@@ -241,6 +241,9 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 .pi-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
 .pi-row select, .pi-row input { flex: 1; }
 .empty-state { text-align: center; padding: 32px; color: #aaa; font-size: 13px; }
+
+/* Ocultar qualquer resumo de alertas postergados no Dashboard */
+#dash-inativos-postergados, #dash-postergados, .dash-postergados, [data-postergados="true"] { display:none !important; }
 </style>
 </head>
 <body>
@@ -3254,7 +3257,18 @@ function enviarOCPorEmail(o, forn) {
       '<p style="margin-top:24px;">Aguardamos confirmação do recebimento desta OC.</p>' +
       '<p style="margin-top:8px;">Atenciosamente,<br><b>AB Chemicals</b><br>abchemicalspr@gmail.com — (43) 98871-2001 — Londrina/PR</p>' +
       '<div class="footer">Este email foi gerado automaticamente pelo sistema ERP AB Chemicals.</div>' +
-      '</body></html>';
+      '
+<script>
+(function(){
+  function limparResumoPostergados(){
+    document.querySelectorAll('#dash-inativos-preview, #dash-inativos-postergados, #dash-postergados, .dash-postergados, [data-postergados="true"]').forEach(function(el){
+      if(el.id !== 'dash-inativos-preview' || /posterg/i.test(el.textContent)) el.remove();
+    });
+  }
+  document.addEventListener('DOMContentLoaded', limparResumoPostergados);
+})();
+</script>
+</body></html>';
 
     emailjs.send('service_pedidos', 'template_xk8fggd', {
       doc_titulo:   'Ordem de Compra',
@@ -3625,9 +3639,14 @@ function renderDashboard() {
 
   const inativosDash = calcularClientesInativos(30);
   document.getElementById('dash-inativos-count').textContent = inativosDash.length;
-  document.getElementById('dash-inativos-preview').innerHTML = inativosDash.length
+  const dashPreview = document.getElementById('dash-inativos-preview');
+  dashPreview.innerHTML = inativosDash.length
     ? inativosDash.slice(0,3).map(c => c.nome + ' <span style="color:#D85A30;">(' + (c.ultima ? c.dias + ' dias' : 'nunca comprou') + ')</span>').join(' &nbsp;•&nbsp; ') + (inativosDash.length > 3 ? ` &nbsp;e mais ${inativosDash.length - 3}...` : '')
     : 'Nenhum cliente sem compra no período.';
+  // Este espaço é reservado exclusivamente para clientes sem compra.
+  // Nunca exibir aqui resumo de alertas postergados.
+  dashPreview.querySelectorAll('[data-postergados="true"], #dash-inativos-postergados, #dash-postergados, .dash-postergados').forEach(el => el.remove());
+  if (/alerta\(s\)?\s+postergado/i.test(dashPreview.textContent)) dashPreview.textContent = inativosDash.length ? inativosDash.slice(0,3).map(c => c.nome).join(' • ') : 'Nenhum cliente sem compra no período.';
 
 
   const ults = [...D.pedidos].sort((a,b)=>(b.data||'').localeCompare(a.data||'')).slice(0,4);
