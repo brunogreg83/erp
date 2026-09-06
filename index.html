@@ -372,9 +372,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
             <div id="bar-chart" style="width:100%;"></div>
             <div id="chart-legenda" style="display:flex;gap:16px;margin-top:10px;justify-content:center;font-size:11px;color:#888;flex-wrap:wrap;"></div>
           </div>
-          <div class="card"><div class="section-title">Últimos pedidos</div>
-            <div class="table-wrap" style="margin:0;"><table><thead><tr><th>Pedido</th><th>Cliente</th><th>Status</th></tr></thead><tbody id="dash-pedidos"><tr><td colspan="3" style="text-align:center;color:#bbb;padding:18px;">Carregando...</td></tr></tbody></table></div>
-          </div>
         </div>
 
         <!-- Gráfico Receitas x Despesas -->
@@ -387,7 +384,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
           <div id="rxd-legenda" style="display:flex;gap:20px;margin-top:10px;justify-content:center;font-size:11px;color:#888;flex-wrap:wrap;"></div>
         </div>
 
-        <div class="card" id="dash-alertas"><div class="section-title">Alertas do sistema</div><div style="color:#bbb;font-size:13px;">Carregando dados...</div></div>
       </div>
 
       <!-- VENDAS -->
@@ -3676,21 +3672,6 @@ function renderDashboard() {
   if (/alerta\(s\)?\s+postergado/i.test(dashPreview.textContent)) dashPreview.textContent = inativosDash.length ? inativosDash.slice(0,3).map(c => c.nome).join(' • ') : 'Nenhum cliente sem compra no período.';
 
 
-  const ults = [...D.pedidos].sort((a,b)=>(b.data||'').localeCompare(a.data||'')).slice(0,4);
-  document.getElementById('dash-pedidos').innerHTML = ults.map(p =>
-    `<tr><td>#${p.id.slice(-6).toUpperCase()}</td><td>${p.cliente}</td><td>${badge(p.status)}</td></tr>`).join('')
-    || '<tr><td colspan="3"><div class="empty-state">Sem pedidos. Use "Dados exemplo" para começar.</div></td></tr>';
-
-  const aDiv = document.getElementById('dash-alertas');
-  aDiv.innerHTML = '<div class="section-title">Alertas do sistema</div>';
-  const crit  = al.filter(p=>sit(p.estoque,p.minimo)==='Crítico');
-  const baixo = al.filter(p=>sit(p.estoque,p.minimo)==='Baixo');
-  const venc  = D.receber.filter(r=>{ const d=daysTo(r.vencimento); return d>=0 && d<=3; });
-  if (!crit.length && !baixo.length && !venc.length)
-    aDiv.innerHTML += '<div class="empty-state">Nenhum alerta no momento!</div>';
-  crit.forEach(p  => aDiv.innerHTML += `<div class="alert-box alert-danger"><i class="ti ti-alert-circle"></i>&nbsp; ${p.nome} — ${p.estoque} unid. Reposição urgente!</div>`);
-  baixo.forEach(p => aDiv.innerHTML += `<div class="alert-box alert-warn"><i class="ti ti-alert-triangle"></i>&nbsp; ${p.nome} — ${p.estoque} unid. (mín: ${p.minimo}).</div>`);
-  if (venc.length) aDiv.innerHTML += `<div class="alert-box alert-warn"><i class="ti ti-alert-triangle"></i>&nbsp; ${venc.length} título(s) vencem nos próximos 3 dias.</div>`;
 
   // ── Gráfico de faturamento — Canvas animado com comparativo ──────────────
   const porMes = {};
