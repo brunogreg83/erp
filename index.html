@@ -440,7 +440,41 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
               <div style="font-size:12px;color:#888;">Ordens de compra, fornecedores e reposição automática integrados ao estoque.</div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button class="btn-primary" onclick="openModal('modal-oc')"><i class="ti ti-plus"></i> Nova       <tbody id="tabela-clientes"></tbody></table>
+              <button class="btn-primary" onclick="openModal('modal-oc')"><i class="ti ti-plus"></i> Nova ordem de compra</button>
+              <button class="btn-ghost" onclick="openModal('modal-fornecedor')"><i class="ti ti-building-store"></i> Novo fornecedor</button>
+            </div>
+          </div>
+          <div id="forn-duplicados-aviso"></div>
+          <div class="card" style="margin-bottom:18px;">
+            <div class="section-title">Fornecedores cadastrados</div>
+            <div class="table-wrap" style="margin:0;">
+              <table><thead><tr><th>Empresa</th><th class="col-mobile-hide">CNPJ</th><th class="col-mobile-hide">Contato</th><th class="col-mobile-hide">Telefone</th><th class="col-mobile-hide">Email</th><th class="col-mobile-hide">Produtos</th><th>Status</th><th></th></tr></thead>
+              <tbody id="tabela-fornecedores"></tbody></table>
+            </div>
+          </div>
+          <div class="card" style="margin-bottom:18px;">
+            <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+              <span>Sugestão de reposição automática</span>
+              <button class="btn-primary" style="font-size:12px;padding:5px 12px;display:none;" id="btn-comprar-todos" onclick="abrirOCTodos()"><i class="ti ti-shopping-cart"></i> Comprar todos</button>
+            </div>
+            <div id="cmp-sugestoes"></div>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Nº OC</th><th>Fornecedor</th><th>Data</th><th>Itens</th><th>Total</th><th>Status</th><th></th></tr></thead>
+            <tbody id="tabela-compras"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLIENTES -->
+      <div class="screen" id="screen-clientes">
+        <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center;">
+          <button class="btn-primary" onclick="openModal('modal-cliente')"><i class="ti ti-plus"></i> Novo cliente</button>
+          <input class="form-input" placeholder="Buscar cliente..." style="max-width:220px;height:36px;" oninput="filtrar('tabela-clientes',this.value)">
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Cliente</th><th>CNPJ</th><th>Segmento</th><th>Último pedido</th><th>Total (ano)</th><th>Status</th><th></th></tr></thead>
+          <tbody id="tabela-clientes"></tbody></table>
         </div>
       </div>
 
