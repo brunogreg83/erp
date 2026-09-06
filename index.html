@@ -524,6 +524,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <div class="two-col">
           <div class="report-card" onclick="relatorio('vendas')"><div class="rc-icon"><i class="ti ti-chart-bar"></i></div><div class="rc-title">Vendas por cliente</div><div class="rc-desc">Ranking, volume e ticket médio.</div><div class="rc-cta">Gerar →</div></div>
           <div class="report-card" onclick="relatorio('margem')"><div class="rc-icon"><i class="ti ti-percentage"></i></div><div class="rc-title">Margem por produto</div><div class="rc-desc">Custo, preço e margem bruta por SKU.</div><div class="rc-cta">Gerar →</div></div>
+          <div class="report-card" onclick="relatorio('margemReal')"><div class="rc-icon"><i class="ti ti-chart-donut"></i></div><div class="rc-title">Margem líquida real por pedido</div><div class="rc-desc">Cruza pedidos do ERP, custo médio, descontos e custos operacionais.</div><div class="rc-cta">Analisar →</div></div>
           <div class="report-card" onclick="relatorio('fluxo')"><div class="rc-icon"><i class="ti ti-cash"></i></div><div class="rc-title">Fluxo de caixa</div><div class="rc-desc">Entradas, saídas e saldo projetado.</div><div class="rc-cta">Gerar →</div></div>
           <div class="report-card" onclick="relatorio('giro')"><div class="rc-icon"><i class="ti ti-refresh"></i></div><div class="rc-title">Giro de estoque</div><div class="rc-desc">Produtos parados e curva ABC.</div><div class="rc-cta">Gerar →</div></div>
           <div class="report-card" onclick="relatorio('inadimplencia')"><div class="rc-icon"><i class="ti ti-alert-triangle" style="color:#EF9F27;"></i></div><div class="rc-title">Inadimplência</div><div class="rc-desc">Títulos em atraso e projeção.</div><div class="rc-cta">Gerar →</div></div>
@@ -3892,6 +3893,78 @@ window.atualizarClientesInativos = () => {
   document.getElementById('rel-corpo').innerHTML = renderClientesInativosHtml(dias);
 };
 
+
+// ── Margem líquida real por pedido ─────────────────────────────────────────
+const MARGEM_CFG_KEY = 'abc_margem_real_cfg_v1';
+function margemCfg(){
+  try {
+    const saved = JSON.parse(localStorage.getItem(MARGEM_CFG_KEY)||'null');
+    return Object.assign({aluguel:470,nfe:49.90,contador:270,combustivel:0,funcionarios:0,outrosFixos:0,imposto:0,frete:0,taxaFinanceira:0}, saved||{});
+  } catch(e){ return {aluguel:470,nfe:49.90,contador:270,combustivel:0,funcionarios:0,outrosFixos:0,imposto:0,frete:0,taxaFinanceira:0}; }
+}
+function salvarMargemCfg(){
+  const ids=['aluguel','nfe','contador','combustivel','funcionarios','outrosFixos','imposto','frete','taxaFinanceira'];
+  const cfg={}; ids.forEach(id=>cfg[id]=parseBR(document.getElementById('mr-'+id)?.value||'0'));
+  localStorage.setItem(MARGEM_CFG_KEY,JSON.stringify(cfg));
+  toast('✓ Custos da margem real salvos.');
+  renderMargemReal();
+}
+function custoFixoMensalReal(c){ return ['aluguel','nfe','contador','combustivel','funcionarios','outrosFixos'].reduce((s,k)=>s+(Number(c[k])||0),0); }
+function statusMargemReal(m){
+  if(m<0) return ['Prejuízo','badge-red'];
+  if(m<10) return ['Crítica','badge-red'];
+  if(m<20) return ['Baixa','badge-amber'];
+  if(m<30) return ['Aceitável','badge-blue'];
+  return ['Boa','badge-green'];
+}
+function calcMargemPedidoReal(p,c,ctx){
+  const itens=p.itens||[];
+  const bruto=itens.reduce((s,i)=>s+(parseFloat(i.qty)||0)*(parseFloat(i.preco)||0),0);
+  const desconto=Math.max(0,parseFloat(p.desconto)||0);
+  const receita=Math.max(0,bruto-desconto);
+  const custoMerc=itens.reduce((s,i)=>{
+    const prod=D.produtos.find(x=>x.nome===i.produto);
+    return s+(parseFloat(i.qty)||0)*(parseFloat(prod?.custo)||0);
+  },0);
+  const imposto=receita*(Number(c.imposto)||0)/100;
+  const frete=Number(c.frete)||0;
+  const taxaFin=receita*(Number(c.taxaFinanceira)||0)/100;
+  const fixoRateado=ctx.faturamento>0 ? (Number(c.fixoMensal)||0)*(receita/ctx.faturamento) : 0;
+  const lucro=receita-custoMerc-imposto-frete-taxaFin-fixoRateado;
+  const margem=receita>0?lucro/receita*100:0;
+  return {bruto,desconto,receita,custoMerc,imposto,frete,taxaFin,fixoRateado,lucro,margem};
+}
+function renderMargemReal(){
+  const box=document.getElementById('rel-corpo'); if(!box) return;
+  const c=margemCfg();
+  const pedidos=D.pedidos.filter(p=>p.status==='Entregue'||p.status==='Faturado');
+  const faturamento=pedidos.reduce((s,p)=>s+totPed(p),0);
+  const ctx={faturamento,fixoMensal:custoFixoMensalReal(c)};
+  const resultados=pedidos.map(p=>({p,r:calcMargemPedidoReal(p,c,ctx)})).sort((a,b)=>a.r.margem-b.r.margem);
+  const receita=resultados.reduce((s,x)=>s+x.r.receita,0), custo=resultados.reduce((s,x)=>s+x.r.custoMerc,0), descontos=resultados.reduce((s,x)=>s+x.r.desconto,0);
+  const impostos=resultados.reduce((s,x)=>s+x.r.imposto,0), fretes=resultados.reduce((s,x)=>s+x.r.frete,0), taxas=resultados.reduce((s,x)=>s+x.r.taxaFin,0), fixos=resultados.reduce((s,x)=>s+x.r.fixoRateado,0);
+  const lucro=receita-custo-impostos-fretes-taxas-fixos, margem=receita?lucro/receita*100:0;
+  const cfgHtml=`<div class="card" style="padding:14px;margin-bottom:16px;background:#f9f9f7;">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Custos usados no cálculo da margem real</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+      ${[['aluguel','Aluguel'],['nfe','NFe'],['contador','Contador'],['combustivel','Combustível'],['funcionarios','Funcionários'],['outrosFixos','Outros fixos']].map(([id,l])=>`<div><label class="form-label">${l}/mês</label><input class="form-input" id="mr-${id}" value="${Number(c[id]||0).toFixed(2)}" oninput="this.value=this.value.replace(/[^0-9,.-]/g,'')"></div>`).join('')}
+      <div><label class="form-label">Impostos (%)</label><input class="form-input" id="mr-imposto" value="${Number(c.imposto||0).toFixed(2)}"></div>
+      <div><label class="form-label">Frete por pedido (R$)</label><input class="form-input" id="mr-frete" value="${Number(c.frete||0).toFixed(2)}"></div>
+      <div><label class="form-label">Taxa financeira (%)</label><input class="form-input" id="mr-taxaFinanceira" value="${Number(c.taxaFinanceira||0).toFixed(2)}"></div>
+    </div>
+    <div class="actions" style="margin-top:10px;"><button class="btn-primary" onclick="salvarMargemCfg()"><i class="ti ti-check"></i> Salvar parâmetros</button></div>
+    <div style="font-size:11px;color:#888;margin-top:8px;">Os valores regionais/operacionais são parâmetros editáveis. O ERP fornece os pedidos e os custos cadastrados dos produtos; não são inventados custos ausentes.</div>
+  </div>`;
+  const kpis=`<div class="kpi-grid" style="margin-bottom:16px;">
+    <div class="kpi-card"><div class="kpi-label">Receita líquida dos pedidos</div><div class="kpi-value">${R$(receita)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Custo das mercadorias</div><div class="kpi-value">${R$(custo)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Lucro líquido estimado</div><div class="kpi-value" style="color:${lucro>=0?'#185FA5':'#D85A30'}">${R$(lucro)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Margem líquida real</div><div class="kpi-value" style="color:${margem>=0?'#185FA5':'#D85A30'}">${margem.toFixed(2)}%</div></div>
+  </div>`;
+  const table=resultados.map(x=>{const p=x.p,r=x.r,[st,cl]=statusMargemReal(r.margem);return `<tr><td>#${String(p.id).slice(-6).toUpperCase()}</td><td>${fmtDt(p.data)}</td><td>${p.cliente||'—'}</td><td>${R$(r.receita)}</td><td>${R$(r.custoMerc)}</td><td>${R$(r.desconto)}</td><td><b style="color:${r.lucro>=0?'#185FA5':'#D85A30'}">${R$(r.lucro)}</b></td><td><b>${r.margem.toFixed(2)}%</b></td><td><span class="badge ${cl}">${st}</span></td></tr>`}).join('');
+  box.innerHTML=cfgHtml+kpis+`<div class="card" style="padding:14px;margin-bottom:14px;"><div class="stat-row"><span class="stat-key">Descontos concedidos</span><span class="stat-val">${R$(descontos)}</span></div><div class="stat-row"><span class="stat-key">Impostos considerados</span><span class="stat-val">${R$(impostos)}</span></div><div class="stat-row"><span class="stat-key">Fretes considerados</span><span class="stat-val">${R$(fretes)}</span></div><div class="stat-row"><span class="stat-key">Taxas financeiras</span><span class="stat-val">${R$(taxas)}</span></div><div class="stat-row"><span class="stat-key">Custos fixos rateados</span><span class="stat-val">${R$(fixos)}</span></div></div><div class="table-wrap"><table><thead><tr><th>Pedido</th><th>Data</th><th>Cliente</th><th>Receita</th><th>Custo merc.</th><th>Desconto</th><th>Lucro líquido</th><th>Margem líquida</th><th>Situação</th></tr></thead><tbody>${table||'<tr><td colspan="9"><div class="empty-state">Nenhum pedido faturado/entregue para analisar.</div></td></tr>'}</tbody></table></div>`;
+}
+window.renderMargemReal=renderMargemReal;
 window.relatorio = tipo => {
   if (tipo==='vendas') {
     const m={};
@@ -3903,6 +3976,10 @@ window.relatorio = tipo => {
   if (tipo==='margem') {
     const l=D.produtos.map(p=>{const mg=p.preco>0?Math.round((p.preco-p.custo)/p.preco*100):0;return `<tr><td>${p.nome}</td><td>${R$(p.custo)}</td><td>${R$(p.preco)}</td><td>${mg}%</td></tr>`;}).join('');
     showRel('Margem por produto',`<div class="table-wrap"><table><thead><tr><th>Produto</th><th>Custo</th><th>Preço</th><th>Margem</th></tr></thead><tbody>${l||'<tr><td colspan="4"><div class="empty-state">Sem produtos.</div></td></tr>'}</tbody></table></div>`);
+  }
+  if (tipo==='margemReal') {
+    showRel('Margem líquida real por pedido', '');
+    renderMargemReal();
   }
   if (tipo==='fluxo') {
     const tR=D.receber.reduce((s,r)=>s+(parseFloat(r.valor)||0),0), tP=D.pagar.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
