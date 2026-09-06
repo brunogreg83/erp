@@ -346,6 +346,11 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     <div class="content">
       <!-- DASHBOARD -->
       <div class="screen active" id="screen-dashboard">
+        <!-- Resultado Real do Mês (lucro/prejuízo em R$, considerando vendas, CMV e custos fixos) -->
+        <div class="card" style="margin-bottom:18px;">
+          <div class="section-title" style="margin-bottom:14px;"><i class="ti ti-report-money" style="margin-right:6px;"></i>Resultado Real do Mês</div>
+          <div id="dash-resultado-real"></div>
+        </div>
         <div class="card" id="dash-clientes-sem-compra" style="margin-bottom:18px;cursor:pointer;" onclick="window.relatorio('inativos')">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;">
             <div class="section-title" style="margin-bottom:0;">Clientes sem Compra <span style="font-weight:400;color:#aaa;font-size:12px;">(30 dias ou mais)</span></div>
@@ -3722,6 +3727,7 @@ function desenharRxD(containerId, legendaId, badgeId, receitas, despesas, ym) {
 
 // ── Dashboard ──────────────────────────────────────────────────────────────
 function renderDashboard() {
+  atualizarResultadoRealDashboard();
   const ymAtualDash = new Date().toISOString().slice(0,7);
   const fat  = D.pedidos.filter(p => (p.status==='Entregue' || p.status==='Faturado') && (p.data||'').startsWith(ymAtualDash)).reduce((s,p)=>s+totPed(p),0);
   const mesDash = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][new Date().getMonth()];
@@ -5319,21 +5325,31 @@ window.atualizarMargemReal = () => {
   document.getElementById('margreal-corpo').innerHTML = renderMargemRealHtml(sel.value);
 };
 
-// ── Resultado Real do Mês (tela Financeiro) — lucro/prejuízo em R$ considerando vendas, CMV e custos fixos ──
-window.atualizarResultadoRealFinanceiro = () => {
-  const box = document.getElementById('fin-resultado-real');
-  const sel = document.getElementById('fin-mes-global');
-  if (!box || !sel || !sel.value) return;
-  const ym = sel.value;
+// ── Resultado Real do Mês — lucro/prejuízo em R$ considerando vendas, CMV e custos fixos ──
+function renderResultadoRealHtml(ym) {
   const r = calcMargemReal(ym);
   const cor = r.lucroLiquido >= 0 ? '#185FA5' : '#A32D2D';
   const situacao = r.lucroLiquido >= 0 ? '🟢 Lucro no mês' : '🔴 Prejuízo no mês';
-  box.innerHTML =
-    '<div class="stat-row"><span class="stat-key">Faturamento líquido (vendas do mês)</span><span class="stat-val">' + R$(r.faturamentoLiquido) + '</span></div>' +
+  return '<div class="stat-row"><span class="stat-key">Faturamento líquido (vendas do mês)</span><span class="stat-val">' + R$(r.faturamentoLiquido) + '</span></div>' +
     '<div class="stat-row"><span class="stat-key">Custo da mercadoria vendida (CMV)</span><span class="stat-val" style="color:#D85A30;">- ' + R$(r.cmv) + '</span></div>' +
     '<div class="stat-row"><span class="stat-key">Custos fixos do mês</span><span class="stat-val" style="color:#D85A30;">- ' + R$(r.custosFixos) + '</span></div>' +
     '<div class="stat-row" style="font-size:15px;"><span class="stat-key"><b>' + situacao + '</b></span><span class="stat-val" style="color:' + cor + ';font-size:18px;"><b>' + R$(r.lucroLiquido) + '</b></span></div>' +
     '<div class="form-hint" style="margin-top:6px;">Margem real: <b>' + r.margemRealPct.toFixed(1) + '%</b> · baseado em ' + r.nPedidos + ' pedido(s) entregue(s)/faturado(s) no mês. Configure os custos fixos em Financeiro.</div>';
+}
+
+window.atualizarResultadoRealFinanceiro = () => {
+  const box = document.getElementById('fin-resultado-real');
+  const sel = document.getElementById('fin-mes-global');
+  if (!box || !sel || !sel.value) return;
+  box.innerHTML = renderResultadoRealHtml(sel.value);
+};
+
+window.atualizarResultadoRealDashboard = () => {
+  const box = document.getElementById('dash-resultado-real');
+  if (!box) return;
+  const now = new Date();
+  const ymAtual = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  box.innerHTML = renderResultadoRealHtml(ymAtual);
 };
 
 // Preenchimento da chave Anthropic ao entrar em Ajustes
