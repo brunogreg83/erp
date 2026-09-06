@@ -214,6 +214,10 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 .report-card .rc-desc { font-size: 12px; color: #888; }
 .report-card .rc-cta { font-size: 11px; color: #185FA5; margin-top: 12px; }
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; align-items: center; justify-content: center; }
+/* Modal de postergação sempre em primeiro plano */
+#modal-postergar-inativo { position: fixed !important; inset: 0 !important; z-index: 2147483647 !important; display: none; align-items: center !important; justify-content: center !important; background: rgba(0,0,0,.55) !important; }
+#modal-postergar-inativo.open { display: flex !important; }
+#modal-postergar-inativo .modal { position: relative !important; z-index: 2147483647 !important; margin: auto; }
 .modal-overlay.open { display: flex; }
 .modal {
   background: #fff; border-radius: 14px; padding: 0; width: 480px; max-width: 95vw;
@@ -237,6 +241,9 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 .pi-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
 .pi-row select, .pi-row input { flex: 1; }
 .empty-state { text-align: center; padding: 32px; color: #aaa; font-size: 13px; }
+
+/* Ocultar qualquer resumo de alertas postergados no Dashboard */
+#dash-inativos-postergados, #dash-postergados, .dash-postergados, [data-postergados="true"] { display:none !important; }
 </style>
 </head>
 <body>
@@ -251,11 +258,11 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     <div class="login-error" id="login-error">Usuário ou senha incorretos.</div>
     <div class="form-group">
       <label class="form-label">Usuário</label>
-      <input class="form-input" type="text" id="inp-login" placeholder="Digite seu usuário"Enter')fazerLogin()">
+      <input class="form-input" type="text" id="inp-login" placeholder="Digite seu usuário" onkeydown="if(event.key==='Enter')fazerLogin()">
     </div>
     <div class="form-group">
       <label class="form-label">Senha</label>
-      <input class="form-input" type="password" id="inp-senha" placeholder="Digite sua senha"Enter')fazerLogin()">
+      <input class="form-input" type="password" id="inp-senha" placeholder="Digite sua senha" onkeydown="if(event.key==='Enter')fazerLogin()">
     </div>
     <button class="login-btn" onclick="fazerLogin()">Entrar</button>
   </div>
@@ -274,7 +281,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <button class="nav-item" onclick="goTo('estoque',this)" id="nav-estoque"><i class="ti ti-box"></i>Estoque e Produtos</button>
       <button class="nav-item" onclick="goTo('clientes',this)" id="nav-clientes"><i class="ti ti-users"></i>Clientes e CRM</button>
       <button class="nav-item" onclick="goTo('financeiro',this)" id="nav-financeiro"><i class="ti ti-receipt"></i>Financeiro</button>
-       <button class="nav-item" onclick="goTo('cfo',this)" id="nav-cfo"><i class="ti ti-chart-donut"></i>CFO • Rentabilidade</button>
+      <button class="nav-item" onclick="goTo('cfo',this)" id="nav-cfo"><i class="ti ti-chart-donut"></i>CFO • Rentabilidade</button>
       <button class="nav-item" onclick="goTo('compras',this)" id="nav-compras"><i class="ti ti-truck"></i>Compras</button>
       <button class="nav-item" onclick="goTo('relatorios',this)" id="nav-relatorios"><i class="ti ti-chart-bar"></i>Relatórios</button>
       <button class="nav-item" onclick="goTo('ajustes',this)" id="nav-ajustes"><i class="ti ti-settings"></i>Ajustes</button>
@@ -309,7 +316,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <button class="nav-item" onclick="mobGoTo('estoque')" id="mob-nav-estoque"><i class="ti ti-box"></i>Estoque e Produtos</button>
         <button class="nav-item" onclick="mobGoTo('clientes')" id="mob-nav-clientes"><i class="ti ti-users"></i>Clientes e CRM</button>
         <button class="nav-item" onclick="mobGoTo('financeiro')" id="mob-nav-financeiro"><i class="ti ti-receipt"></i>Financeiro</button>
-         <button class="nav-item" onclick="mobGoTo('cfo')" id="mob-nav-cfo"><i class="ti ti-chart-donut"></i>CFO • Rentabilidade</button>
+        <button class="nav-item" onclick="mobGoTo('cfo')" id="mob-nav-cfo"><i class="ti ti-chart-donut"></i>CFO • Rentabilidade</button>
         <button class="nav-item" onclick="mobGoTo('compras')" id="mob-nav-compras"><i class="ti ti-truck"></i>Compras</button>
         <button class="nav-item" onclick="mobGoTo('relatorios')" id="mob-nav-relatorios"><i class="ti ti-chart-bar"></i>Relatórios</button>
         <button class="nav-item" onclick="mobGoTo('ajustes')" id="mob-nav-ajustes"><i class="ti ti-settings"></i>Ajustes</button>
@@ -519,6 +526,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <div class="two-col">
           <div class="report-card" onclick="relatorio('vendas')"><div class="rc-icon"><i class="ti ti-chart-bar"></i></div><div class="rc-title">Vendas por cliente</div><div class="rc-desc">Ranking, volume e ticket médio.</div><div class="rc-cta">Gerar →</div></div>
           <div class="report-card" onclick="relatorio('margem')"><div class="rc-icon"><i class="ti ti-percentage"></i></div><div class="rc-title">Margem por produto</div><div class="rc-desc">Custo, preço e margem bruta por SKU.</div><div class="rc-cta">Gerar →</div></div>
+          <div class="report-card" onclick="relatorio('margemReal')"><div class="rc-icon"><i class="ti ti-chart-donut"></i></div><div class="rc-title">Margem líquida real por pedido</div><div class="rc-desc">Cruza pedidos do ERP, custo médio, descontos e custos operacionais.</div><div class="rc-cta">Analisar →</div></div>
           <div class="report-card" onclick="relatorio('fluxo')"><div class="rc-icon"><i class="ti ti-cash"></i></div><div class="rc-title">Fluxo de caixa</div><div class="rc-desc">Entradas, saídas e saldo projetado.</div><div class="rc-cta">Gerar →</div></div>
           <div class="report-card" onclick="relatorio('giro')"><div class="rc-icon"><i class="ti ti-refresh"></i></div><div class="rc-title">Giro de estoque</div><div class="rc-desc">Produtos parados e curva ABC.</div><div class="rc-cta">Gerar →</div></div>
           <div class="report-card" onclick="relatorio('inadimplencia')"><div class="rc-icon"><i class="ti ti-alert-triangle" style="color:#EF9F27;"></i></div><div class="rc-title">Inadimplência</div><div class="rc-desc">Títulos em atraso e projeção.</div><div class="rc-cta">Gerar →</div></div>
@@ -573,6 +581,28 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
             </div>
           </div>
         </div>
+      <div class="screen" id="screen-cfo">
+        <div class="section-title" style="font-size:22px;margin-bottom:4px;">CFO • Rentabilidade</div>
+        <div style="color:#6b7f91;font-size:12px;margin-bottom:16px;">Margem real dos pedidos usando os custos cadastrados no ERP.</div>
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-label">Faturamento</div><div class="kpi-value" id="cfo-fat">R$ 0,00</div></div>
+          <div class="kpi-card"><div class="kpi-label">CMV</div><div class="kpi-value" id="cfo-cmv">R$ 0,00</div></div>
+          <div class="kpi-card"><div class="kpi-label">Lucro bruto</div><div class="kpi-value" id="cfo-bruto">R$ 0,00</div></div>
+          <div class="kpi-card"><div class="kpi-label">Margem bruta</div><div class="kpi-value" id="cfo-mb">0,00%</div></div>
+        </div>
+        <div class="kpi-grid" style="margin-top:10px;">
+          <div class="kpi-card"><div class="kpi-label">Impostos + variáveis</div><div class="kpi-value" id="cfo-var">R$ 0,00</div></div>
+          <div class="kpi-card"><div class="kpi-label">Custos fixos</div><div class="kpi-value" id="cfo-fix">R$ 0,00</div></div>
+          <div class="kpi-card"><div class="kpi-label">Lucro líquido estimado</div><div class="kpi-value" id="cfo-liq">R$ 0,00</div></div>
+          <div class="kpi-card"><div class="kpi-label">Margem líquida</div><div class="kpi-value" id="cfo-ml">0,00%</div></div>
+        </div>
+        <div class="two-col" style="margin-top:14px;align-items:start;">
+          <div class="card"><div class="section-title">Parâmetros da análise</div><div class="form-group"><label class="form-label">Impostos (%)</label><input class="form-input" id="cfo-tax" type="number" step="0.01" value="0"></div><div class="form-group"><label class="form-label">Comissão (%)</label><input class="form-input" id="cfo-com" type="number" step="0.01" value="0"></div><div class="form-group"><label class="form-label">Frete (%)</label><input class="form-input" id="cfo-frete" type="number" step="0.01" value="0"></div><div class="form-group"><label class="form-label">Outros variáveis (%)</label><input class="form-input" id="cfo-outros" type="number" step="0.01" value="0"></div><button class="btn-primary" onclick="cfoSave()">Salvar parâmetros</button></div>
+          <div class="card"><div class="section-title">Custos fixos vindos do ERP</div><div id="cfo-custos-fixos" style="font-size:13px;color:#666;">Aguardando Firebase...</div><div style="margin-top:14px;line-height:1.9;font-size:12px;">🟢 ≥ 15% Excelente<br>🟢 10%–14,99% Boa<br>🟡 5%–9,99% Atenção<br>🔴 0%–4,99% Baixa<br>⛔ &lt; 0% Prejuízo</div></div>
+        </div>
+        <div class="card" style="margin-top:14px;"><div class="section-title">Rentabilidade por pedido</div><div class="table-wrap"><table><thead><tr><th>Pedido</th><th>Cliente</th><th>Venda</th><th>CMV</th><th>Lucro bruto</th><th>Margem</th><th>Lucro líquido est.</th><th>Margem líquida</th></tr></thead><tbody id="cfo-pedidos"></tbody></table></div></div>
+      </div>
+
       </div>
 
     </div>
@@ -768,6 +798,24 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <button class="btn-ghost" id="btn-analisar-nf" onclick="analisarNF()" style="display:none;"><i class="ti ti-cpu"></i> Analisar com IA</button>
       <button class="btn-primary" id="btn-confirmar-nf" onclick="confirmarImportacao()" style="display:none;">Confirmar importação</button>
     </div>
+  </div>
+</div>
+
+<!-- Modal Postergar alerta de cliente sem compra -->
+<div class="modal-overlay" id="modal-postergar-inativo">
+  <div class="modal" style="width:520px;">
+    <div class="modal-header"><span class="modal-header-title">Postergar alerta de cliente</span><span class="modal-drag-hint"><i class="ti ti-arrows-move"></i> mover</span></div>
+    <div class="modal-body">
+      <div id="postergar-cliente-nome" style="font-size:15px;font-weight:600;margin-bottom:16px;"></div>
+      <div class="form-group"><label class="form-label">Motivo da não compra</label>
+        <select class="form-input" id="postergar-motivo">
+          <option>Sem demanda no momento</option><option>Estoque ainda alto</option><option>Comprou de outro fornecedor</option><option>Aguardando aprovação</option><option>Problema financeiro</option><option>Cliente pediu retorno posteriormente</option><option>Negociação em andamento</option><option>Outro</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Comentário / observação</label><textarea class="form-input" id="postergar-comentario" rows="4" placeholder="Registre o motivo e o contexto do acompanhamento..." style="resize:vertical;"></textarea></div>
+      <div class="form-group"><label class="form-label">Voltar a alertar em</label><input class="form-input" type="date" id="postergar-data"><span class="form-hint">O cliente ficará fora dos alertas até esta data.</span></div>
+    </div>
+    <div class="modal-footer"><button class="btn-ghost" onclick="closeModal('modal-postergar-inativo')">Cancelar</button><button class="btn-primary" onclick="salvarPostergacaoInativo()"><i class="ti ti-clock-pause"></i> Postergar alerta</button></div>
   </div>
 </div>
 
@@ -1110,6 +1158,7 @@ window.mobGoTo = function(id) {
   if (fab) fab.style.display = (id === 'vendas' || id === 'orcamentos') ? 'flex' : 'none';
 
   // redesenhar gráficos ao navegar
+  if (id === 'cfo') setTimeout(renderCFO, 20);
   if (id === 'financeiro') {
     setTimeout(() => {
       const sel = document.getElementById('fin-mes-global');
@@ -1202,7 +1251,7 @@ function aplicarPerfil(perfil, nome) {
 function restaurarTela(tela) {
   if (!tela) return;
   const titles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',orcamentos:'Orçamentos',estoque:'Estoque e Produtos',
-    clientes:'Clientes e CRM',financeiro:'Financeiro e Faturamento',compras:'Compras e Fornecedores',
+    clientes:'Clientes e CRM',financeiro:'Financeiro e Faturamento',cfo:'CFO • Rentabilidade',compras:'Compras e Fornecedores',
     relatorios:'Relatórios',ajustes:'Ajustes do Sistema'};
   const mobTitles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',orcamentos:'Orçamentos',estoque:'Estoque e Produtos',
     clientes:'Clientes e CRM',financeiro:'Financeiro',compras:'Compras',relatorios:'Relatórios',ajustes:'Ajustes'};
@@ -1357,33 +1406,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-
-<section id="cfo" class="page-section" style="display:none;">
-  <div class="page-head"><div><h1>CFO • Rentabilidade</h1><p>Visão gerencial da margem e do lucro da AB Chemicals, usando os dados do ERP em tempo real.</p></div></div>
-  <div class="kpi-grid" style="margin-top:14px;">
-    <div class="kpi-card"><div class="kpi-label">Faturamento</div><div class="kpi-value" id="cfo-fat">R$ 0,00</div></div>
-    <div class="kpi-card"><div class="kpi-label">CMV</div><div class="kpi-value" id="cfo-cmv">R$ 0,00</div></div>
-    <div class="kpi-card"><div class="kpi-label">Lucro bruto</div><div class="kpi-value" id="cfo-bruto">R$ 0,00</div></div>
-    <div class="kpi-card"><div class="kpi-label">Margem bruta</div><div class="kpi-value" id="cfo-margem">0,00%</div></div>
-  </div>
-  <div class="kpi-grid" style="margin-top:10px;">
-    <div class="kpi-card"><div class="kpi-label">Impostos</div><div class="kpi-value" id="cfo-imp">R$ 0,00</div></div>
-    <div class="kpi-card"><div class="kpi-label">Custos fixos</div><div class="kpi-value" id="cfo-fixos">R$ 0,00</div></div>
-    <div class="kpi-card"><div class="kpi-label">Lucro líquido estimado</div><div class="kpi-value" id="cfo-liq">R$ 0,00</div></div>
-    <div class="kpi-card"><div class="kpi-label">Margem líquida</div><div class="kpi-value" id="cfo-ml">0,00%</div></div>
-  </div>
-  <div class="content-grid" style="margin-top:14px;">
-    <div class="panel"><div class="panel-title">Configuração da análise</div><div class="form-grid">
-      <label>Comissão média %<input id="cfo-com" type="number" step="0.01" value="0"></label>
-      <label>Frete médio %<input id="cfo-frete" type="number" step="0.01" value="0"></label>
-      <label>Outros variáveis %<input id="cfo-outros" type="number" step="0.01" value="0"></label>
-      <label>Margem mínima %<input id="cfo-min" type="number" step="0.01" value="10"></label>
-    </div><button class="btn btn-primary" onclick="cfoSave()" style="margin-top:12px;">Salvar configuração</button></div>
-    <div class="panel"><div class="panel-title">Semáforo</div><div style="line-height:2">🟢 <b>Excelente</b> ≥ 15%<br>🟢 <b>Boa</b> 10%–14,99%<br>🟡 <b>Atenção</b> 5%–9,99%<br>🔴 <b>Baixa</b> 0%–4,99%<br>⛔ <b>Prejuízo</b> &lt; 0%</div></div>
-  </div>
-  <div class="panel" style="margin-top:14px;"><div class="panel-title">Pedidos com maior impacto na rentabilidade</div><div class="table-wrap"><table><thead><tr><th>Pedido</th><th>Cliente</th><th>Venda</th><th>CMV</th><th>Lucro bruto</th><th>Margem</th></tr></thead><tbody id="cfo-table"></tbody></table></div></div>
-</section>
-
 <script type="module">
 import { initializeApp }       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot, enableNetwork, disableNetwork }
@@ -1403,7 +1425,13 @@ const db  = getFirestore(app);
 
 // ── Cache local ────────────────────────────────────────────────────────────
 const D = { pedidos:[], produtos:[], clientes:[], receber:[], pagar:[], ordens:[], usuarios:[], fornecedores:[] };
+let cfoFixos = { aluguel:0, nfe:0, contador:0, combustivel:0, funcionarios:0, outros:0, impostoPct:0 };
 window.D = D;
+onSnapshot(doc(db,'config','custosFixos'), snap => {
+  if (snap.exists()) cfoFixos = { ...cfoFixos, ...snap.data() };
+  renderCFO();
+}, err => { console.error('custosFixos', err); renderCFO(); });
+
 
 // window.pitens precisa ser global pois é referenciado em onchange de HTML dinâmico
 window.pitens = [];
@@ -1454,8 +1482,20 @@ async function del(col, id) {
   catch(e) { syncErr(); toast('Erro ao excluir.'); }
 }
 async function upd(col, id, data) {
-  try { await updateDoc(doc(db, col, id), data); }
-  catch(e) { syncErr(); }
+  try {
+    await updateDoc(doc(db, col, id), data);
+    // Mantém a interface sincronizada imediatamente, sem depender do onSnapshot.
+    if (D[col]) {
+      const idx = D[col].findIndex(x => x.id === id);
+      if (idx >= 0) D[col][idx] = { ...D[col][idx], ...data };
+    }
+    return true;
+  } catch(e) {
+    console.error('Erro ao atualizar', col, id, e);
+    syncErr();
+    toast('Não foi possível salvar a alteração no Firebase.');
+    return false;
+  }
 }
 
 // ── Utils ──────────────────────────────────────────────────────────────────
@@ -1650,6 +1690,14 @@ window.filtrar = (id, q) => {
 
 // ── Modais ─────────────────────────────────────────────────────────────────
 window.openModal = id => {
+  // A janela de postergação é elevada para o body para nunca ficar presa
+  // ao contexto de empilhamento do relatório de clientes sem compra.
+  if (id === 'modal-postergar-inativo') {
+    const pm = document.getElementById(id);
+    if (pm && pm.parentElement !== document.body) document.body.appendChild(pm);
+    pm.style.position = 'fixed';
+    pm.style.zIndex = '2147483647';
+  }
   if (id === 'modal-pedido')  prepPedido();
   if (id === 'modal-receber') { document.getElementById('rec-venc').value = today(); sel('rec-cli', D.clientes.map(c=>c.nome)); }
   if (id === 'modal-pagar') {
@@ -3242,8 +3290,7 @@ function enviarOCPorEmail(o, forn) {
       '<p style="margin-top:24px;">Aguardamos confirmação do recebimento desta OC.</p>' +
       '<p style="margin-top:8px;">Atenciosamente,<br><b>AB Chemicals</b><br>abchemicalspr@gmail.com — (43) 98871-2001 — Londrina/PR</p>' +
       '<div class="footer">Este email foi gerado automaticamente pelo sistema ERP AB Chemicals.</div>' +
-      '
-</body></html>';
+      '</body></html>';
 
     emailjs.send('service_pedidos', 'template_xk8fggd', {
       doc_titulo:   'Ordem de Compra',
@@ -3614,10 +3661,15 @@ function renderDashboard() {
 
   const inativosDash = calcularClientesInativos(30);
   document.getElementById('dash-inativos-count').textContent = inativosDash.length;
-  document.getElementById('dash-inativos-preview').innerHTML = inativosDash.length
-    ? inativosDash.slice(0,3).map(c => c.nome + ' <span style="color:#D85A30;">(' + (c.ultima ? c.dias + ' dias' : 'nunca comprou') + ')</span>').join(' &nbsp;•&nbsp; ')
-      + (inativosDash.length > 3 ? ` &nbsp;e mais ${inativosDash.length - 3}...` : '')
+  const dashPreview = document.getElementById('dash-inativos-preview');
+  dashPreview.innerHTML = inativosDash.length
+    ? inativosDash.slice(0,3).map(c => c.nome + ' <span style="color:#D85A30;">(' + (c.ultima ? c.dias + ' dias' : 'nunca comprou') + ')</span>').join(' &nbsp;•&nbsp; ') + (inativosDash.length > 3 ? ` &nbsp;e mais ${inativosDash.length - 3}...` : '')
     : 'Nenhum cliente sem compra no período.';
+  // Este espaço é reservado exclusivamente para clientes sem compra.
+  // Nunca exibir aqui resumo de alertas postergados.
+  dashPreview.querySelectorAll('[data-postergados="true"], #dash-inativos-postergados, #dash-postergados, .dash-postergados').forEach(el => el.remove());
+  if (/alerta\(s\)?\s+postergado/i.test(dashPreview.textContent)) dashPreview.textContent = inativosDash.length ? inativosDash.slice(0,3).map(c => c.nome).join(' • ') : 'Nenhum cliente sem compra no período.';
+
 
   const ults = [...D.pedidos].sort((a,b)=>(b.data||'').localeCompare(a.data||'')).slice(0,4);
   document.getElementById('dash-pedidos').innerHTML = ults.map(p =>
@@ -3788,47 +3840,163 @@ function normalizarNomeCliente(s) {
   return (s || '').toString().trim().toLowerCase().replace(/\s+/g, ' ');
 }
 function calcularClientesInativos(minDias) {
+  const hoje = today();
   const ultimaPorCliente = {};
   D.pedidos.forEach(p => {
     if (!p.cliente || !p.data) return;
     const chave = normalizarNomeCliente(p.cliente);
-    if (!ultimaPorCliente[chave] || p.data > ultimaPorCliente[chave]) {
-      ultimaPorCliente[chave] = p.data;
-    }
+    if (!ultimaPorCliente[chave] || p.data > ultimaPorCliente[chave]) ultimaPorCliente[chave] = p.data;
   });
-  return D.clientes
-    .map(c => {
-      const ultima = ultimaPorCliente[normalizarNomeCliente(c.nome)] || null;
-      const dias = ultima ? Math.abs(daysTo(ultima)) : null; // null = nunca comprou
-      return { nome: c.nome, ultima, dias };
-    })
-    .filter(c => c.dias === null || c.dias >= minDias)
-    .sort((a, b) => (b.dias === null ? 99999 : b.dias) - (a.dias === null ? 99999 : a.dias));
+  return D.clientes.map(c => {
+    const ultima = ultimaPorCliente[normalizarNomeCliente(c.nome)] || null;
+    const dias = ultima ? Math.abs(daysTo(ultima)) : null;
+    const post = c.alertaInativoPostergado || null;
+    const postAtivo = post && post.ate && post.ate > hoje;
+    return { ...c, ultima, dias, post, postAtivo };
+  }).filter(c => (c.dias === null || c.dias >= minDias) && !c.postAtivo)
+    .sort((a,b) => (b.dias === null ? 99999 : b.dias) - (a.dias === null ? 99999 : a.dias));
 }
 function renderClientesInativosHtml(minDias) {
   const lista = calcularClientesInativos(minDias);
-  const opcoes = [7, 15, 30, 45, 60].map(d =>
-    `<option value="${d}" ${minDias === d ? 'selected' : ''}>${d} dias ou mais</option>`).join('');
-  const linhas = lista.map(c => `<tr>
-      <td>${c.nome}</td>
-      <td>${c.ultima ? fmtDt(c.ultima) : '<span style="color:#D85A30">Nunca comprou</span>'}</td>
-      <td>${c.dias === null ? '—' : c.dias + ' dias'}</td>
-    </tr>`).join('');
-  return `
-    <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;">
-      <label style="font-size:12px;color:#888;">Sem compra há:</label>
-      <select id="sel-inativos-dias" onchange="window.atualizarClientesInativos()" style="padding:8px 12px;border:1px solid #e8e7e0;border-radius:8px;font-family:inherit;">
-        ${opcoes}
-      </select>
-    </div>
-    <div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Última Compra</th><th>Dias sem Comprar</th></tr></thead><tbody>${linhas || '<tr><td colspan="3"><div class="empty-state">Nenhum cliente neste período.</div></td></tr>'}</tbody></table></div>
-    <div class="stat-row"><span class="stat-key">Total de clientes no filtro</span><span class="stat-val">${lista.length}</span></div>`;
+  const opcoes = [7,15,30,45,60].map(d => `<option value="${d}" ${minDias===d?'selected':''}>${d} dias ou mais</option>`).join('');
+  const linhas = lista.map(c => `<tr><td><b>${c.nome}</b></td><td>${c.ultima ? fmtDt(c.ultima) : '<span style="color:#D85A30">Nunca comprou</span>'}</td><td>${c.dias===null?'—':c.dias+' dias'}</td><td><div class="td-actions"><button class="btn-ghost" style="padding:5px 9px;color:#185FA5;" onclick="abrirPostergacaoInativo('${c.id}')"><i class="ti ti-clock-pause"></i> Postergar</button><button class="btn-view" title="Ver histórico" onclick="verHistoricoInativo('${c.id}')"><i class="ti ti-history"></i></button></div></td></tr>`).join('');
+  return `<div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><label style="font-size:12px;color:#888;">Sem compra há:</label><select id="sel-inativos-dias" onchange="window.atualizarClientesInativos()" style="padding:8px 12px;border:1px solid #e8e7e0;border-radius:8px;font-family:inherit;">${opcoes}</select><span style="font-size:11px;color:#999;margin-left:auto;">${lista.length} cliente(s) no alerta</span></div><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Última Compra</th><th>Dias sem Comprar</th><th>Ação</th></tr></thead><tbody>${linhas || '<tr><td colspan="4"><div class="empty-state">Nenhum cliente neste período.</div></td></tr>'}</tbody></table></div><div class="stat-row"><span class="stat-key">Total de clientes no filtro</span><span class="stat-val">${lista.length}</span></div>`;
 }
+window.abrirPostergacaoInativo = id => {
+  const c = D.clientes.find(x=>x.id===id); if(!c) return;
+  const m = document.getElementById('modal-postergar-inativo');
+  m.dataset.clienteId = id;
+  document.getElementById('postergar-cliente-nome').textContent = c.nome;
+  document.getElementById('postergar-motivo').value = c.alertaInativoPostergado?.motivo || 'Sem demanda no momento';
+  document.getElementById('postergar-comentario').value = c.alertaInativoPostergado?.comentario || '';
+  const d = new Date(); d.setDate(d.getDate()+15);
+  document.getElementById('postergar-data').value = c.alertaInativoPostergado?.ate || d.toISOString().split('T')[0];
+  openModal('modal-postergar-inativo');
+};
+
+window.salvarPostergacaoInativo = async () => {
+  const m = document.getElementById('modal-postergar-inativo');
+  const id = m.dataset.clienteId;
+  const data = document.getElementById('postergar-data').value;
+  const motivo = document.getElementById('postergar-motivo').value;
+  const comentario = document.getElementById('postergar-comentario').value.trim();
+  const c = D.clientes.find(x=>x.id===id);
+  if(!id || !c){ toast('Cliente não encontrado.'); return; }
+  if(!data){ toast('Informe a data para voltar a alertar.'); return; }
+  if(data <= today()){ toast('A data precisa ser futura.'); return; }
+  if(!comentario){ toast('Informe um comentário sobre o motivo da não compra.'); return; }
+
+  const registro = { em: today(), ate: data, motivo, comentario };
+  const historico = Array.isArray(c.alertaInativoHistorico) ? [...c.alertaInativoHistorico] : [];
+  historico.unshift(registro);
+
+  const ok = await upd('clientes', id, {
+    alertaInativoPostergado: registro,
+    alertaInativoHistorico: historico.slice(0,30)
+  });
+  if(!ok) return;
+
+  closeModal('modal-postergar-inativo');
+  toast('✓ Alerta de '+c.nome+' postergado até '+fmtDt(data)+'.');
+  renderDashboard();
+  const sel = document.getElementById('sel-inativos-dias');
+  if(sel) window.atualizarClientesInativos();
+};
+
+window.verHistoricoInativo = id => {
+  const c = D.clientes.find(x=>x.id===id); if(!c) return;
+  const hist = Array.isArray(c.alertaInativoHistorico) ? c.alertaInativoHistorico : [];
+  const atual = c.alertaInativoPostergado;
+  const rows = hist.map(h => `<div style="border-bottom:1px solid #f0f0ec;padding:10px 0;">
+    <div style="display:flex;justify-content:space-between;gap:10px;font-size:11px;color:#999;"><span>Registrado em ${fmtDt(h.em)}</span><b style="color:#185FA5;">Alerta até ${fmtDt(h.ate)}</b></div>
+    <div style="font-size:12px;font-weight:600;margin-top:4px;">${h.motivo||'—'}</div>
+    <div style="font-size:12px;color:#666;margin-top:3px;white-space:pre-wrap;">${h.comentario||'Sem comentário.'}</div>
+  </div>`).join('');
+  showRel('Histórico de acompanhamento — '+c.nome,
+    `<div class="card" style="padding:12px;margin-bottom:14px;background:#f9f9f7;">
+      <div class="stat-row"><span class="stat-key">Última compra</span><span class="stat-val">${c.ultimaCompra ? fmtDt(c.ultimaCompra) : '—'}</span></div>
+      ${atual ? `<div class="stat-row"><span class="stat-key">Alerta atual</span><span class="stat-val">até ${fmtDt(atual.ate)}</span></div>` : ''}
+    </div>
+    ${rows || '<div class="empty-state">Nenhum histórico de postergação registrado.</div>'}`);
+};
+
 window.atualizarClientesInativos = () => {
   const dias = parseInt(document.getElementById('sel-inativos-dias').value);
   document.getElementById('rel-corpo').innerHTML = renderClientesInativosHtml(dias);
 };
 
+
+// ── Margem líquida real por pedido ─────────────────────────────────────────
+const MARGEM_CFG_KEY = 'abc_margem_real_cfg_v1';
+function margemCfg(){
+  try {
+    const saved = JSON.parse(localStorage.getItem(MARGEM_CFG_KEY)||'null');
+    return Object.assign({aluguel:470,nfe:49.90,contador:270,combustivel:0,funcionarios:0,outrosFixos:0,imposto:0,frete:0,taxaFinanceira:0}, saved||{});
+  } catch(e){ return {aluguel:470,nfe:49.90,contador:270,combustivel:0,funcionarios:0,outrosFixos:0,imposto:0,frete:0,taxaFinanceira:0}; }
+}
+function salvarMargemCfg(){
+  const ids=['aluguel','nfe','contador','combustivel','funcionarios','outrosFixos','imposto','frete','taxaFinanceira'];
+  const cfg={}; ids.forEach(id=>cfg[id]=parseBR(document.getElementById('mr-'+id)?.value||'0'));
+  localStorage.setItem(MARGEM_CFG_KEY,JSON.stringify(cfg));
+  toast('✓ Custos da margem real salvos.');
+  renderMargemReal();
+}
+function custoFixoMensalReal(c){ return ['aluguel','nfe','contador','combustivel','funcionarios','outrosFixos'].reduce((s,k)=>s+(Number(c[k])||0),0); }
+function statusMargemReal(m){
+  if(m<0) return ['Prejuízo','badge-red'];
+  if(m<10) return ['Crítica','badge-red'];
+  if(m<20) return ['Baixa','badge-amber'];
+  if(m<30) return ['Aceitável','badge-blue'];
+  return ['Boa','badge-green'];
+}
+function calcMargemPedidoReal(p,c,ctx){
+  const itens=p.itens||[];
+  const bruto=itens.reduce((s,i)=>s+(parseFloat(i.qty)||0)*(parseFloat(i.preco)||0),0);
+  const desconto=Math.max(0,parseFloat(p.desconto)||0);
+  const receita=Math.max(0,bruto-desconto);
+  const custoMerc=itens.reduce((s,i)=>{
+    const prod=D.produtos.find(x=>x.nome===i.produto);
+    return s+(parseFloat(i.qty)||0)*(parseFloat(prod?.custo)||0);
+  },0);
+  const imposto=receita*(Number(c.imposto)||0)/100;
+  const frete=Number(c.frete)||0;
+  const taxaFin=receita*(Number(c.taxaFinanceira)||0)/100;
+  const fixoRateado=ctx.faturamento>0 ? (Number(c.fixoMensal)||0)*(receita/ctx.faturamento) : 0;
+  const lucro=receita-custoMerc-imposto-frete-taxaFin-fixoRateado;
+  const margem=receita>0?lucro/receita*100:0;
+  return {bruto,desconto,receita,custoMerc,imposto,frete,taxaFin,fixoRateado,lucro,margem};
+}
+function renderMargemReal(){
+  const box=document.getElementById('rel-corpo'); if(!box) return;
+  const c=margemCfg();
+  const pedidos=D.pedidos.filter(p=>p.status==='Entregue'||p.status==='Faturado');
+  const faturamento=pedidos.reduce((s,p)=>s+totPed(p),0);
+  const ctx={faturamento,fixoMensal:custoFixoMensalReal(c)};
+  const resultados=pedidos.map(p=>({p,r:calcMargemPedidoReal(p,c,ctx)})).sort((a,b)=>a.r.margem-b.r.margem);
+  const receita=resultados.reduce((s,x)=>s+x.r.receita,0), custo=resultados.reduce((s,x)=>s+x.r.custoMerc,0), descontos=resultados.reduce((s,x)=>s+x.r.desconto,0);
+  const impostos=resultados.reduce((s,x)=>s+x.r.imposto,0), fretes=resultados.reduce((s,x)=>s+x.r.frete,0), taxas=resultados.reduce((s,x)=>s+x.r.taxaFin,0), fixos=resultados.reduce((s,x)=>s+x.r.fixoRateado,0);
+  const lucro=receita-custo-impostos-fretes-taxas-fixos, margem=receita?lucro/receita*100:0;
+  const cfgHtml=`<div class="card" style="padding:14px;margin-bottom:16px;background:#f9f9f7;">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Custos usados no cálculo da margem real</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+      ${[['aluguel','Aluguel'],['nfe','NFe'],['contador','Contador'],['combustivel','Combustível'],['funcionarios','Funcionários'],['outrosFixos','Outros fixos']].map(([id,l])=>`<div><label class="form-label">${l}/mês</label><input class="form-input" id="mr-${id}" value="${Number(c[id]||0).toFixed(2)}" oninput="this.value=this.value.replace(/[^0-9,.-]/g,'')"></div>`).join('')}
+      <div><label class="form-label">Impostos (%)</label><input class="form-input" id="mr-imposto" value="${Number(c.imposto||0).toFixed(2)}"></div>
+      <div><label class="form-label">Frete por pedido (R$)</label><input class="form-input" id="mr-frete" value="${Number(c.frete||0).toFixed(2)}"></div>
+      <div><label class="form-label">Taxa financeira (%)</label><input class="form-input" id="mr-taxaFinanceira" value="${Number(c.taxaFinanceira||0).toFixed(2)}"></div>
+    </div>
+    <div class="actions" style="margin-top:10px;"><button class="btn-primary" onclick="salvarMargemCfg()"><i class="ti ti-check"></i> Salvar parâmetros</button></div>
+    <div style="font-size:11px;color:#888;margin-top:8px;">Os valores regionais/operacionais são parâmetros editáveis. O ERP fornece os pedidos e os custos cadastrados dos produtos; não são inventados custos ausentes.</div>
+  </div>`;
+  const kpis=`<div class="kpi-grid" style="margin-bottom:16px;">
+    <div class="kpi-card"><div class="kpi-label">Receita líquida dos pedidos</div><div class="kpi-value">${R$(receita)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Custo das mercadorias</div><div class="kpi-value">${R$(custo)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Lucro líquido estimado</div><div class="kpi-value" style="color:${lucro>=0?'#185FA5':'#D85A30'}">${R$(lucro)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Margem líquida real</div><div class="kpi-value" style="color:${margem>=0?'#185FA5':'#D85A30'}">${margem.toFixed(2)}%</div></div>
+  </div>`;
+  const table=resultados.map(x=>{const p=x.p,r=x.r,[st,cl]=statusMargemReal(r.margem);return `<tr><td>#${String(p.id).slice(-6).toUpperCase()}</td><td>${fmtDt(p.data)}</td><td>${p.cliente||'—'}</td><td>${R$(r.receita)}</td><td>${R$(r.custoMerc)}</td><td>${R$(r.desconto)}</td><td><b style="color:${r.lucro>=0?'#185FA5':'#D85A30'}">${R$(r.lucro)}</b></td><td><b>${r.margem.toFixed(2)}%</b></td><td><span class="badge ${cl}">${st}</span></td></tr>`}).join('');
+  box.innerHTML=cfgHtml+kpis+`<div class="card" style="padding:14px;margin-bottom:14px;"><div class="stat-row"><span class="stat-key">Descontos concedidos</span><span class="stat-val">${R$(descontos)}</span></div><div class="stat-row"><span class="stat-key">Impostos considerados</span><span class="stat-val">${R$(impostos)}</span></div><div class="stat-row"><span class="stat-key">Fretes considerados</span><span class="stat-val">${R$(fretes)}</span></div><div class="stat-row"><span class="stat-key">Taxas financeiras</span><span class="stat-val">${R$(taxas)}</span></div><div class="stat-row"><span class="stat-key">Custos fixos rateados</span><span class="stat-val">${R$(fixos)}</span></div></div><div class="table-wrap"><table><thead><tr><th>Pedido</th><th>Data</th><th>Cliente</th><th>Receita</th><th>Custo merc.</th><th>Desconto</th><th>Lucro líquido</th><th>Margem líquida</th><th>Situação</th></tr></thead><tbody>${table||'<tr><td colspan="9"><div class="empty-state">Nenhum pedido faturado/entregue para analisar.</div></td></tr>'}</tbody></table></div>`;
+}
+window.renderMargemReal=renderMargemReal;
 window.relatorio = tipo => {
   if (tipo==='vendas') {
     const m={};
@@ -3840,6 +4008,10 @@ window.relatorio = tipo => {
   if (tipo==='margem') {
     const l=D.produtos.map(p=>{const mg=p.preco>0?Math.round((p.preco-p.custo)/p.preco*100):0;return `<tr><td>${p.nome}</td><td>${R$(p.custo)}</td><td>${R$(p.preco)}</td><td>${mg}%</td></tr>`;}).join('');
     showRel('Margem por produto',`<div class="table-wrap"><table><thead><tr><th>Produto</th><th>Custo</th><th>Preço</th><th>Margem</th></tr></thead><tbody>${l||'<tr><td colspan="4"><div class="empty-state">Sem produtos.</div></td></tr>'}</tbody></table></div>`);
+  }
+  if (tipo==='margemReal') {
+    showRel('Margem líquida real por pedido', '');
+    renderMargemReal();
   }
   if (tipo==='fluxo') {
     const tR=D.receber.reduce((s,r)=>s+(parseFloat(r.valor)||0),0), tP=D.pagar.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
@@ -5075,10 +5247,10 @@ function renderUsuarios() {
 }
 
 // ── Navegação com controle de acesso ──────────────────────────────────────
-const ROTAS_ADMIN    = ['dashboard','vendas','orcamentos','estoque','clientes','financeiro','compras','relatorios','ajustes'];
+const ROTAS_ADMIN    = ['dashboard','vendas','orcamentos','estoque','clientes','financeiro','cfo','compras','relatorios','ajustes'];
 const ROTAS_VENDEDOR = ['vendas','orcamentos','clientes'];
 const titles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',orcamentos:'Orçamentos',estoque:'Estoque e Produtos',
-  clientes:'Clientes e CRM',financeiro:'Financeiro e Faturamento',compras:'Compras e Fornecedores',
+  clientes:'Clientes e CRM',financeiro:'Financeiro e Faturamento',cfo:'CFO • Rentabilidade',compras:'Compras e Fornecedores',
   relatorios:'Relatórios',ajustes:'Ajustes do Sistema'};
 
 window.goTo = (id, btn) => {
@@ -5121,8 +5293,9 @@ window.goTo = (id, btn) => {
   }
 };
 
+\nconst cfoCfgKey='ab_cfo_cfg_v2';\nfunction cfoCfg(){ try { return {tax:0,com:0,frete:0,outros:0,...JSON.parse(localStorage.getItem(cfoCfgKey)||'{}')}; } catch(e){ return {tax:0,com:0,frete:0,outros:0}; } }\nwindow.cfoSave=function(){ const g=id=>Number(document.getElementById(id)?.value)||0; localStorage.setItem(cfoCfgKey,JSON.stringify({tax:g('cfo-tax'),com:g('cfo-com'),frete:g('cfo-frete'),outros:g('cfo-outros')})); renderCFO(); toast('Parâmetros do CFO salvos.'); };\nfunction cfoTotalFixos(){ return ['aluguel','nfe','contador','combustivel','funcionarios','outros'].reduce((s,k)=>s+(Number(cfoFixos[k])||0),0); }\nfunction cfoMoney(v){ return R$(v); }\nfunction renderCFO(){\n  const ids=['cfo-fat','cfo-cmv','cfo-bruto','cfo-mb','cfo-var','cfo-fix','cfo-liq','cfo-ml','cfo-pedidos','cfo-custos-fixos'];\n  if(!ids.some(id=>document.getElementById(id))) return;\n  const cfg=cfoCfg();\n  ['tax','com','frete','outros'].forEach(k=>{const e=document.getElementById('cfo-'+k); if(e && document.activeElement!==e) e.value=cfg[k];});\n  const prods=D.produtos||[];\n  const pedidos=(D.pedidos||[]).filter(p=>p.status!=='Orçamento');\n  const custo=i=>{const p=prods.find(x=>String(x.nome||'').trim()===String(i.produto||'').trim()); return p?Number(p.custo)||0:0;};\n  const venda=p=>Math.max(0,(p.itens||[]).reduce((s,i)=>s+(Number(i.qty)||0)*(Number(i.preco)||0),0)-(Number(p.desconto)||0));\n  const cmv=p=>(p.itens||[]).reduce((s,i)=>s+(Number(i.qty)||0)*custo(i),0);\n  const fat=pedidos.reduce((s,p)=>s+venda(p),0), totalCmv=pedidos.reduce((s,p)=>s+cmv(p),0), bruto=fat-totalCmv;\n  const variPct=cfg.tax+cfg.com+cfg.frete+cfg.outros; const vari=fat*variPct/100; const fix=cfoTotalFixos(); const liq=bruto-vari-fix;\n  const pct=(v,base)=>base? v/base*100:0;\n  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};\n  set('cfo-fat',cfoMoney(fat)); set('cfo-cmv',cfoMoney(totalCmv)); set('cfo-bruto',cfoMoney(bruto)); set('cfo-mb',pct(bruto,fat).toFixed(2)+'%'); set('cfo-var',cfoMoney(vari)); set('cfo-fix',cfoMoney(fix)); set('cfo-liq',cfoMoney(liq)); set('cfo-ml',pct(liq,fat).toFixed(2)+'%');\n  const cfEl=document.getElementById('cfo-custos-fixos'); if(cfEl) cfEl.innerHTML='<div class="stat-row"><span>Aluguel</span><b>'+cfoMoney(cfoFixos.aluguel)+'</b></div><div class="stat-row"><span>NFe</span><b>'+cfoMoney(cfoFixos.nfe)+'</b></div><div class="stat-row"><span>Contador</span><b>'+cfoMoney(cfoFixos.contador)+'</b></div><div class="stat-row"><span>Combustível</span><b>'+cfoMoney(cfoFixos.combustivel)+'</b></div><div class="stat-row"><span>Funcionários</span><b>'+cfoMoney(cfoFixos.funcionarios)+'</b></div><div class="stat-row"><span>Outros</span><b>'+cfoMoney(cfoFixos.outros)+'</b></div><div class="stat-row"><span><b>Total fixos</b></span><b>'+cfoMoney(fix)+'</b></div>';\n  const tb=document.getElementById('cfo-pedidos'); if(tb) tb.innerHTML=pedidos.length?pedidos.map(p=>{const v=venda(p),c=cmv(p),b=v-c,va=v*variPct/100,l=b-va,mg=pct(l,v); return '<tr><td>'+((p.id||'').slice(-8)||'—')+'</td><td>'+((p.cliente||'').replace(/</g,'&lt;'))+'</td><td>'+cfoMoney(v)+'</td><td>'+cfoMoney(c)+'</td><td>'+cfoMoney(b)+'</td><td>'+pct(b,v).toFixed(2)+'%</td><td>'+cfoMoney(l)+'</td><td>'+mg.toFixed(2)+'%</td></tr>';}).join(''):'<tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px;">Nenhum pedido faturado para analisar.</td></tr>';\n}\nwindow.renderCFO=renderCFO;\n
 function renderAll() {
-  renderDashboard(); renderPedidos(); renderOrcamentos(); renderEstoque(); renderClientes(); renderFinanceiro(); renderCompras(); renderUsuarios(); renderFornecedores();
+  renderDashboard(); renderPedidos(); renderOrcamentos(); renderEstoque(); renderClientes(); renderFinanceiro(); renderCompras(); renderUsuarios(); renderFornecedores(); renderCFO();
 }
 
 // expor globalmente para o onchange do select funcionar
@@ -5168,30 +5341,6 @@ function gerarAlertasInteligentes(){
     }
   }catch(e){console.error(e);}
 }
-</script>
-
-<script>
-(function(){
-const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0);
-const pct=v=>(Number(v)||0).toFixed(2)+'%';
-const getCfg=()=>{try{return JSON.parse(localStorage.getItem('ab_cfo_cfg')||'{"com":0,"frete":0,"outros":0,"min":10}')}catch(e){return {com:0,frete:0,outros:0,min:10}}};
-function venda(p){return Math.max(0,(p.itens||[]).reduce((s,i)=>s+(Number(i.qty)||0)*(Number(i.preco)||0),0)-(Number(p.desconto)||0));}
-function custoItem(i){const p=(window.D.produtos||[]).find(x=>x.nome===i.produto);return p?Number(p.custo)||0:0;}
-function cmv(p){return (p.itens||[]).reduce((s,i)=>s+(Number(i.qty)||0)*custoItem(i),0);}
-window.cfoSave=function(){localStorage.setItem('ab_cfo_cfg',JSON.stringify({com:Number(document.getElementById('cfo-com')?.value)||0,frete:Number(document.getElementById('cfo-frete')?.value)||0,outros:Number(document.getElementById('cfo-outros')?.value)||0,min:Number(document.getElementById('cfo-min')?.value)||10}));window.renderCFO();};
-window.renderCFO=function(){try{
-const ps=Array.isArray(window.D?.pedidos)?window.D.pedidos:[], cfg=getCfg();
-const fat=ps.reduce((s,p)=>s+venda(p),0), custo=ps.reduce((s,p)=>s+cmv(p),0), bruto=fat-custo;
-const conf=window.D.config||{}, impostoPct=Number(conf.impostoPct)||0, fd=conf.custosFixos;
-let fix=0;if(typeof fd==='number')fix=fd;else if(fd&&typeof fd==='object')fix=Object.values(fd).reduce((s,v)=>s+(Number(v)||0),0);
-const vari=fat*(impostoPct+Number(cfg.com||0)+Number(cfg.frete||0)+Number(cfg.outros||0))/100, liq=bruto-vari-fix;
-const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
-set('cfo-fat',money(fat));set('cfo-cmv',money(custo));set('cfo-bruto',money(bruto));set('cfo-margem',pct(fat?bruto/fat*100:0));set('cfo-imp',money(fat*impostoPct/100));set('cfo-fixos',money(fix));set('cfo-liq',money(liq));set('cfo-ml',pct(fat?liq/fat*100:0));
-const tb=document.getElementById('cfo-table');if(tb){const arr=ps.map(p=>({p,v:venda(p),c:cmv(p)})).sort((a,b)=>(b.v-b.c)-(a.v-a.c)).slice(0,20);tb.innerHTML=arr.map(x=>{const m=x.v?((x.v-x.c)/x.v*100):0;return '<tr><td>'+String(x.p.id||'-')+'</td><td>'+String(x.p.cliente||'-')+'</td><td>'+money(x.v)+'</td><td>'+money(x.c)+'</td><td>'+money(x.v-x.c)+'</td><td>'+pct(m)+'</td></tr>'}).join('')||'<tr><td colspan="6">Nenhum pedido encontrado.</td></tr>';}
-}catch(e){console.error('CFO:',e)}};
-function hook(){if(typeof window.renderAll==='function'&&!window.renderAll.__cfoHooked){const old=window.renderAll;window.renderAll=function(){old.apply(this,arguments);setTimeout(window.renderCFO,0)};window.renderAll.__cfoHooked=true;}window.renderCFO();}
-window.addEventListener('load',()=>setTimeout(hook,500));setTimeout(hook,1200);
-})();
 </script>
 </body>
 </html>
