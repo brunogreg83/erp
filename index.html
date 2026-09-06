@@ -1133,7 +1133,7 @@ window.mobGoTo = function(id) {
 
   // FAB: mostrar só em Vendas
   const fab = document.getElementById('mob-fab');
-  if (fab) fab.style.display = (id === 'vendas' || id === ) ? 'flex' : 'none';
+  if (fab) fab.style.display = (id === 'vendas') ? 'flex' : 'none';
 
   // redesenhar gráficos ao navegar
   if (id === 'cfo') setTimeout(() => { if(window.renderCFO) window.renderCFO(); }, 30);
@@ -1255,7 +1255,7 @@ function restaurarTela(tela) {
 
   // FAB: mostrar só em Vendas
   const fab = document.getElementById('mob-fab');
-  if (fab) fab.style.display = (tela === 'vendas' || tela === ) ? 'flex' : 'none';
+  if (fab) fab.style.display = (tela === 'vendas') ? 'flex' : 'none';
 }
 
 // ao carregar: checar sessão
