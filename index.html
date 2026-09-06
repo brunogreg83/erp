@@ -518,16 +518,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
           <div class="kpi-card"><div class="kpi-label">Custos fixos</div><div class="kpi-value" id="cfo-fix">R$ 0,00</div></div>
           <div class="kpi-card"><div class="kpi-label">Lucro líquido estimado</div><div class="kpi-value" id="cfo-liq">R$ 0,00</div></div>
         </div>
-        <div class="two-col">
-          <div class="card"><div class="section-title">Parâmetros</div>
-            <div class="form-group"><label class="form-label">Impostos (%)</label><input class="form-input" id="cfo-tax" type="number" step="0.01" value="0"></div>
-            <div class="form-group"><label class="form-label">Comissão (%)</label><input class="form-input" id="cfo-com" type="number" step="0.01" value="0"></div>
-            <div class="form-group"><label class="form-label">Frete (%)</label><input class="form-input" id="cfo-frete" type="number" step="0.01" value="0"></div>
-            <div class="form-group"><label class="form-label">Outros variáveis (%)</label><input class="form-input" id="cfo-outros" type="number" step="0.01" value="0"></div>
-            <button class="btn-primary" onclick="cfoSave()">Salvar parâmetros</button>
-          </div>
-          <div class="card"><div class="section-title">Margem líquida</div><div id="cfo-ml" style="font-size:30px;font-weight:700;">0,00%</div><div id="cfo-status" style="margin-top:8px;color:#888;font-size:13px;"></div></div>
-        </div>
+        <div class="card cfo-margin-card"><div class="section-title">Margem líquida</div><div id="cfo-ml" style="font-size:30px;font-weight:700;">0,00%</div><div id="cfo-status" style="margin-top:8px;color:#888;font-size:13px;"></div></div>
         <div class="card"><div class="section-title">Margem por pedido</div><div class="table-wrap" style="margin:0;"><table><thead><tr><th>Pedido</th><th>Cliente</th><th>Venda</th><th>CMV</th><th>Lucro bruto</th><th>Margem</th><th>Líquido est.</th><th>Margem líquida</th></tr></thead><tbody id="cfo-pedidos"></tbody></table></div></div>
 
         <div class="cfo-finance-block">
@@ -551,6 +542,28 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
             <div id="cfo-rxd-chart" style="width:100%;"></div>
             <div id="cfo-rxd-legenda" class="cfo-chart-legend"></div>
           </div>
+        </div>
+
+        <!-- CUSTOS FIXOS E PARÂMETROS -->
+        <div class="card cfo-cost-card" style="margin-top:20px;">
+          <div class="cfo-cost-head">
+            <div><div class="section-title"><i class="ti ti-settings-dollar" style="color:#20c2df;margin-right:7px;"></i>Custos fixos e parâmetros</div>
+            <div class="cfo-cost-help">Cadastre ou altere aqui os custos mensais e os percentuais usados na rentabilidade do CFO.</div></div>
+            <div id="cfo-cost-status" class="cfo-cost-status">Sincronizado com o Firebase</div>
+          </div>
+          <div class="cfo-cost-grid">
+            <div><label class="form-label">Aluguel / mês</label><input class="form-input" id="cfo-fix-aluguel" type="number" step="0.01"></div>
+            <div><label class="form-label">NFe / mês</label><input class="form-input" id="cfo-fix-nfe" type="number" step="0.01"></div>
+            <div><label class="form-label">Contador / mês</label><input class="form-input" id="cfo-fix-contador" type="number" step="0.01"></div>
+            <div><label class="form-label">Combustível / mês</label><input class="form-input" id="cfo-fix-combustivel" type="number" step="0.01"></div>
+            <div><label class="form-label">Funcionários / mês</label><input class="form-input" id="cfo-fix-funcionarios" type="number" step="0.01"></div>
+            <div><label class="form-label">Outros custos fixos / mês</label><input class="form-input" id="cfo-fix-outrosFixos" type="number" step="0.01"></div>
+            <div><label class="form-label">Impostos (%)</label><input class="form-input" id="cfo-tax" type="number" step="0.01"></div>
+            <div><label class="form-label">Comissão (%)</label><input class="form-input" id="cfo-com" type="number" step="0.01"></div>
+            <div><label class="form-label">Frete (%)</label><input class="form-input" id="cfo-frete" type="number" step="0.01"></div>
+            <div><label class="form-label">Outros variáveis (%)</label><input class="form-input" id="cfo-outros" type="number" step="0.01"></div>
+          </div>
+          <div class="cfo-cost-footer"><div><b id="cfo-cost-total">R$ 0,00</b><span> custo fixo mensal total</span></div><button class="btn-primary" onclick="cfoSaveCustos()"><i class="ti ti-device-floppy"></i> Salvar custos e parâmetros</button></div>
         </div>
       </div>
 
@@ -1114,7 +1127,7 @@ window.toggleDrawer = function() {
 };
 
 const MOB_TITLES = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',orcamentos:'Orçamentos',estoque:'Estoque e Produtos',
-  clientes:'Clientes e CRM',financeiro:'Financeiro',compras:'Compras',relatorios:'Relatórios',ajustes:'Ajustes'};
+  clientes:'Clientes e CRM',cfo:'CFO • Rentabilidade',compras:'Compras',relatorios:'Relatórios',ajustes:'Ajustes'};
 
 window.mobGoTo = function(id) {
   if (id === 'financeiro') id = 'cfo';
@@ -1157,13 +1170,7 @@ window.mobGoTo = function(id) {
   if (fab) fab.style.display = (id === 'vendas' || id === 'orcamentos') ? 'flex' : 'none';
 
   // redesenhar gráficos ao navegar
-  if (id === 'financeiro') {
-    setTimeout(() => {
-      const sel = document.getElementById('fin-mes-global');
-      if (sel && sel.options.length === 0) renderFinanceiro();
-      else atualizarFinanceiroMes();
-    }, 30);
-  }
+  if (id === 'cfo') setTimeout(() => { if(window.renderCFO) window.renderCFO(); }, 30);
   if (id === 'dashboard') {
     const tR = D.receber.reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
     const tP = D.pagar.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
@@ -1252,7 +1259,7 @@ function restaurarTela(tela) {
     clientes:'Clientes e CRM',cfo:'CFO • Rentabilidade',compras:'Compras e Fornecedores',
     relatorios:'Relatórios',ajustes:'Ajustes do Sistema'};
   const mobTitles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',orcamentos:'Orçamentos',estoque:'Estoque e Produtos',
-    clientes:'Clientes e CRM',financeiro:'Financeiro',compras:'Compras',relatorios:'Relatórios',ajustes:'Ajustes'};
+    clientes:'Clientes e CRM',cfo:'CFO • Rentabilidade',compras:'Compras',relatorios:'Relatórios',ajustes:'Ajustes'};
 
   // telas
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -1406,7 +1413,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <script type="module">
 import { initializeApp }       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot, enableNetwork, disableNetwork }
+import { getFirestore, collection, addDoc, deleteDoc, doc, setDoc, updateDoc, onSnapshot, enableNetwork, disableNetwork }
                                 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // ── Firebase init ──────────────────────────────────────────────────────────
@@ -1423,6 +1430,8 @@ const db  = getFirestore(app);
 window.db = db;
 window._cfoDoc = (db,path)=>doc(db,...path.split('/'));
 window._cfoOnSnapshot = onSnapshot;
+window._cfoSetDoc = setDoc;
+window._cfoDocRef = doc;
 
 // ── Cache local ────────────────────────────────────────────────────────────
 const D = { pedidos:[], produtos:[], clientes:[], receber:[], pagar:[], ordens:[], usuarios:[], fornecedores:[] };
@@ -5275,13 +5284,7 @@ window.goTo = (id, btn) => {
     }, 50);
   }
   // redesenhar gráficos que dependem de visibilidade
-  if (id === 'financeiro') {
-    setTimeout(() => {
-      const sel = document.getElementById('fin-mes-global');
-      if (sel && sel.options.length === 0) renderFinanceiro();
-      else atualizarFinanceiroMes();
-    }, 30);
-  }
+  if (id === 'cfo') setTimeout(() => { if(window.renderCFO) window.renderCFO(); }, 30);
   if (id === 'dashboard') {
     const tR = D.receber.reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
     const tP = D.pagar.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
@@ -5388,6 +5391,18 @@ function gerarAlertasInteligentes(){
 #screen-cfo .cfo-finance-block .table-wrap{background:#091b28;}
 #screen-cfo .cfo-finance-block .table-wrap th{background:#12364b;color:#dff7ff;}
 #screen-cfo .cfo-finance-block .table-wrap td{color:#d5e6ed;}
+
+#screen-cfo .cfo-margin-card{margin-bottom:14px;}
+#screen-cfo .cfo-cost-card{background:linear-gradient(145deg,#0f2b3d,#081b29)!important;border:1px solid #2b6079!important;}
+#screen-cfo .cfo-cost-head{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;flex-wrap:wrap;margin-bottom:15px;}
+#screen-cfo .cfo-cost-help{font-size:12px;color:#9fb9c7;margin-top:-7px;}
+#screen-cfo .cfo-cost-status{font-size:11px;color:#8fb9c8;background:#0b2232;border:1px solid #27536a;border-radius:9px;padding:7px 10px;}
+#screen-cfo .cfo-cost-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:11px;}
+#screen-cfo .cfo-cost-grid .form-input{width:100%;box-sizing:border-box;}
+#screen-cfo .cfo-cost-footer{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap;margin-top:15px;padding-top:14px;border-top:1px solid #244b60;color:#9fb9c7;font-size:12px;}
+#screen-cfo .cfo-cost-footer b{font-size:19px;color:#35d2ec;margin-right:5px;}
+@media(max-width:1050px){#screen-cfo .cfo-cost-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
+@media(max-width:700px){#screen-cfo .cfo-cost-grid{grid-template-columns:repeat(2,minmax(0,1fr));}#screen-cfo .cfo-cost-footer{align-items:stretch;}#screen-cfo .cfo-cost-footer .btn-primary{width:100%;}}
 @media(max-width:700px){#screen-cfo{padding:15px;border-radius:14px;}#screen-cfo .cfo-title{font-size:21px;}#screen-cfo .cfo-month-tools{width:100%;}#screen-cfo .cfo-month-select{flex:1;min-width:0;}#screen-cfo .cfo-refresh{padding:10px 11px;}#screen-cfo .kpi-card .kpi-value{font-size:18px;}}
 </style>
 <script>
@@ -5395,7 +5410,7 @@ function gerarAlertasInteligentes(){
   const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0);
   const pct=v=>(Number(v)||0).toFixed(2)+'%';
   const cfgKey='ab_cfo_cfg_v2';
-  let fixed={aluguel:470,nfe:0,contador:0,combustivel:0,outros:0,impostoPct:0};
+  let fixed={aluguel:470,nfe:49.90,contador:270,combustivel:0,funcionarios:0,outrosFixos:0};
   let selectedMonth='';
   function pad(n){return String(n).padStart(2,'0');}
   function ymOf(d){return d.getFullYear()+'-'+pad(d.getMonth()+1);}
@@ -5411,11 +5426,27 @@ function gerarAlertasInteligentes(){
   window.cfoChangeMonth=function(v){selectedMonth=v||ymOf(new Date());render();};
   function getCfg(){try{return Object.assign({tax:0,com:0,frete:0,outros:0},JSON.parse(localStorage.getItem(cfgKey)||'{}'));}catch(e){return {tax:0,com:0,frete:0,outros:0};}}
   function setInputs(c){['tax','com','frete','outros'].forEach(k=>{const e=document.getElementById('cfo-'+k);if(e)e.value=c[k]||0;});}
-  window.cfoSave=function(){const c={tax:+document.getElementById('cfo-tax').value||0,com:+document.getElementById('cfo-com').value||0,frete:+document.getElementById('cfo-frete').value||0,outros:+document.getElementById('cfo-outros').value||0};localStorage.setItem(cfgKey,JSON.stringify(c));render();};
+  function fillCostInputs(c, v){
+    const vals=Object.assign({aluguel:470,nfe:49.90,contador:270,combustivel:0,funcionarios:0,outrosFixos:0},c||{});
+    ['aluguel','nfe','contador','combustivel','funcionarios','outrosFixos'].forEach(k=>{const e=document.getElementById('cfo-fix-'+k);if(e)e.value=Number(vals[k]||0).toFixed(2);});
+    const cfg=Object.assign({tax:0,com:0,frete:0,outros:0},v||{});
+    ['tax','com','frete','outros'].forEach(k=>{const e=document.getElementById('cfo-'+k);if(e)e.value=Number(cfg[k]||0);});
+    const total=['aluguel','nfe','contador','combustivel','funcionarios','outrosFixos'].reduce((a,k)=>a+(Number(vals[k])||0),0);
+    const t=document.getElementById('cfo-cost-total');if(t)t.textContent=money(total);
+  }
+  window.cfoSaveCustos=async function(){
+    const data={aluguel:+document.getElementById('cfo-fix-aluguel').value||0,nfe:+document.getElementById('cfo-fix-nfe').value||0,contador:+document.getElementById('cfo-fix-contador').value||0,combustivel:+document.getElementById('cfo-fix-combustivel').value||0,funcionarios:+document.getElementById('cfo-fix-funcionarios').value||0,outrosFixos:+document.getElementById('cfo-fix-outrosFixos').value||0};
+    const vars={tax:+document.getElementById('cfo-tax').value||0,com:+document.getElementById('cfo-com').value||0,frete:+document.getElementById('cfo-frete').value||0,outros:+document.getElementById('cfo-outros').value||0};
+    fixed=Object.assign(fixed,data);localStorage.setItem(cfgKey,JSON.stringify(vars));
+    const st=document.getElementById('cfo-cost-status');
+    try{if(window.db&&window._cfoSetDoc&&window._cfoDocRef){await window._cfoSetDoc(window._cfoDocRef(window.db,'config','custosFixos'),Object.assign({},data,{impostoPct:vars.tax,comissaoPct:vars.com,fretePct:vars.frete,outrosVariaveisPct:vars.outros}),{merge:true});if(st)st.textContent='Salvo no Firebase ✓';}}catch(e){console.error(e);if(st)st.textContent='Salvo localmente • erro no Firebase';}
+    fillCostInputs(fixed,vars);render();
+  };
+  window.cfoSave=window.cfoSaveCustos;
   function render(){
     const D=window.D;if(!D)return;
     monthOptions();
-    const c=getCfg();setInputs(c);
+    const c=getCfg();setInputs(c);fillCostInputs(fixed,c);
     const ps=(D.pedidos||[]).filter(p=>(p.status==='Entregue'||p.status==='Faturado')&&(p.data||'').slice(0,7)===selectedMonth);
     const produtos=D.produtos||[];
     const custo=i=>{const p=produtos.find(x=>x.nome===i.produto);return p?Number(p.custo)||0:0;};
@@ -5454,7 +5485,7 @@ function gerarAlertasInteligentes(){
   render=function(){_renderCFO();renderCfoFinance();};
   window.renderCFO=render;
   window.addEventListener('cfo-ready',render);
-  setTimeout(()=>{try{const db=window.db;if(db&&window._cfoOnSnapshot){window._cfoOnSnapshot(window._cfoDoc(db,'config/custosFixos'),s=>{if(s.exists())fixed=Object.assign(fixed,s.data());render();});}}catch(e){console.error(e);}},1000);
+  setTimeout(()=>{try{const db=window.db;if(db&&window._cfoOnSnapshot){window._cfoOnSnapshot(window._cfoDoc(db,'config/custosFixos'),s=>{if(s.exists()){const d=s.data();fixed=Object.assign(fixed,d);const vars=Object.assign(getCfg(),{tax:Number(d.impostoPct)||getCfg().tax,com:Number(d.comissaoPct)||getCfg().com,frete:Number(d.fretePct)||getCfg().frete,outros:Number(d.outrosVariaveisPct)||getCfg().outros});localStorage.setItem(cfgKey,JSON.stringify(vars));}render();});}}catch(e){console.error(e);}},1000);
 })();
 </script>
 </body>
