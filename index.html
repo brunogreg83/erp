@@ -478,16 +478,10 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
           </div>
         </div>
 
-        <!-- Simulador de Pedido — Margem Real -->
+        <!-- Resultado Real do Mês (lucro/prejuízo em R$, considerando vendas, CMV e custos fixos) -->
         <div class="card" style="margin-bottom:22px;">
-          <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-            <span><i class="ti ti-calculator" style="margin-right:6px;"></i>Simulador de Pedido — Margem Real</span>
-            <button class="btn-ghost" style="font-size:12px;padding:5px 12px;" onclick="addItemSim()"><i class="ti ti-plus"></i> Adicionar item</button>
-          </div>
-          <div style="font-size:12px;color:#888;margin-bottom:12px;">Digite os itens de um pedido e veja, na hora, a margem real de cada produto e se a venda está saudável — considerando o custo do produto e os custos fixos do mês (configurados em Ajustes).</div>
-          <div id="sim-itens"></div>
-          <div id="sim-vazio" class="form-hint" style="margin:6px 0 10px;">Nenhum item ainda — clique em "Adicionar item".</div>
-          <div id="sim-resultado"></div>
+          <div class="section-title" style="margin-bottom:14px;"><i class="ti ti-report-money" style="margin-right:6px;"></i>Resultado Real do Mês</div>
+          <div id="fin-resultado-real"></div>
         </div>
 
         <!-- Gráfico Receitas x Despesas — mês selecionado -->
@@ -2820,6 +2814,7 @@ window.atualizarFinanceiroMes = () => {
   atualizarSaldoMes();
   filtrarReceberMes();
   filtrarPagarMes();
+  atualizarResultadoRealFinanceiro();
 
   const sel = document.getElementById('fin-mes-global');
   const ym  = sel ? sel.value : null;
@@ -5321,65 +5316,21 @@ window.atualizarMargemReal = () => {
   document.getElementById('margreal-corpo').innerHTML = renderMargemRealHtml(sel.value);
 };
 
-// ── Simulador de Pedido — Margem Real por item (tela Financeiro) ────────────
-window.simItens = [];
-
-window.addItemSim = () => {
-  const idx = window.simItens.length;
-  window.simItens.push({ produto:'', qty:1, preco:0 });
-  const row = document.createElement('div');
-  row.className = 'pi-row'; row.id = 'sim-item-'+idx;
-  row.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;align-items:center;';
-  const opts = '<option value="">Selecione...</option>' + D.produtos.map(p => '<option value="' + p.nome + '">' + p.nome + '</option>').join('');
-  row.innerHTML =
-    '<select class="form-input" style="flex:2;" onchange="setSimItem(' + idx + ',this.value)">' + opts + '</select>' +
-    '<input type="text" inputmode="decimal" class="form-input" style="max-width:70px;" value="1" oninput="window.simItens[' + idx + '].qty=parseFloat(this.value.replace(\',\',\'.\'))||0; recalcSim();">' +
-    '<input type="text" inputmode="decimal" class="form-input" style="max-width:100px;" placeholder="Preço venda" id="sim-preco-' + idx + '" oninput="window.simItens[' + idx + '].preco=parseBR(this.value); recalcSim();">' +
-    '<button class="btn-danger" onclick="document.getElementById(\'sim-item-' + idx + '\').remove(); window.simItens[' + idx + ']=null; recalcSim();">✕</button>';
-  document.getElementById('sim-itens').appendChild(row);
-  document.getElementById('sim-vazio').style.display = 'none';
-  recalcSim();
-};
-
-window.setSimItem = (idx, nome) => {
-  const p = D.produtos.find(x => x.nome === nome);
-  window.simItens[idx] = { produto: nome, qty: window.simItens[idx]?.qty || 1, preco: p?.preco || 0 };
-  const el = document.getElementById('sim-preco-'+idx); if (el && p) el.value = p.preco;
-  recalcSim();
-};
-
-window.recalcSim = () => {
-  const itens = window.simItens.filter(Boolean).filter(i => i.produto);
-  const box = document.getElementById('sim-resultado');
-  if (!box) return;
-  if (!itens.length) { box.innerHTML = ''; return; }
-
-  let faturamento = 0, cmv = 0, minima = null;
-
-  const linhas = itens.map(it => {
-    const p = D.produtos.find(x => x.nome === it.produto);
-    const custo = p ? (parseFloat(p.custo) || 0) : 0;
-    const qty = parseFloat(it.qty) || 0;
-    const preco = parseFloat(it.preco) || 0;
-    faturamento += qty * preco;
-    cmv += qty * custo;
-    const c = classificarMargem(preco, custo);
-    minima = c.minima;
-
-    return '<tr><td>' + it.produto + '</td><td>' + qty + '</td><td>' + R$(custo) + '</td><td>' + R$(preco) + '</td><td>' + c.margemPct.toFixed(1) + '%</td><td style="color:' + c.cor + ';font-weight:500;">' + c.texto + '</td></tr>';
-  }).join('');
-
-  const margemTotalPct = faturamento > 0 ? ((faturamento - cmv) / faturamento) * 100 : 0;
-  const corTotal = minima !== null && margemTotalPct < minima ? '#D85A30' : '#185FA5';
-
+// ── Resultado Real do Mês (tela Financeiro) — lucro/prejuízo em R$ considerando vendas, CMV e custos fixos ──
+window.atualizarResultadoRealFinanceiro = () => {
+  const box = document.getElementById('fin-resultado-real');
+  const sel = document.getElementById('fin-mes-global');
+  if (!box || !sel || !sel.value) return;
+  const ym = sel.value;
+  const r = calcMargemReal(ym);
+  const cor = r.lucroLiquido >= 0 ? '#185FA5' : '#A32D2D';
+  const situacao = r.lucroLiquido >= 0 ? '🟢 Lucro no mês' : '🔴 Prejuízo no mês';
   box.innerHTML =
-    '<div class="table-wrap" style="margin:10px 0;"><table><thead><tr><th>Produto</th><th>Qtd</th><th>Custo</th><th>Preço</th><th>Margem</th><th>Situação</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
-    '<div class="stat-row"><span class="stat-key">Faturamento do pedido</span><span class="stat-val">' + R$(faturamento) + '</span></div>' +
-    '<div class="stat-row"><span class="stat-key">Custo da mercadoria (CMV)</span><span class="stat-val" style="color:#D85A30;">- ' + R$(cmv) + '</span></div>' +
-    '<div class="stat-row"><span class="stat-key"><b>Margem bruta do pedido</b></span><span class="stat-val" style="color:' + corTotal + ';"><b>' + margemTotalPct.toFixed(1) + '%</b></span></div>' +
-    (minima !== null
-      ? '<div class="form-hint">Margem mínima necessária para cobrir os custos fixos do mês: <b>' + minima.toFixed(1) + '%</b>. Configure/ajuste os custos fixos em Ajustes.</div>'
-      : '<div class="form-hint">Cadastre os custos fixos em Ajustes e registre vendas no mês para calcular a margem mínima necessária.</div>');
+    '<div class="stat-row"><span class="stat-key">Faturamento líquido (vendas do mês)</span><span class="stat-val">' + R$(r.faturamentoLiquido) + '</span></div>' +
+    '<div class="stat-row"><span class="stat-key">Custo da mercadoria vendida (CMV)</span><span class="stat-val" style="color:#D85A30;">- ' + R$(r.cmv) + '</span></div>' +
+    '<div class="stat-row"><span class="stat-key">Custos fixos do mês</span><span class="stat-val" style="color:#D85A30;">- ' + R$(r.custosFixos) + '</span></div>' +
+    '<div class="stat-row" style="font-size:15px;"><span class="stat-key"><b>' + situacao + '</b></span><span class="stat-val" style="color:' + cor + ';font-size:18px;"><b>' + R$(r.lucroLiquido) + '</b></span></div>' +
+    '<div class="form-hint" style="margin-top:6px;">Margem real: <b>' + r.margemRealPct.toFixed(1) + '%</b> · baseado em ' + r.nPedidos + ' pedido(s) entregue(s)/faturado(s) no mês. Configure os custos fixos em Ajustes.</div>';
 };
 
 // Preenchimento da chave Anthropic ao entrar em Ajustes
