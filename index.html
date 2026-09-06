@@ -881,6 +881,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <div class="section-title" style="margin-top:8px;">Itens do pedido</div>
       <div id="ped-itens"></div>
       <button class="btn-ghost" style="width:100%;margin-top:4px;" onclick="addItem()"><i class="ti ti-plus"></i> Adicionar item</button>
+      <div id="ped-margem-resumo" style="margin-top:10px;"></div>
       <div class="form-group" style="margin-top:14px;">
         <label class="form-label">Desconto (R$)</label>
         <input class="form-input" type="text" inputmode="decimal" id="ped-desconto" value="0" placeholder="0,00">
@@ -1865,6 +1866,7 @@ window.closeModal = id => {
 function prepPedido() {
   window.pitens = [];
   document.getElementById('ped-itens').innerHTML = '';
+  const resumoEl = document.getElementById('ped-margem-resumo'); if (resumoEl) resumoEl.innerHTML = '';
 
   // Cliente: recarrega a lista e força "Selecione..." (sem herdar o último cliente usado)
   sel('ped-cli', D.clientes.map(c => c.nome));
@@ -1881,6 +1883,71 @@ function prepPedido() {
   if (descEl) descEl.value = '0';
 
 }
+function margemMinimaNecessaria() {
+  // % de margem bruta que a empresa precisa, em média, para cobrir os custos fixos do mês.
+  const now = new Date();
+  const ymAtual = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  const r = calcMargemReal(ymAtual);
+  if (r.faturamentoBruto > 0) return (r.custosFixos / r.faturamentoBruto) * 100;
+  // sem vendas ainda no mês: usa o total de custos fixos sobre o faturamento do mês anterior, se houver
+  const d = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  const ymAnterior = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  const rAnt = calcMargemReal(ymAnterior);
+  if (rAnt.faturamentoBruto > 0) return (rAnt.custosFixos / rAnt.faturamentoBruto) * 100;
+  return null; // sem dados suficientes para estimar
+}
+
+// Classifica a margem de um item (preço x custo) usando a margem mínima necessária como referência.
+function classificarMargem(preco, custo) {
+  const margemPct = preco > 0 ? ((preco - custo) / preco) * 100 : 0;
+  const minima = margemMinimaNecessaria();
+  let texto, cor;
+  if (preco <= custo) { texto = '🔴 Prejuízo — abaixo do custo'; cor = '#A32D2D'; }
+  else if (minima === null) {
+    texto = margemPct >= 30 ? '🟢 Margem boa' : (margemPct >= 15 ? '🟡 Margem OK' : '🟠 Margem baixa');
+    cor = margemPct >= 30 ? '#185FA5' : (margemPct >= 15 ? '#854F0B' : '#D85A30');
+  }
+  else if (margemPct >= minima + 10) { texto = '🟢 Venda saudável'; cor = '#185FA5'; }
+  else if (margemPct >= minima) { texto = '🟡 No ponto de equilíbrio'; cor = '#854F0B'; }
+  else { texto = '🟠 Não cobre os custos fixos'; cor = '#D85A30'; }
+  return { margemPct, minima, texto, cor };
+}
+
+// Atualiza o alerta colorido de um item do formulário de pedido, ao digitar.
+window.atualizarBadgePI = idx => {
+  const it = window.pitens[idx];
+  const badge = document.getElementById('pi-badge-' + idx);
+  if (!badge || !it || !it.produto) { if (badge) badge.innerHTML = ''; atualizarResumoPedidoMargem(); return; }
+  const p = D.produtos.find(x => x.nome === it.produto);
+  const custo = p ? (parseFloat(p.custo) || 0) : 0;
+  const preco = parseFloat(it.preco) || 0;
+  const c = classificarMargem(preco, custo);
+  badge.innerHTML = '<span style="font-size:11px;font-weight:500;color:' + c.cor + ';">' + c.texto + ' · margem ' + c.margemPct.toFixed(1) + '%</span>';
+  atualizarResumoPedidoMargem();
+};
+
+// Resumo geral de margem do pedido inteiro, atualizado a cada alteração.
+window.atualizarResumoPedidoMargem = () => {
+  const box = document.getElementById('ped-margem-resumo');
+  if (!box) return;
+  const itens = (window.pitens || []).filter(Boolean).filter(i => i.produto);
+  if (!itens.length) { box.innerHTML = ''; return; }
+  let faturamento = 0, cmv = 0;
+  itens.forEach(it => {
+    const p = D.produtos.find(x => x.nome === it.produto);
+    const custo = p ? (parseFloat(p.custo) || 0) : 0;
+    const qty = parseFloat(it.qty) || 0;
+    const preco = parseFloat(it.preco) || 0;
+    faturamento += qty * preco;
+    cmv += qty * custo;
+  });
+  const c = classificarMargem(faturamento > 0 ? faturamento : 0, faturamento > 0 ? cmv : 0);
+  box.innerHTML = '<div class="alert-box" style="background:#f5f5f3;">' +
+    '<span style="color:' + c.cor + ';font-weight:600;">' + c.texto + '</span>' +
+    '<span style="margin-left:auto;color:#666;">Margem do pedido: <b style="color:' + c.cor + ';">' + c.margemPct.toFixed(1) + '%</b>' +
+    (c.minima !== null ? ' · mínima necessária: ' + c.minima.toFixed(1) + '%' : '') + '</span></div>';
+};
+
 window.addItem = () => {
   const idx = window.pitens.length;
   window.pitens.push({ produto:'', qty:1, preco:0 });
@@ -1888,9 +1955,10 @@ window.addItem = () => {
   row.className = 'pi-row'; row.id = 'pi-'+idx;
   const opts = D.produtos.map(p => '<option>' + p.nome + '</option>').join('');
   row.innerHTML = '<select class="form-input" onchange="setPI(' + idx + ',this.value)">' + opts + '</select>' +
-    '<input type="text" inputmode="decimal" class="form-input" style="max-width:70px;" value="1" oninput="window.pitens[' + idx + '].qty=+this.value">' +
-    '<input type="text" inputmode="decimal" class="form-input" style="max-width:90px;" placeholder="Preço" id="pp-' + idx + '" oninput="window.pitens[' + idx + '].preco=parseBR(this.value)">' +
-    '<button class="btn-danger" onclick="document.getElementById(\'pi-' + idx + '\').remove();window.pitens[' + idx + ']=null">✕</button>';
+    '<input type="text" inputmode="decimal" class="form-input" style="max-width:70px;" value="1" oninput="window.pitens[' + idx + '].qty=+this.value; atualizarBadgePI(' + idx + ');">' +
+    '<input type="text" inputmode="decimal" class="form-input" style="max-width:90px;" placeholder="Preço" id="pp-' + idx + '" oninput="window.pitens[' + idx + '].preco=parseBR(this.value); atualizarBadgePI(' + idx + ');">' +
+    '<button class="btn-danger" onclick="document.getElementById(\'pi-' + idx + '\').remove();window.pitens[' + idx + ']=null; atualizarResumoPedidoMargem();">✕</button>' +
+    '<div id="pi-badge-' + idx + '" style="flex-basis:100%;margin-top:2px;"></div>';
   document.getElementById('ped-itens').appendChild(row);
   if (D.produtos[0]) setPI(idx, D.produtos[0].nome);
 };
@@ -1898,6 +1966,7 @@ window.setPI = (idx, nome) => {
   const p = D.produtos.find(x => x.nome === nome);
   window.pitens[idx] = { produto:nome, qty:window.pitens[idx]?.qty||1, preco:p?.preco||0 };
   const el = document.getElementById('pp-'+idx); if(el && p) el.value = p.preco;
+  atualizarBadgePI(idx);
 };
 
 window.salvarPedido = async () => {
@@ -2007,14 +2076,16 @@ window.editPedido = id => {
     const row = document.createElement('div');
     row.className = 'pi-row'; row.id = 'pi-' + idx;
     row.innerHTML =
-      '<select class="form-input" onchange="window.pitens[' + idx + '].produto=this.value">' + opts + '</select>' +
+      '<select class="form-input" onchange="window.pitens[' + idx + '].produto=this.value; atualizarBadgePI(' + idx + ');">' + opts + '</select>' +
       '<input type="text" inputmode="decimal" class="form-input" style="max-width:70px;" value="' + it.qty + '" ' +
-        'oninput="window.pitens[' + idx + '].qty=+this.value">' +
+        'oninput="window.pitens[' + idx + '].qty=+this.value; atualizarBadgePI(' + idx + ');">' +
       '<input type="text" inputmode="decimal" class="form-input" style="max-width:90px;" id="pp-' + idx + '" value="' + it.preco + '" ' +
-        'oninput="window.pitens[' + idx + '].preco=parseBR(this.value)">' +
-      '<button class="btn-danger" onclick="document.getElementById(\'pi-' + idx + '\').remove();window.pitens[' + idx + ']=null">✕</button>';
+        'oninput="window.pitens[' + idx + '].preco=parseBR(this.value); atualizarBadgePI(' + idx + ');">' +
+      '<button class="btn-danger" onclick="document.getElementById(\'pi-' + idx + '\').remove();window.pitens[' + idx + ']=null; atualizarResumoPedidoMargem();">✕</button>' +
+      '<div id="pi-badge-' + idx + '" style="flex-basis:100%;margin-top:2px;"></div>';
 
     document.getElementById('ped-itens').appendChild(row);
+    atualizarBadgePI(idx);
   });
 
   // trocar botão para salvar alterações
@@ -5253,20 +5324,6 @@ window.atualizarMargemReal = () => {
 // ── Simulador de Pedido — Margem Real por item (tela Financeiro) ────────────
 window.simItens = [];
 
-function margemMinimaNecessaria() {
-  // % de margem bruta que a empresa precisa, em média, para cobrir os custos fixos do mês.
-  const now = new Date();
-  const ymAtual = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-  const r = calcMargemReal(ymAtual);
-  if (r.faturamentoBruto > 0) return (r.custosFixos / r.faturamentoBruto) * 100;
-  // sem vendas ainda no mês: usa o total de custos fixos sobre o faturamento do mês anterior, se houver
-  const d = new Date(now.getFullYear(), now.getMonth()-1, 1);
-  const ymAnterior = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-  const rAnt = calcMargemReal(ymAnterior);
-  if (rAnt.faturamentoBruto > 0) return (rAnt.custosFixos / rAnt.faturamentoBruto) * 100;
-  return null; // sem dados suficientes para estimar
-}
-
 window.addItemSim = () => {
   const idx = window.simItens.length;
   window.simItens.push({ produto:'', qty:1, preco:0 });
@@ -5297,28 +5354,19 @@ window.recalcSim = () => {
   if (!box) return;
   if (!itens.length) { box.innerHTML = ''; return; }
 
-  const minima = margemMinimaNecessaria();
-  let faturamento = 0, cmv = 0;
+  let faturamento = 0, cmv = 0, minima = null;
 
   const linhas = itens.map(it => {
     const p = D.produtos.find(x => x.nome === it.produto);
     const custo = p ? (parseFloat(p.custo) || 0) : 0;
     const qty = parseFloat(it.qty) || 0;
     const preco = parseFloat(it.preco) || 0;
-    const totalItem = qty * preco;
-    const custoItem = qty * custo;
-    faturamento += totalItem;
-    cmv += custoItem;
-    const margemPct = preco > 0 ? ((preco - custo) / preco) * 100 : 0;
+    faturamento += qty * preco;
+    cmv += qty * custo;
+    const c = classificarMargem(preco, custo);
+    minima = c.minima;
 
-    let status, cor;
-    if (preco <= custo) { status = '🔴 Prejuízo — abaixo do custo'; cor = '#A32D2D'; }
-    else if (minima === null) { status = margemPct >= 30 ? '🟢 Margem boa' : (margemPct >= 15 ? '🟡 Margem OK' : '🟠 Margem baixa'); cor = margemPct >= 30 ? '#185FA5' : (margemPct >= 15 ? '#854F0B' : '#D85A30'); }
-    else if (margemPct >= minima + 10) { status = '🟢 Venda saudável'; cor = '#185FA5'; }
-    else if (margemPct >= minima) { status = '🟡 No ponto de equilíbrio'; cor = '#854F0B'; }
-    else { status = '🟠 Não cobre os custos fixos'; cor = '#D85A30'; }
-
-    return '<tr><td>' + it.produto + '</td><td>' + qty + '</td><td>' + R$(custo) + '</td><td>' + R$(preco) + '</td><td>' + margemPct.toFixed(1) + '%</td><td style="color:' + cor + ';font-weight:500;">' + status + '</td></tr>';
+    return '<tr><td>' + it.produto + '</td><td>' + qty + '</td><td>' + R$(custo) + '</td><td>' + R$(preco) + '</td><td>' + c.margemPct.toFixed(1) + '%</td><td style="color:' + c.cor + ';font-weight:500;">' + c.texto + '</td></tr>';
   }).join('');
 
   const margemTotalPct = faturamento > 0 ? ((faturamento - cmv) / faturamento) * 100 : 0;
