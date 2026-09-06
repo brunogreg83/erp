@@ -473,6 +473,10 @@ document.addEventListener("DOMContentLoaded", () => {
     .hero-title{font-size:1.1rem}
     .form-card{padding:14px 10px}
   }
+
+  .btn-voltar-erp{background:#061523;color:#fff;border:1px solid rgba(20,217,236,.55);padding:9px 14px;border-radius:8px;cursor:pointer;font-family:"Montserrat",sans-serif;font-size:.78rem;font-weight:800;letter-spacing:.3px;display:flex;align-items:center;gap:6px;white-space:nowrap;box-shadow:0 4px 14px rgba(6,21,35,.18);transition:.2s}
+  .btn-voltar-erp:hover{background:#0b8fa3;border-color:#14d9ec;transform:translateY(-1px)}
+  @media(max-width:600px){.btn-voltar-erp{padding:8px 10px;font-size:.7rem}.btn-voltar-erp span:last-child{display:none}}
 </style>
 </head>
 <body>
@@ -484,6 +488,9 @@ document.addEventListener("DOMContentLoaded", () => {
     <span class="db-status" id="dbStatus">&#9679; Aguardando…</span>
     <span class="saving-badge" id="savingBadge"><span class="spinner" style="border-top-color:var(--text-muted)"></span> Salvando…</span>
   </div>
+  <button class="btn-voltar-erp" onclick="window.location.href='index.html'" type="button" aria-label="Voltar ao ERP">
+    <span aria-hidden="true">←</span> <span>Voltar ao ERP</span>
+  </button>
   <button class="btn-gerar" onclick="gerarPDF()" id="btnNavGerar" disabled>
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
     <span>Gerar PDF</span>

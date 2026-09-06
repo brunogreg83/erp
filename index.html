@@ -1102,32 +1102,32 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 
 <script>
 const SESSION_KEY = 'abc_auth';
-const SESSION_TTL = 10 * 60 * 1000;
+const SESSION_TTL = Infinity;
 
 // usuário admin fixo + usuários do Firebase
 const ADMIN_FIXO = { login: 'admin', senha: '#Algo2023', nome: 'Administrador', perfil: 'admin' };
 
 function verificarSessao() {
   try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
+    const raw = localStorage.getItem(SESSION_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw);
     if (Date.now() - data.ts < SESSION_TTL) return data;
-    sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_KEY);
     return null;
   } catch(e) { return null; }
 }
 
 function salvarSessao(usuario) {
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify({ ...usuario, ts: Date.now() }));
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ ...usuario, ts: Date.now() }));
 }
 
 function getSessao() {
-  try { return JSON.parse(sessionStorage.getItem(SESSION_KEY)); } catch(e) { return null; }
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch(e) { return null; }
 }
 
 window.fazerLogout = function() {
-  sessionStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(SESSION_KEY);
   location.reload();
 };
 
@@ -5309,7 +5309,7 @@ function renderAll() {
 
 // expor globalmente para o onchange do select funcionar
 window.renderDashboard = renderDashboard;
-window._getSessao = () => { try { return JSON.parse(sessionStorage.getItem(SESSION_KEY)); } catch(e){ return null; } };
+window._getSessao = () => { try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch(e){ return null; } };
 
 function gerarAlertasInteligentes(){
   try{
