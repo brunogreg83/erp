@@ -504,6 +504,11 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
             <input class="form-input" id="cf-combustivel" type="number" step="0.01" placeholder="0,00">
           </div>
           <div class="form-group">
+            <label class="form-label">Imposto Simples Nacional (%)</label>
+            <input class="form-input" id="cf-imposto" type="number" step="0.01" placeholder="0,00">
+            <span class="form-hint">Alíquota aplicada sobre o faturamento do mês. É calculada automaticamente em R$ com base nas vendas.</span>
+          </div>
+          <div class="form-group">
             <label class="form-label" style="display:flex;align-items:center;justify-content:space-between;">Outros custos fixos <button class="btn-ghost" style="padding:3px 9px;font-size:11px;" onclick="addLinhaCustoFixo()"><i class="ti ti-plus"></i> Adicionar</button></label>
             <div id="cf-outros-lista"></div>
           </div>
@@ -511,7 +516,9 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
             <button class="btn-primary" onclick="salvarCustosFixos()"><i class="ti ti-check"></i> Salvar custos fixos</button>
             <span id="cf-status" style="font-size:12px;color:#888;"></span>
           </div>
-          <div class="stat-row" style="margin-top:10px;"><span class="stat-key">Total de custos fixos/mês</span><span class="stat-val" id="cf-total">R$ 0,00</span></div>
+          <div class="stat-row" style="margin-top:10px;"><span class="stat-key">Custos fixos em R$/mês</span><span class="stat-val" id="cf-total">R$ 0,00</span></div>
+          <div class="stat-row"><span class="stat-key">Imposto estimado no mês (sobre vendas já faturadas)</span><span class="stat-val" id="cf-imposto-valor">R$ 0,00</span></div>
+          <div class="stat-row"><span class="stat-key"><b>Total geral de custos do mês</b></span><span class="stat-val" id="cf-total-geral"><b>R$ 0,00</b></span></div>
         </div>
 
         <!-- Resultado Real do Mês (lucro/prejuízo em R$, considerando vendas, CMV e custos fixos) -->
@@ -5187,12 +5194,14 @@ function getCustosFixos() {
       nfe: parseFloat(cf.nfe) || 0,
       contador: parseFloat(cf.contador) || 0,
       combustivel: parseFloat(cf.combustivel) || 0,
+      impostoPct: parseFloat(cf.impostoPct) || 0,
       outros: Array.isArray(cf.outros) ? cf.outros.map(o => ({ nome: o.nome || '', valor: parseFloat(o.valor) || 0 })) : []
     };
-  } catch(e) { return { aluguel:0, nfe:0, contador:0, combustivel:0, outros:[] }; }
+  } catch(e) { return { aluguel:0, nfe:0, contador:0, combustivel:0, impostoPct:0, outros:[] }; }
 }
 
-function totalCustosFixos(cf) {
+// Soma apenas os custos fixos em R$ (aluguel, NF-e, contador, combustível, outros) — não inclui o imposto, que é variável (% sobre o faturamento).
+function totalCustosFixosRS(cf) {
   cf = cf || getCustosFixos();
   return cf.aluguel + cf.nfe + cf.contador + cf.combustivel + cf.outros.reduce((s,o)=>s+(parseFloat(o.valor)||0), 0);
 }
@@ -5218,6 +5227,7 @@ function preencherCustosFixosUI() {
   const elN = document.getElementById('cf-nfe'); if (elN) elN.value = cf.nfe || '';
   const elC = document.getElementById('cf-contador'); if (elC) elC.value = cf.contador || '';
   const elCb = document.getElementById('cf-combustivel'); if (elCb) elCb.value = cf.combustivel || '';
+  const elI = document.getElementById('cf-imposto'); if (elI) elI.value = cf.impostoPct || '';
   const lista = document.getElementById('cf-outros-lista');
   if (lista) {
     lista.innerHTML = '';
@@ -5226,17 +5236,30 @@ function preencherCustosFixosUI() {
   atualizarTotalCustosFixosUI();
 }
 
+// Faturamento líquido do mês atual, usado só para estimar em R$ o valor do imposto percentual.
+function faturamentoLiquidoMesAtual() {
+  const now = new Date();
+  const ym = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  return calcMargemReal(ym).faturamentoLiquido;
+}
+
 window.atualizarTotalCustosFixosUI = () => {
   const aluguel = parseFloat(document.getElementById('cf-aluguel')?.value) || 0;
   const nfe = parseFloat(document.getElementById('cf-nfe')?.value) || 0;
   const contador = parseFloat(document.getElementById('cf-contador')?.value) || 0;
   const combustivel = parseFloat(document.getElementById('cf-combustivel')?.value) || 0;
+  const impostoPct = parseFloat(document.getElementById('cf-imposto')?.value) || 0;
   const outros = Array.from(document.querySelectorAll('#cf-outros-lista .cf-outro-row')).reduce((s,row) => {
     return s + (parseFloat(row.querySelector('.cf-outro-valor')?.value) || 0);
   }, 0);
-  const tot = aluguel + nfe + contador + combustivel + outros;
+  const totRS = aluguel + nfe + contador + combustivel + outros;
+  const impostoValor = faturamentoLiquidoMesAtual() * (impostoPct / 100);
   const totEl = document.getElementById('cf-total');
-  if (totEl) totEl.textContent = R$(tot);
+  if (totEl) totEl.textContent = R$(totRS);
+  const impEl = document.getElementById('cf-imposto-valor');
+  if (impEl) impEl.textContent = R$(impostoValor);
+  const totGeralEl = document.getElementById('cf-total-geral');
+  if (totGeralEl) totGeralEl.innerHTML = '<b>' + R$(totRS + impostoValor) + '</b>';
 };
 
 window.salvarCustosFixos = () => {
@@ -5249,6 +5272,7 @@ window.salvarCustosFixos = () => {
     nfe: parseFloat(document.getElementById('cf-nfe')?.value) || 0,
     contador: parseFloat(document.getElementById('cf-contador')?.value) || 0,
     combustivel: parseFloat(document.getElementById('cf-combustivel')?.value) || 0,
+    impostoPct: parseFloat(document.getElementById('cf-imposto')?.value) || 0,
     outros
   };
   localStorage.setItem('custos_fixos', JSON.stringify(cf));
@@ -5282,12 +5306,14 @@ function calcMargemReal(ym) {
   const margemBrutaPct = faturamentoBruto > 0 ? (margemBrutaValor / faturamentoBruto) * 100 : 0;
 
   const cf = getCustosFixos();
-  const custosFixos = totalCustosFixos(cf);
+  const custosFixosRS = totalCustosFixosRS(cf);
+  const impostoValor = faturamentoLiquido * ((cf.impostoPct || 0) / 100);
+  const custosFixos = custosFixosRS + impostoValor;
 
   const lucroLiquido = faturamentoLiquido - cmv - custosFixos;
   const margemRealPct = faturamentoLiquido > 0 ? (lucroLiquido / faturamentoLiquido) * 100 : 0;
 
-  return { faturamentoBruto, descontos, faturamentoLiquido, cmv, margemBrutaValor, margemBrutaPct, cf, custosFixos, lucroLiquido, margemRealPct, nPedidos: pedidosMes.length };
+  return { faturamentoBruto, descontos, faturamentoLiquido, cmv, margemBrutaValor, margemBrutaPct, cf, custosFixosRS, impostoValor, custosFixos, lucroLiquido, margemRealPct, nPedidos: pedidosMes.length };
 }
 
 function renderMargemRealHtml(ym) {
@@ -5310,6 +5336,7 @@ function renderMargemRealHtml(ym) {
       <div class="stat-row"><span class="stat-key">Contador</span><span class="stat-val">${R$(r.cf.contador)}</span></div>
       <div class="stat-row"><span class="stat-key">Combustível</span><span class="stat-val">${R$(r.cf.combustivel)}</span></div>
       ${outrosLinhas}
+      <div class="stat-row"><span class="stat-key">Imposto Simples Nacional (${(r.cf.impostoPct||0).toFixed(2)}% sobre faturamento)</span><span class="stat-val">${R$(r.impostoValor)}</span></div>
       <div class="stat-row"><span class="stat-key"><b>Total de custos fixos</b></span><span class="stat-val" style="color:#D85A30;"><b>- ${R$(r.custosFixos)}</b></span></div>
     </div>
     <div class="card" style="padding:16px;">
@@ -5332,7 +5359,8 @@ function renderResultadoRealHtml(ym) {
   const situacao = r.lucroLiquido >= 0 ? '🟢 Lucro no mês' : '🔴 Prejuízo no mês';
   return '<div class="stat-row"><span class="stat-key">Faturamento líquido (vendas do mês)</span><span class="stat-val">' + R$(r.faturamentoLiquido) + '</span></div>' +
     '<div class="stat-row"><span class="stat-key">Custo da mercadoria vendida (CMV)</span><span class="stat-val" style="color:#D85A30;">- ' + R$(r.cmv) + '</span></div>' +
-    '<div class="stat-row"><span class="stat-key">Custos fixos do mês</span><span class="stat-val" style="color:#D85A30;">- ' + R$(r.custosFixos) + '</span></div>' +
+    '<div class="stat-row"><span class="stat-key">Custos fixos (aluguel, NF-e, contador, etc.)</span><span class="stat-val" style="color:#D85A30;">- ' + R$(r.custosFixosRS) + '</span></div>' +
+    '<div class="stat-row"><span class="stat-key">Imposto Simples Nacional (' + (r.cf.impostoPct||0).toFixed(2) + '%)</span><span class="stat-val" style="color:#D85A30;">- ' + R$(r.impostoValor) + '</span></div>' +
     '<div class="stat-row" style="font-size:15px;"><span class="stat-key"><b>' + situacao + '</b></span><span class="stat-val" style="color:' + cor + ';font-size:18px;"><b>' + R$(r.lucroLiquido) + '</b></span></div>' +
     '<div class="form-hint" style="margin-top:6px;">Margem real: <b>' + r.margemRealPct.toFixed(1) + '%</b> · baseado em ' + r.nPedidos + ' pedido(s) entregue(s)/faturado(s) no mês. Configure os custos fixos em Financeiro.</div>';
 }
