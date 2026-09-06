@@ -277,7 +277,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     <nav class="nav-section" id="nav-menu">
       <button class="nav-item active" onclick="goTo('dashboard',this)" id="nav-dashboard"><i class="ti ti-layout-dashboard"></i>Dashboard</button>
       <button class="nav-item" onclick="goTo('vendas',this)" id="nav-vendas"><i class="ti ti-shopping-cart"></i>Vendas e Pedidos</button>
-      <button class="nav-item" onclick="goTo('orcamentos',this)" id="nav-orcamentos"><i class="ti ti-file-invoice"></i>Orçamentos</button>
       <button class="nav-item" onclick="goTo('estoque',this)" id="nav-estoque"><i class="ti ti-box"></i>Estoque e Produtos</button>
       <button class="nav-item" onclick="goTo('clientes',this)" id="nav-clientes"><i class="ti ti-users"></i>Clientes e CRM</button>
       <button class="nav-item" onclick="goTo('cfo',this)" id="nav-cfo"><i class="ti ti-chart-donut"></i>CFO • Rentabilidade</button>
@@ -310,7 +309,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <nav style="padding:10px 0;flex:1;" id="mob-nav-menu">
         <button class="nav-item active" onclick="mobGoTo('dashboard')" id="mob-nav-dashboard"><i class="ti ti-layout-dashboard"></i>Dashboard</button>
         <button class="nav-item" onclick="mobGoTo('vendas')" id="mob-nav-vendas"><i class="ti ti-shopping-cart"></i>Vendas e Pedidos</button>
-        <button class="nav-item" onclick="mobGoTo('orcamentos')" id="mob-nav-orcamentos"><i class="ti ti-file-invoice"></i>Orçamentos</button>
+        <button class="nav-item" onclick="mobGoTo()" id="mob-nav-orcamentos"><i class="ti ti-file-invoice"></i>Orçamentos</button>
         <button class="nav-item" onclick="mobGoTo('estoque')" id="mob-nav-estoque"><i class="ti ti-box"></i>Estoque e Produtos</button>
         <button class="nav-item" onclick="mobGoTo('clientes')" id="mob-nav-clientes"><i class="ti ti-users"></i>Clientes e CRM</button>
         <button class="nav-item" onclick="mobGoTo('cfo')" id="mob-nav-cfo"><i class="ti ti-chart-donut"></i>CFO • Rentabilidade</button>
@@ -1093,7 +1092,7 @@ window.toggleDrawer = function() {
   overlay.classList.toggle('open', !isOpen);
 };
 
-const MOB_TITLES = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',orcamentos:'Orçamentos',estoque:'Estoque e Produtos',
+const MOB_TITLES = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',estoque:'Estoque e Produtos',
   clientes:'Clientes e CRM',cfo:'CFO • Rentabilidade',relatorios:'Relatórios',ajustes:'Ajustes'};
 
 window.mobGoTo = function(id) {
@@ -1105,8 +1104,8 @@ window.mobGoTo = function(id) {
   const sessao  = verificarSessao();
   const perfil  = sessao?.perfil || 'admin';
   const perms   = perfil === 'admin'
-    ? ['dashboard','vendas','orcamentos','estoque','clientes','cfo','relatorios','ajustes']
-    : ['vendas','orcamentos','clientes'];
+    ? ['dashboard','vendas','estoque','clientes','cfo','relatorios','ajustes']
+    : ['vendas','clientes'];
   if (!perms.includes(id)) { alert('Acesso não autorizado.'); return; }
 
   // telas
@@ -1134,7 +1133,7 @@ window.mobGoTo = function(id) {
 
   // FAB: mostrar só em Vendas
   const fab = document.getElementById('mob-fab');
-  if (fab) fab.style.display = (id === 'vendas' || id === 'orcamentos') ? 'flex' : 'none';
+  if (fab) fab.style.display = (id === 'vendas' || id === ) ? 'flex' : 'none';
 
   // redesenhar gráficos ao navegar
   if (id === 'cfo') setTimeout(() => { if(window.renderCFO) window.renderCFO(); }, 30);
@@ -1223,10 +1222,10 @@ function aplicarPerfil(perfil, nome) {
 function restaurarTela(tela) {
   if (!tela) return;
   if (tela === 'compras') tela = 'estoque';
-  const titles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',orcamentos:'Orçamentos',estoque:'Estoque e Produtos',
+  const titles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',estoque:'Estoque e Produtos',
     clientes:'Clientes e CRM',cfo:'CFO • Rentabilidade',
     relatorios:'Relatórios',ajustes:'Ajustes do Sistema'};
-  const mobTitles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',orcamentos:'Orçamentos',estoque:'Estoque e Produtos',
+  const mobTitles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',estoque:'Estoque e Produtos',
     clientes:'Clientes e CRM',cfo:'CFO • Rentabilidade',relatorios:'Relatórios',ajustes:'Ajustes'};
 
   // telas
@@ -1256,7 +1255,7 @@ function restaurarTela(tela) {
 
   // FAB: mostrar só em Vendas
   const fab = document.getElementById('mob-fab');
-  if (fab) fab.style.display = (tela === 'vendas' || tela === 'orcamentos') ? 'flex' : 'none';
+  if (fab) fab.style.display = (tela === 'vendas' || tela === ) ? 'flex' : 'none';
 }
 
 // ao carregar: checar sessão
@@ -5220,9 +5219,9 @@ function renderUsuarios() {
 }
 
 // ── Navegação com controle de acesso ──────────────────────────────────────
-const ROTAS_ADMIN    = ['dashboard','vendas','orcamentos','estoque','clientes','cfo','relatorios','ajustes'];
-const ROTAS_VENDEDOR = ['vendas','orcamentos','clientes'];
-const titles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',orcamentos:'Orçamentos',estoque:'Estoque e Produtos',
+const ROTAS_ADMIN    = ['dashboard','vendas','estoque','clientes','cfo','relatorios','ajustes'];
+const ROTAS_VENDEDOR = ['vendas','clientes'];
+const titles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',estoque:'Estoque e Produtos',
   clientes:'Clientes e CRM',cfo:'CFO • Rentabilidade',
   relatorios:'Relatórios',ajustes:'Ajustes do Sistema'};
 
