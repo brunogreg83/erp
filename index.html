@@ -1909,16 +1909,16 @@ function prepPedido() {
 }
 function margemMinimaNecessaria() {
   // % de margem que a empresa precisa, em média, para o Total a Pagar caber dentro do Total a Receber do mês.
-  // Usa o mês anterior completo como referência (mais estável), caindo para o mês atual só se não houver dados do mês anterior.
+  // Usa o mês vigente (em andamento); cai para o mês anterior só se não houver dados ainda no mês atual.
   const now = new Date();
+  const ymAtual = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  const r = calcMargemReal(ymAtual);
+  if (r.totalReceber > 0) return (r.totalPagar / r.totalReceber) * 100;
+  // sem títulos a receber no mês vigente ainda: usa o mês anterior completo como alternativa
   const d = new Date(now.getFullYear(), now.getMonth()-1, 1);
   const ymAnterior = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
   const rAnt = calcMargemReal(ymAnterior);
   if (rAnt.totalReceber > 0) return (rAnt.totalPagar / rAnt.totalReceber) * 100;
-  // sem títulos a receber no mês anterior: usa o mês atual em andamento, se já houver dados
-  const ymAtual = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-  const r = calcMargemReal(ymAtual);
-  if (r.totalReceber > 0) return (r.totalPagar / r.totalReceber) * 100;
   return null; // sem dados suficientes para estimar
 }
 
