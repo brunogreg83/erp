@@ -279,7 +279,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <button class="nav-item" onclick="goTo('vendas',this)" id="nav-vendas"><i class="ti ti-shopping-cart"></i>Vendas e Pedidos</button>
       <button class="nav-item" onclick="goTo('estoque',this)" id="nav-estoque"><i class="ti ti-box"></i>Estoque e Produtos</button>
       <button class="nav-item" onclick="goTo('clientes',this)" id="nav-clientes"><i class="ti ti-users"></i>Clientes e CRM</button>
-      <button class="nav-item" onclick="goTo('cfo',this)" id="nav-cfo"><i class="ti ti-chart-donut"></i>CFO • Rentabilidade</button>
+      <button class="nav-item" onclick="goTo('cfo',this)" id="nav-cfo"><i class="ti ti-chart-donut"></i>Financeiro</button>
       <button class="nav-item" onclick="goTo('relatorios',this)" id="nav-relatorios"><i class="ti ti-chart-bar"></i>Relatórios</button>
       <button class="nav-item" onclick="goTo('ajustes',this)" id="nav-ajustes"><i class="ti ti-settings"></i>Ajustes</button>
     </nav>
@@ -311,7 +311,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <button class="nav-item" onclick="mobGoTo('vendas')" id="mob-nav-vendas"><i class="ti ti-shopping-cart"></i>Vendas e Pedidos</button>
         <button class="nav-item" onclick="mobGoTo('estoque')" id="mob-nav-estoque"><i class="ti ti-box"></i>Estoque e Produtos</button>
         <button class="nav-item" onclick="mobGoTo('clientes')" id="mob-nav-clientes"><i class="ti ti-users"></i>Clientes e CRM</button>
-        <button class="nav-item" onclick="mobGoTo('cfo')" id="mob-nav-cfo"><i class="ti ti-chart-donut"></i>CFO • Rentabilidade</button>
+        <button class="nav-item" onclick="mobGoTo('cfo')" id="mob-nav-cfo"><i class="ti ti-chart-donut"></i>Financeiro</button>
         <button class="nav-item" onclick="mobGoTo('relatorios')" id="mob-nav-relatorios"><i class="ti ti-chart-bar"></i>Relatórios</button>
         <button class="nav-item" onclick="mobGoTo('ajustes')" id="mob-nav-ajustes"><i class="ti ti-settings"></i>Ajustes</button>
       </nav>
@@ -461,7 +461,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <div class="screen" id="screen-cfo">
         <div class="cfo-head">
           <div>
-            <div class="cfo-title"><span class="cfo-title-mark">CFO</span> • Rentabilidade</div>
+            <div class="cfo-title">Financeiro</div>
             <div class="cfo-subtitle">Visão financeira real por mês, usando os pedidos e custos do ERP.</div>
           </div>
           <div class="cfo-month-tools">
@@ -1092,7 +1092,7 @@ window.toggleDrawer = function() {
 };
 
 const MOB_TITLES = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',estoque:'Estoque e Produtos',
-  clientes:'Clientes e CRM',cfo:'CFO • Rentabilidade',relatorios:'Relatórios',ajustes:'Ajustes'};
+  clientes:'Clientes e CRM',cfo:'Financeiro',relatorios:'Relatórios',ajustes:'Ajustes'};
 
 window.mobGoTo = function(id) {
   if (id === 'financeiro') id = 'cfo';
@@ -1222,10 +1222,10 @@ function restaurarTela(tela) {
   if (!tela) return;
   if (tela === 'compras') tela = 'estoque';
   const titles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',estoque:'Estoque e Produtos',
-    clientes:'Clientes e CRM',cfo:'CFO • Rentabilidade',
+    clientes:'Clientes e CRM',cfo:'Financeiro',
     relatorios:'Relatórios',ajustes:'Ajustes do Sistema'};
   const mobTitles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',estoque:'Estoque e Produtos',
-    clientes:'Clientes e CRM',cfo:'CFO • Rentabilidade',relatorios:'Relatórios',ajustes:'Ajustes'};
+    clientes:'Clientes e CRM',cfo:'Financeiro',relatorios:'Relatórios',ajustes:'Ajustes'};
 
   // telas
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -5221,7 +5221,7 @@ function renderUsuarios() {
 const ROTAS_ADMIN    = ['dashboard','vendas','estoque','clientes','cfo','relatorios','ajustes'];
 const ROTAS_VENDEDOR = ['vendas','clientes'];
 const titles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',estoque:'Estoque e Produtos',
-  clientes:'Clientes e CRM',cfo:'CFO • Rentabilidade',
+  clientes:'Clientes e CRM',cfo:'Financeiro',
   relatorios:'Relatórios',ajustes:'Ajustes do Sistema'};
 
 window.goTo = (id, btn) => {
