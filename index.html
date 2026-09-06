@@ -274,7 +274,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <button class="nav-item" onclick="goTo('estoque',this)" id="nav-estoque"><i class="ti ti-box"></i>Estoque e Produtos</button>
       <button class="nav-item" onclick="goTo('clientes',this)" id="nav-clientes"><i class="ti ti-users"></i>Clientes e CRM</button>
       <button class="nav-item" onclick="goTo('financeiro',this)" id="nav-financeiro"><i class="ti ti-receipt"></i>Financeiro</button>
-      <button class="nav-item" onclick="goTo('cfo',this)" id="nav-cfo"><i class="ti ti-chart-donut"></i>CFO • Rentabilidade</button>
+       <button class="nav-item" onclick="goTo('cfo',this)" id="nav-cfo"><i class="ti ti-chart-donut"></i>CFO • Rentabilidade</button>
       <button class="nav-item" onclick="goTo('compras',this)" id="nav-compras"><i class="ti ti-truck"></i>Compras</button>
       <button class="nav-item" onclick="goTo('relatorios',this)" id="nav-relatorios"><i class="ti ti-chart-bar"></i>Relatórios</button>
       <button class="nav-item" onclick="goTo('ajustes',this)" id="nav-ajustes"><i class="ti ti-settings"></i>Ajustes</button>
@@ -309,7 +309,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <button class="nav-item" onclick="mobGoTo('estoque')" id="mob-nav-estoque"><i class="ti ti-box"></i>Estoque e Produtos</button>
         <button class="nav-item" onclick="mobGoTo('clientes')" id="mob-nav-clientes"><i class="ti ti-users"></i>Clientes e CRM</button>
         <button class="nav-item" onclick="mobGoTo('financeiro')" id="mob-nav-financeiro"><i class="ti ti-receipt"></i>Financeiro</button>
-        <button class="nav-item" onclick="mobGoTo('cfo')" id="mob-nav-cfo"><i class="ti ti-chart-donut"></i>CFO • Rentabilidade</button>
+         <button class="nav-item" onclick="mobGoTo('cfo')" id="mob-nav-cfo"><i class="ti ti-chart-donut"></i>CFO • Rentabilidade</button>
         <button class="nav-item" onclick="mobGoTo('compras')" id="mob-nav-compras"><i class="ti ti-truck"></i>Compras</button>
         <button class="nav-item" onclick="mobGoTo('relatorios')" id="mob-nav-relatorios"><i class="ti ti-chart-bar"></i>Relatórios</button>
         <button class="nav-item" onclick="mobGoTo('ajustes')" id="mob-nav-ajustes"><i class="ti ti-settings"></i>Ajustes</button>
@@ -1203,7 +1203,7 @@ function restaurarTela(tela) {
   if (!tela) return;
   const titles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',orcamentos:'Orçamentos',estoque:'Estoque e Produtos',
     clientes:'Clientes e CRM',financeiro:'Financeiro e Faturamento',compras:'Compras e Fornecedores',
-    relatorios:'Relatórios',cfo:'CFO • Rentabilidade',ajustes:'Ajustes do Sistema'};
+    relatorios:'Relatórios',ajustes:'Ajustes do Sistema'};
   const mobTitles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',orcamentos:'Orçamentos',estoque:'Estoque e Produtos',
     clientes:'Clientes e CRM',financeiro:'Financeiro',compras:'Compras',relatorios:'Relatórios',ajustes:'Ajustes'};
 
@@ -1357,33 +1357,33 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<section class="screen" id="screen-cfo">
-  <div class="section-title" style="font-size:22px;margin-bottom:4px;">CFO • Rentabilidade</div>
-  <div style="color:#6b7f91;font-size:12px;margin-bottom:16px;">Visão gerencial da margem real dos pedidos usando os dados do ERP em tempo real.</div>
-  <div class="kpi-grid">
+
+<section id="cfo" class="page-section" style="display:none;">
+  <div class="page-head"><div><h1>CFO • Rentabilidade</h1><p>Visão gerencial da margem e do lucro da AB Chemicals, usando os dados do ERP em tempo real.</p></div></div>
+  <div class="kpi-grid" style="margin-top:14px;">
     <div class="kpi-card"><div class="kpi-label">Faturamento</div><div class="kpi-value" id="cfo-fat">R$ 0,00</div></div>
     <div class="kpi-card"><div class="kpi-label">CMV</div><div class="kpi-value" id="cfo-cmv">R$ 0,00</div></div>
     <div class="kpi-card"><div class="kpi-label">Lucro bruto</div><div class="kpi-value" id="cfo-bruto">R$ 0,00</div></div>
-    <div class="kpi-card"><div class="kpi-label">Margem bruta</div><div class="kpi-value" id="cfo-mb">0,00%</div></div>
+    <div class="kpi-card"><div class="kpi-label">Margem bruta</div><div class="kpi-value" id="cfo-margem">0,00%</div></div>
   </div>
   <div class="kpi-grid" style="margin-top:10px;">
-    <div class="kpi-card"><div class="kpi-label">Impostos estimados</div><div class="kpi-value" id="cfo-imp">R$ 0,00</div></div>
-    <div class="kpi-card"><div class="kpi-label">Custos variáveis</div><div class="kpi-value" id="cfo-var">R$ 0,00</div></div>
-    <div class="kpi-card"><div class="kpi-label">Custos fixos</div><div class="kpi-value" id="cfo-fix">R$ 470,00</div></div>
+    <div class="kpi-card"><div class="kpi-label">Impostos</div><div class="kpi-value" id="cfo-imp">R$ 0,00</div></div>
+    <div class="kpi-card"><div class="kpi-label">Custos fixos</div><div class="kpi-value" id="cfo-fixos">R$ 0,00</div></div>
     <div class="kpi-card"><div class="kpi-label">Lucro líquido estimado</div><div class="kpi-value" id="cfo-liq">R$ 0,00</div></div>
+    <div class="kpi-card"><div class="kpi-label">Margem líquida</div><div class="kpi-value" id="cfo-ml">0,00%</div></div>
   </div>
-  <div class="two-col" style="margin-top:14px;align-items:start;">
-    <div class="card"><div class="section-title">Parâmetros</div><div class="form-grid">
-      <label>Impostos (%)<input id="cfo-tax" type="number" step="0.01" value="0"></label>
-      <label>Comissão (%)<input id="cfo-com" type="number" step="0.01" value="0"></label>
-      <label>Frete (%)<input id="cfo-frete" type="number" step="0.01" value="0"></label>
-      <label>Outros variáveis (%)<input id="cfo-outros" type="number" step="0.01" value="0"></label>
-      <label>Custos fixos mensais<input id="cfo-fixos" type="number" step="0.01" value="470"></label>
-    </div><button class="btn-primary" style="margin-top:12px;" onclick="cfoSave()">Salvar parâmetros</button></div>
-    <div class="card"><div class="section-title">Semáforo da margem líquida</div><div style="line-height:2;font-size:13px;">🟢 ≥ 15% Excelente<br>🟢 10%–14,99% Boa<br>🟡 5%–9,99% Atenção<br>🔴 0%–4,99% Baixa<br>⛔ &lt; 0% Prejuízo</div><div id="cfo-ml" style="font-size:28px;font-weight:800;margin-top:8px;">0,00%</div></div>
+  <div class="content-grid" style="margin-top:14px;">
+    <div class="panel"><div class="panel-title">Configuração da análise</div><div class="form-grid">
+      <label>Comissão média %<input id="cfo-com" type="number" step="0.01" value="0"></label>
+      <label>Frete médio %<input id="cfo-frete" type="number" step="0.01" value="0"></label>
+      <label>Outros variáveis %<input id="cfo-outros" type="number" step="0.01" value="0"></label>
+      <label>Margem mínima %<input id="cfo-min" type="number" step="0.01" value="10"></label>
+    </div><button class="btn btn-primary" onclick="cfoSave()" style="margin-top:12px;">Salvar configuração</button></div>
+    <div class="panel"><div class="panel-title">Semáforo</div><div style="line-height:2">🟢 <b>Excelente</b> ≥ 15%<br>🟢 <b>Boa</b> 10%–14,99%<br>🟡 <b>Atenção</b> 5%–9,99%<br>🔴 <b>Baixa</b> 0%–4,99%<br>⛔ <b>Prejuízo</b> &lt; 0%</div></div>
   </div>
-  <div class="card" style="margin-top:14px;"><div class="section-title">Pedidos — margem por pedido</div><div class="table-wrap"><table><thead><tr><th>Pedido</th><th>Cliente</th><th>Venda</th><th>CMV</th><th>Lucro bruto</th><th>Margem bruta</th><th>Lucro líquido est.</th><th>Margem líquida</th></tr></thead><tbody id="cfo-pedidos"></tbody></table></div></div>
+  <div class="panel" style="margin-top:14px;"><div class="panel-title">Pedidos com maior impacto na rentabilidade</div><div class="table-wrap"><table><thead><tr><th>Pedido</th><th>Cliente</th><th>Venda</th><th>CMV</th><th>Lucro bruto</th><th>Margem</th></tr></thead><tbody id="cfo-table"></tbody></table></div></div>
 </section>
+
 <script type="module">
 import { initializeApp }       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot, enableNetwork, disableNetwork }
@@ -3242,28 +3242,7 @@ function enviarOCPorEmail(o, forn) {
       '<p style="margin-top:24px;">Aguardamos confirmação do recebimento desta OC.</p>' +
       '<p style="margin-top:8px;">Atenciosamente,<br><b>AB Chemicals</b><br>abchemicalspr@gmail.com — (43) 98871-2001 — Londrina/PR</p>' +
       '<div class="footer">Este email foi gerado automaticamente pelo sistema ERP AB Chemicals.</div>' +
-      '<script>
-(function(){
- const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0), pc=v=>(Number(v)||0).toFixed(2)+'%';
- function getCfg(){try{return JSON.parse(localStorage.getItem('ab_cfo_cfg')||'{"tax":0,"com":0,"frete":0,"outros":0,"fixos":470}')}catch(e){return {tax:0,com:0,frete:0,outros:0,fixos:470}}}
- window.cfoSave=function(){localStorage.setItem('ab_cfo_cfg',JSON.stringify({tax:+document.getElementById('cfo-tax').value||0,com:+document.getElementById('cfo-com').value||0,frete:+document.getElementById('cfo-frete').value||0,outros:+document.getElementById('cfo-outros').value||0,fixos:+document.getElementById('cfo-fixos').value||0}));window.renderCFO();};
- window.renderCFO=function(){
-  const D=window.D;if(!D)return; const cfg=getCfg();
-  const prod=D.produtos||[], ps=(D.pedidos||[]).filter(p=>p.status!=='Orçamento');
-  const custoItem=i=>{const x=prod.find(p=>p.nome===i.produto);return x?(+x.custo||0):0};
-  const venda=p=>Math.max(0,(p.itens||[]).reduce((s,i)=>s+(+i.qty||0)*(+i.preco||0),0)-(+p.desconto||0));
-  const cmv=p=>(p.itens||[]).reduce((s,i)=>s+(+i.qty||0)*custoItem(i),0);
-  const fat=ps.reduce((s,p)=>s+venda(p),0), c=ps.reduce((s,p)=>s+cmv(p),0), bruto=fat-c;
-  const imp=fat*cfg.tax/100, vari=fat*(cfg.com+cfg.frete+cfg.outros)/100, fix=cfg.fixos, liq=bruto-imp-vari-fix, mb=fat?bruto/fat*100:0, ml=fat?liq/fat*100:0;
-  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};set('cfo-fat',money(fat));set('cfo-cmv',money(c));set('cfo-bruto',money(bruto));set('cfo-mb',pc(mb));set('cfo-imp',money(imp));set('cfo-var',money(vari));set('cfo-fix',money(fix));set('cfo-liq',money(liq));set('cfo-ml',pc(ml));
-  ['tax','com','frete','outros','fixos'].forEach(k=>{const e=document.getElementById('cfo-'+k);if(e)e.value=cfg[k]});
-  const rows=ps.map(p=>{const v=venda(p),cc=cmv(p),b=v-cc,al=fix&&fat?fix*v/fat:0,l=b-v*(cfg.tax+cfg.com+cfg.frete+cfg.outros)/100-al;return {p,v,cc,b,mb:v?b/v*100:0,l,ml:v?l/v*100:0}}).sort((a,b)=>b.l-a.l);
-  const tb=document.getElementById('cfo-pedidos');tb.innerHTML=rows.map(x=>`<tr><td>${x.p.id||'-'}</td><td>${x.p.cliente||'-'}</td><td>${money(x.v)}</td><td>${money(x.cc)}</td><td>${money(x.b)}</td><td>${pc(x.mb)}</td><td>${money(x.l)}</td><td>${pc(x.ml)}</td></tr>`).join('')||'<tr><td colspan="8" style="text-align:center;padding:20px;color:#8093a3;">Nenhum pedido encontrado.</td></tr>';
- };
- const old=window.renderAll; if(old&&!old.__cfoWrapped){const f=old;window.renderAll=function(){f.apply(this,arguments);window.renderCFO();};window.renderAll.__cfoWrapped=true;}
- const c=getCfg();window.addEventListener('DOMContentLoaded',()=>{['tax','com','frete','outros','fixos'].forEach(k=>{const e=document.getElementById('cfo-'+k);if(e)e.value=c[k]});window.renderCFO();});
-})();
-</script>
+      '
 </body></html>';
 
     emailjs.send('service_pedidos', 'template_xk8fggd', {
@@ -5096,11 +5075,11 @@ function renderUsuarios() {
 }
 
 // ── Navegação com controle de acesso ──────────────────────────────────────
-const ROTAS_ADMIN    = ['dashboard','vendas','orcamentos','estoque','clientes','financeiro','cfo','compras','relatorios','ajustes'];
+const ROTAS_ADMIN    = ['dashboard','vendas','orcamentos','estoque','clientes','financeiro','compras','relatorios','ajustes'];
 const ROTAS_VENDEDOR = ['vendas','orcamentos','clientes'];
 const titles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',orcamentos:'Orçamentos',estoque:'Estoque e Produtos',
   clientes:'Clientes e CRM',financeiro:'Financeiro e Faturamento',compras:'Compras e Fornecedores',
-  relatorios:'Relatórios',cfo:'CFO • Rentabilidade',ajustes:'Ajustes do Sistema'};
+  relatorios:'Relatórios',ajustes:'Ajustes do Sistema'};
 
 window.goTo = (id, btn) => {
   const sessao = getSessao();
@@ -5143,7 +5122,7 @@ window.goTo = (id, btn) => {
 };
 
 function renderAll() {
-  renderDashboard(); renderPedidos(); renderOrcamentos(); renderEstoque(); renderClientes(); renderFinanceiro(); renderCompras(); renderUsuarios(); renderFornecedores(); if (window.renderCFO) window.renderCFO();
+  renderDashboard(); renderPedidos(); renderOrcamentos(); renderEstoque(); renderClientes(); renderFinanceiro(); renderCompras(); renderUsuarios(); renderFornecedores();
 }
 
 // expor globalmente para o onchange do select funcionar
@@ -5189,6 +5168,30 @@ function gerarAlertasInteligentes(){
     }
   }catch(e){console.error(e);}
 }
+</script>
+
+<script>
+(function(){
+const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0);
+const pct=v=>(Number(v)||0).toFixed(2)+'%';
+const getCfg=()=>{try{return JSON.parse(localStorage.getItem('ab_cfo_cfg')||'{"com":0,"frete":0,"outros":0,"min":10}')}catch(e){return {com:0,frete:0,outros:0,min:10}}};
+function venda(p){return Math.max(0,(p.itens||[]).reduce((s,i)=>s+(Number(i.qty)||0)*(Number(i.preco)||0),0)-(Number(p.desconto)||0));}
+function custoItem(i){const p=(window.D.produtos||[]).find(x=>x.nome===i.produto);return p?Number(p.custo)||0:0;}
+function cmv(p){return (p.itens||[]).reduce((s,i)=>s+(Number(i.qty)||0)*custoItem(i),0);}
+window.cfoSave=function(){localStorage.setItem('ab_cfo_cfg',JSON.stringify({com:Number(document.getElementById('cfo-com')?.value)||0,frete:Number(document.getElementById('cfo-frete')?.value)||0,outros:Number(document.getElementById('cfo-outros')?.value)||0,min:Number(document.getElementById('cfo-min')?.value)||10}));window.renderCFO();};
+window.renderCFO=function(){try{
+const ps=Array.isArray(window.D?.pedidos)?window.D.pedidos:[], cfg=getCfg();
+const fat=ps.reduce((s,p)=>s+venda(p),0), custo=ps.reduce((s,p)=>s+cmv(p),0), bruto=fat-custo;
+const conf=window.D.config||{}, impostoPct=Number(conf.impostoPct)||0, fd=conf.custosFixos;
+let fix=0;if(typeof fd==='number')fix=fd;else if(fd&&typeof fd==='object')fix=Object.values(fd).reduce((s,v)=>s+(Number(v)||0),0);
+const vari=fat*(impostoPct+Number(cfg.com||0)+Number(cfg.frete||0)+Number(cfg.outros||0))/100, liq=bruto-vari-fix;
+const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+set('cfo-fat',money(fat));set('cfo-cmv',money(custo));set('cfo-bruto',money(bruto));set('cfo-margem',pct(fat?bruto/fat*100:0));set('cfo-imp',money(fat*impostoPct/100));set('cfo-fixos',money(fix));set('cfo-liq',money(liq));set('cfo-ml',pct(fat?liq/fat*100:0));
+const tb=document.getElementById('cfo-table');if(tb){const arr=ps.map(p=>({p,v:venda(p),c:cmv(p)})).sort((a,b)=>(b.v-b.c)-(a.v-a.c)).slice(0,20);tb.innerHTML=arr.map(x=>{const m=x.v?((x.v-x.c)/x.v*100):0;return '<tr><td>'+String(x.p.id||'-')+'</td><td>'+String(x.p.cliente||'-')+'</td><td>'+money(x.v)+'</td><td>'+money(x.c)+'</td><td>'+money(x.v-x.c)+'</td><td>'+pct(m)+'</td></tr>'}).join('')||'<tr><td colspan="6">Nenhum pedido encontrado.</td></tr>';}
+}catch(e){console.error('CFO:',e)}};
+function hook(){if(typeof window.renderAll==='function'&&!window.renderAll.__cfoHooked){const old=window.renderAll;window.renderAll=function(){old.apply(this,arguments);setTimeout(window.renderCFO,0)};window.renderAll.__cfoHooked=true;}window.renderCFO();}
+window.addEventListener('load',()=>setTimeout(hook,500));setTimeout(hook,1200);
+})();
 </script>
 </body>
 </html>
