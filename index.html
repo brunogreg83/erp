@@ -536,10 +536,18 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       </div>
       <!-- CFO RENTABILIDADE -->
       <div class="screen" id="screen-cfo">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px;">
-          <div><div class="section-title" style="font-size:22px;margin-bottom:4px;">CFO • Rentabilidade</div><div style="color:#6b7f91;font-size:12px;">Margem real calculada diretamente dos pedidos e produtos do ERP.</div></div>
-          <button class="btn-ghost" onclick="renderCFO()"><i class="ti ti-refresh"></i> Atualizar</button>
+        <div class="cfo-head">
+          <div>
+            <div class="cfo-title"><span class="cfo-title-mark">CFO</span> • Rentabilidade</div>
+            <div class="cfo-subtitle">Visão financeira real por mês, usando os pedidos e custos do ERP.</div>
+          </div>
+          <div class="cfo-month-tools">
+            <label for="cfo-mes">Período</label>
+            <select id="cfo-mes" class="cfo-month-select" onchange="cfoChangeMonth(this.value)"></select>
+            <button class="cfo-refresh" onclick="renderCFO()"><i class="ti ti-refresh"></i> Atualizar</button>
+          </div>
         </div>
+        <div class="cfo-period-banner"><i class="ti ti-calendar-stats"></i><span id="cfo-period-label">Mês atual</span><span class="cfo-period-dot">•</span><span>Pedidos faturados/entregues no período</span></div>
         <div class="kpi-grid">
           <div class="kpi-card"><div class="kpi-label">Faturamento</div><div class="kpi-value" id="cfo-fat">R$ 0,00</div></div>
           <div class="kpi-card"><div class="kpi-label">CMV</div><div class="kpi-value" id="cfo-cmv">R$ 0,00</div></div>
@@ -5346,32 +5354,87 @@ function gerarAlertasInteligentes(){
   }catch(e){console.error(e);}
 }
 </script>
+<style>
+/* CFO — destaque visual */
+#screen-cfo{background:linear-gradient(135deg,#071522 0%,#0b1d2d 52%,#102b3f 100%);border:1px solid #23465e;border-radius:18px;padding:22px;box-shadow:0 14px 40px rgba(2,12,20,.28);color:#eef7fb;}
+#screen-cfo .cfo-head{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:14px;}
+#screen-cfo .cfo-title{font-size:25px;font-weight:800;letter-spacing:-.3px;color:#fff;}
+#screen-cfo .cfo-title-mark{display:inline-flex;align-items:center;padding:5px 10px;border-radius:9px;background:#19b7d9;color:#061722;font-size:13px;letter-spacing:.7px;vertical-align:middle;margin-right:3px;box-shadow:0 0 22px rgba(25,183,217,.24);}
+#screen-cfo .cfo-subtitle{color:#a9c3d2;font-size:13px;margin-top:5px;}
+#screen-cfo .cfo-month-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+#screen-cfo .cfo-month-tools label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#9bb8c8;}
+#screen-cfo .cfo-month-select{min-width:170px;background:#102b3d;color:#fff;border:1px solid #2e6079;border-radius:10px;padding:10px 34px 10px 12px;font-weight:700;outline:none;}
+#screen-cfo .cfo-month-select:focus{border-color:#22c4e5;box-shadow:0 0 0 3px rgba(34,196,229,.14);}
+#screen-cfo .cfo-refresh{border:1px solid #315d73;background:#122f41;color:#dff7ff;border-radius:10px;padding:10px 13px;font-weight:700;cursor:pointer;}
+#screen-cfo .cfo-refresh:hover{background:#174258;border-color:#3a7894;}
+#screen-cfo .cfo-period-banner{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#0d2535;border:1px solid #234c64;border-left:4px solid #20c2df;border-radius:11px;padding:10px 13px;margin-bottom:16px;color:#a9c7d5;font-size:12px;}
+#screen-cfo .cfo-period-banner i{color:#20c2df;font-size:17px;}
+#screen-cfo .cfo-period-banner #cfo-period-label{font-weight:800;color:#fff;font-size:13px;}
+#screen-cfo .cfo-period-dot{color:#20c2df;}
+#screen-cfo .kpi-grid{gap:12px;margin-bottom:12px;}
+#screen-cfo .kpi-card{background:linear-gradient(145deg,#122f43,#0d2535);border:1px solid #28536b;border-radius:13px;box-shadow:0 8px 22px rgba(0,0,0,.18);padding:16px;}
+#screen-cfo .kpi-card .kpi-label{color:#a8c3d2;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.55px;}
+#screen-cfo .kpi-card .kpi-value{color:#fff;font-size:22px;font-weight:800;margin-top:7px;}
+#screen-cfo .kpi-card:nth-child(1) .kpi-value,#screen-cfo .kpi-card:nth-child(3) .kpi-value,#screen-cfo #cfo-liq{color:#35d2ec;}
+#screen-cfo .card{background:#0d2434;border:1px solid #294f65;border-radius:14px;color:#edf7fb;box-shadow:0 8px 22px rgba(0,0,0,.16);}
+#screen-cfo .section-title{color:#fff!important;}
+#screen-cfo .form-label{color:#a9c3d2;}
+#screen-cfo .form-input{background:#091b28;color:#fff;border-color:#315c73;}
+#screen-cfo .form-input:focus{border-color:#20c2df;box-shadow:0 0 0 3px rgba(32,194,223,.12);}
+#screen-cfo .btn-primary{background:#19b7d9;border-color:#19b7d9;color:#061722;font-weight:800;}
+#screen-cfo #cfo-ml{color:#35d2ec!important;}
+#screen-cfo #cfo-status{color:#b7ced9!important;font-weight:700;}
+#screen-cfo table thead th{background:#102f43;color:#d9f3fa;border-bottom:1px solid #315c73;}
+#screen-cfo table tbody td{color:#d5e6ed;border-bottom:1px solid #1e4053;}
+#screen-cfo table tbody tr:hover{background:#123145;}
+#screen-cfo .table-wrap{border-color:#294f65;}
+@media(max-width:700px){#screen-cfo{padding:15px;border-radius:14px;}#screen-cfo .cfo-title{font-size:21px;}#screen-cfo .cfo-month-tools{width:100%;}#screen-cfo .cfo-month-select{flex:1;min-width:0;}#screen-cfo .cfo-refresh{padding:10px 11px;}#screen-cfo .kpi-card .kpi-value{font-size:18px;}}
+</style>
 <script>
 (function(){
   const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0);
   const pct=v=>(Number(v)||0).toFixed(2)+'%';
   const cfgKey='ab_cfo_cfg_v2';
   let fixed={aluguel:470,nfe:0,contador:0,combustivel:0,outros:0,impostoPct:0};
-  let fixedLoaded=false;
+  let selectedMonth='';
+  function pad(n){return String(n).padStart(2,'0');}
+  function ymOf(d){return d.getFullYear()+'-'+pad(d.getMonth()+1);}
+  function monthLabel(ym){const [y,m]=ym.split('-').map(Number);return new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric'}).format(new Date(y,m-1,1)).replace(/^./,x=>x.toUpperCase());}
+  function monthOptions(){
+    const now=new Date(), arr=[];
+    for(let i=-2;i<=2;i++){const d=new Date(now.getFullYear(),now.getMonth()+i,1);arr.push(ymOf(d));}
+    if(!selectedMonth) selectedMonth=ymOf(now);
+    const el=document.getElementById('cfo-mes');
+    if(el){el.innerHTML=arr.map(ym=>'<option value="'+ym+'">'+monthLabel(ym)+(ym===ymOf(now)?' • Atual':'')+'</option>').join('');el.value=arr.includes(selectedMonth)?selectedMonth:ymOf(now);}
+    const lab=document.getElementById('cfo-period-label');if(lab)lab.textContent=monthLabel(selectedMonth);
+  }
+  window.cfoChangeMonth=function(v){selectedMonth=v||ymOf(new Date());render();};
   function getCfg(){try{return Object.assign({tax:0,com:0,frete:0,outros:0},JSON.parse(localStorage.getItem(cfgKey)||'{}'));}catch(e){return {tax:0,com:0,frete:0,outros:0};}}
   function setInputs(c){['tax','com','frete','outros'].forEach(k=>{const e=document.getElementById('cfo-'+k);if(e)e.value=c[k]||0;});}
   window.cfoSave=function(){const c={tax:+document.getElementById('cfo-tax').value||0,com:+document.getElementById('cfo-com').value||0,frete:+document.getElementById('cfo-frete').value||0,outros:+document.getElementById('cfo-outros').value||0};localStorage.setItem(cfgKey,JSON.stringify(c));render();};
-  function render(){const D=window.D;if(!D)return;const c=getCfg();setInputs(c);const ps=(D.pedidos||[]).filter(p=>p.status!=='Orçamento');const produtos=D.produtos||[];
+  function render(){
+    const D=window.D;if(!D)return;
+    monthOptions();
+    const c=getCfg();setInputs(c);
+    const ps=(D.pedidos||[]).filter(p=>(p.status==='Entregue'||p.status==='Faturado')&&(p.data||'').slice(0,7)===selectedMonth);
+    const produtos=D.produtos||[];
     const custo=i=>{const p=produtos.find(x=>x.nome===i.produto);return p?Number(p.custo)||0:0;};
     const venda=p=>Math.max(0,(p.itens||[]).reduce((s,i)=>s+(Number(i.qty)||0)*(Number(i.preco)||0),0)-(Number(p.desconto)||0));
     const cmv=p=>(p.itens||[]).reduce((s,i)=>s+(Number(i.qty)||0)*custo(i),0);
-    const fat=ps.reduce((s,p)=>s+venda(p),0), cv=ps.reduce((s,p)=>s+cmv(p),0), bruto=fat-cv;
-    const vari=fat*((c.com+c.frete+c.outros)/100), imp=fat*(c.tax/100), fix=Object.values(fixed).reduce((s,v)=>s+(typeof v==='number'?v:0),0);
-    const liq=bruto-vari-imp-fix, ml=fat?liq/fat*100:0;
+    const fat=ps.reduce((s,p)=>s+venda(p),0),cv=ps.reduce((s,p)=>s+cmv(p),0),bruto=fat-cv;
+    const vari=fat*((c.com+c.frete+c.outros)/100),imp=fat*(c.tax/100);
+    const fix=(Number(fixed.aluguel)||0)+(Number(fixed.nfe)||0)+(Number(fixed.contador)||0)+(Number(fixed.combustivel)||0)+(Number(fixed.outros)||0);
+    const liq=bruto-vari-imp-fix,ml=fat?liq/fat*100:0;
     [['cfo-fat',fat],['cfo-cmv',cv],['cfo-bruto',bruto],['cfo-imp',imp],['cfo-var',vari],['cfo-fix',fix],['cfo-liq',liq]].forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.textContent=money(v);});
-    const mb=fat?bruto/fat*100:0;document.getElementById('cfo-mb').textContent=pct(mb);document.getElementById('cfo-ml').textContent=pct(ml);
-    document.getElementById('cfo-status').textContent=ml>=15?'Excelente':ml>=10?'Boa':ml>=5?'Atenção':ml>=0?'Margem baixa':'Prejuízo';
-    const tb=document.getElementById('cfo-pedidos'); if(tb)tb.innerHTML=ps.length?ps.map((p,i)=>{const v=venda(p),cc=cmv(p),b=v-cc,va=v*((c.com+c.frete+c.outros)/100),ii=v*(c.tax/100),l=b-va-ii-(fix/Math.max(ps.length,1));return `<tr><td>${p.numero||p.id||('Pedido '+(i+1))}</td><td>${p.cliente||'—'}</td><td>${money(v)}</td><td>${money(cc)}</td><td>${money(b)}</td><td>${pct(v?b/v*100:0)}</td><td>${money(l)}</td><td>${pct(v?l/v*100:0)}</td></tr>`}).join(''):'<tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px;">Nenhum pedido faturado encontrado.</td></tr>';
+    const mb=fat?bruto/fat*100:0;
+    const mbe=document.getElementById('cfo-mb');if(mbe)mbe.textContent=pct(mb);
+    const mle=document.getElementById('cfo-ml');if(mle)mle.textContent=pct(ml);
+    const st=document.getElementById('cfo-status');if(st)st.textContent=ml>=15?'Excelente':ml>=10?'Boa':ml>=5?'Atenção':ml>=0?'Margem baixa':'Prejuízo';
+    const tb=document.getElementById('cfo-pedidos');
+    if(tb)tb.innerHTML=ps.length?ps.map((p,i)=>{const v=venda(p),cc=cmv(p),b=v-cc,va=v*((c.com+c.frete+c.outros)/100),ii=v*(c.tax/100),l=b-va-ii-(fix/Math.max(ps.length,1));return '<tr><td>'+((p.numero||p.id||('Pedido '+(i+1))))+'</td><td>'+(p.cliente||'—')+'</td><td>'+money(v)+'</td><td>'+money(cc)+'</td><td>'+money(b)+'</td><td>'+pct(v?b/v*100:0)+'</td><td>'+money(l)+'</td><td>'+pct(v?l/v*100:0)+'</td></tr>';}).join(''):'<tr><td colspan="8" style="text-align:center;color:#9fb7c4;padding:24px;">Nenhum pedido faturado ou entregue neste mês.</td></tr>';
   }
   window.renderCFO=render;
-  function watchFixed(){const db=window.db;if(!db||fixedLoaded)return;fixedLoaded=true;try{window._cfoFixedUnsub=window.firebaseOnSnapshot?window.firebaseOnSnapshot: null;}catch(e){} }
   window.addEventListener('cfo-ready',render);
-  // Read the existing ERP fixed-cost document through the same Firestore connection when available.
   setTimeout(()=>{try{const db=window.db;if(db&&window._cfoOnSnapshot){window._cfoOnSnapshot(window._cfoDoc(db,'config/custosFixos'),s=>{if(s.exists())fixed=Object.assign(fixed,s.data());render();});}}catch(e){console.error(e);}},1000);
 })();
 </script>
