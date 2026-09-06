@@ -32,6 +32,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .nav-item i { font-size: 17px; }
 .nav-item:hover { background: #112244; color: #ffffff; }
 .nav-item.active { background: #112244; color: #ffffff; font-weight: 500; border-left: 2px solid #4a9eff; }
+.nav-catalogos-toggle { position: relative; }
+.catalogos-chevron { font-size: 14px !important; transition: transform .18s; }
+.nav-catalogos-toggle.open .catalogos-chevron { transform: rotate(180deg); }
+.catalogos-submenu { display: none; background: #071120; border-left: 2px solid #1a3a6b; margin-left: 18px; }
+.catalogos-submenu.open { display: block; }
+.catalogos-submenu a { display: flex; align-items: center; gap: 8px; padding: 8px 14px 8px 16px; color: #8aafd4; text-decoration: none; font-size: 12px; }
+.catalogos-submenu a:hover { background: #112244; color: #fff; }
+.catalogos-submenu a i { font-size: 15px; }
+.catalogos-submenu.mobile { margin-left: 18px; border-left-color: #244574; }
 .sidebar-user { padding: 14px 18px; border-top: 1px solid #1a3a6b; }
 .sidebar-user .u-label { font-size: 11px; color: #6b8cba; }
 .sidebar-user .u-name { font-size: 13px; font-weight: 500; margin-top: 2px; color: #ffffff; }
@@ -280,6 +289,11 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <button class="nav-item" onclick="goTo('estoque',this)" id="nav-estoque"><i class="ti ti-box"></i>Estoque e Produtos</button>
       <button class="nav-item" onclick="goTo('clientes',this)" id="nav-clientes"><i class="ti ti-users"></i>Clientes e CRM</button>
       <button class="nav-item" onclick="goTo('cfo',this)" id="nav-cfo"><i class="ti ti-chart-donut"></i>Financeiro</button>
+      <button class="nav-item nav-catalogos-toggle" onclick="toggleCatalogos('desktop')" id="nav-catalogos"><i class="ti ti-book"></i><span style="flex:1">Catálogos</span><i class="ti ti-chevron-down catalogos-chevron" id="catalogos-chevron-desktop"></i></button>
+      <div class="catalogos-submenu" id="catalogos-submenu-desktop">
+        <a href="./catalogo-ab-chemicals.html" target="_blank" rel="noopener"><i class="ti ti-building-store"></i>Catálogo AB Chemicals</a>
+        <a href="./catalogo-synthera.html" target="_blank" rel="noopener"><i class="ti ti-flask"></i>Catálogo Synthera</a>
+      </div>
       <button class="nav-item" onclick="goTo('relatorios',this)" id="nav-relatorios"><i class="ti ti-chart-bar"></i>Relatórios</button>
       <button class="nav-item" onclick="goTo('ajustes',this)" id="nav-ajustes"><i class="ti ti-settings"></i>Ajustes</button>
     </nav>
@@ -312,6 +326,11 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <button class="nav-item" onclick="mobGoTo('estoque')" id="mob-nav-estoque"><i class="ti ti-box"></i>Estoque e Produtos</button>
         <button class="nav-item" onclick="mobGoTo('clientes')" id="mob-nav-clientes"><i class="ti ti-users"></i>Clientes e CRM</button>
         <button class="nav-item" onclick="mobGoTo('cfo')" id="mob-nav-cfo"><i class="ti ti-chart-donut"></i>Financeiro</button>
+        <button class="nav-item nav-catalogos-toggle" onclick="toggleCatalogos('mobile')" id="mob-nav-catalogos"><i class="ti ti-book"></i><span style="flex:1">Catálogos</span><i class="ti ti-chevron-down catalogos-chevron" id="catalogos-chevron-mobile"></i></button>
+        <div class="catalogos-submenu mobile" id="catalogos-submenu-mobile">
+          <a href="./catalogo-ab-chemicals.html" target="_blank" rel="noopener"><i class="ti ti-building-store"></i>Catálogo AB Chemicals</a>
+          <a href="./catalogo-synthera.html" target="_blank" rel="noopener"><i class="ti ti-flask"></i>Catálogo Synthera</a>
+        </div>
         <button class="nav-item" onclick="mobGoTo('relatorios')" id="mob-nav-relatorios"><i class="ti ti-chart-bar"></i>Relatórios</button>
         <button class="nav-item" onclick="mobGoTo('ajustes')" id="mob-nav-ajustes"><i class="ti ti-settings"></i>Ajustes</button>
       </nav>
@@ -1112,6 +1131,16 @@ window.fazerLogout = function() {
   location.reload();
 };
 
+// ── Catálogos ──────────────────────────────────────────────────────────────
+window.toggleCatalogos = function(tipo) {
+  const mobile = tipo === 'mobile';
+  const menu = document.getElementById(mobile ? 'catalogos-submenu-mobile' : 'catalogos-submenu-desktop');
+  const btn = document.getElementById(mobile ? 'mob-nav-catalogos' : 'nav-catalogos');
+  if (!menu || !btn) return;
+  const aberto = menu.classList.toggle('open');
+  btn.classList.toggle('open', aberto);
+};
+
 // ── Mobile nav ─────────────────────────────────────────────────────────────
 window.toggleDrawer = function() {
   const drawer  = document.getElementById('mob-drawer');
@@ -1221,10 +1250,10 @@ function aplicarPerfil(perfil, nome) {
 
   if (perfil === 'vendedor') {
     // desktop: esconder itens (Clientes permanece visível)
-    ['nav-dashboard','nav-estoque','nav-relatorios','nav-ajustes']
+    ['nav-dashboard','nav-estoque','nav-relatorios','nav-ajustes','nav-catalogos']
       .forEach(id => { const b = document.getElementById(id); if(b) b.style.display='none'; });
     // mobile drawer: esconder itens (Clientes permanece visível)
-    ['mob-nav-dashboard','mob-nav-estoque','mob-nav-relatorios','mob-nav-ajustes']
+    ['mob-nav-dashboard','mob-nav-estoque','mob-nav-relatorios','mob-nav-ajustes','mob-nav-catalogos']
       .forEach(id => { const b = document.getElementById(id); if(b) b.style.display='none'; });
     // mobile bottom nav: esconder botões não permitidos (Clientes permanece visível)
     ['mbn-dashboard','mbn-estoque']
