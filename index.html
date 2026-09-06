@@ -1433,7 +1433,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <script type="module">
 import { initializeApp }       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot, enableNetwork, disableNetwork }
+import { getFirestore, collection, addDoc, deleteDoc, doc, setDoc, updateDoc, onSnapshot, enableNetwork, disableNetwork }
                                 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // ── Firebase init ──────────────────────────────────────────────────────────
@@ -1489,6 +1489,22 @@ let fbReady = false;
     err => { console.error(col, err); syncErr(); }
   );
 });
+
+// ── Custos Fixos (documento único no Firestore, sincroniza entre dispositivos) ──
+let custosFixosRemoto = null;
+let custosFixosCarregado = false;
+onSnapshot(
+  doc(db, 'config', 'custosFixos'),
+  snap => {
+    custosFixosRemoto = snap.exists() ? snap.data() : null;
+    custosFixosCarregado = true;
+    if (custosFixosRemoto) localStorage.setItem('custos_fixos', JSON.stringify(custosFixosRemoto)); // cache offline
+    if (typeof preencherCustosFixosUI === 'function' && document.getElementById('cf-aluguel')) preencherCustosFixosUI();
+    if (typeof atualizarResultadoRealFinanceiro === 'function') atualizarResultadoRealFinanceiro();
+    if (typeof atualizarResultadoRealDashboard === 'function') atualizarResultadoRealDashboard();
+  },
+  err => console.error('custosFixos', err)
+);
 
 // ── CRUD helpers ───────────────────────────────────────────────────────────
 async function add(col, data) {
@@ -1893,15 +1909,16 @@ function prepPedido() {
 }
 function margemMinimaNecessaria() {
   // % de margem bruta que a empresa precisa, em média, para cobrir os custos fixos do mês.
+  // Usa o mês anterior completo como referência (mais estável), caindo para o mês atual só se não houver dados do mês anterior.
   const now = new Date();
-  const ymAtual = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-  const r = calcMargemReal(ymAtual);
-  if (r.faturamentoBruto > 0) return (r.custosFixos / r.faturamentoBruto) * 100;
-  // sem vendas ainda no mês: usa o total de custos fixos sobre o faturamento do mês anterior, se houver
   const d = new Date(now.getFullYear(), now.getMonth()-1, 1);
   const ymAnterior = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
   const rAnt = calcMargemReal(ymAnterior);
   if (rAnt.faturamentoBruto > 0) return (rAnt.custosFixos / rAnt.faturamentoBruto) * 100;
+  // sem vendas no mês anterior: usa o mês atual em andamento, se já houver vendas
+  const ymAtual = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  const r = calcMargemReal(ymAtual);
+  if (r.faturamentoBruto > 0) return (r.custosFixos / r.faturamentoBruto) * 100;
   return null; // sem dados suficientes para estimar
 }
 
@@ -5187,7 +5204,10 @@ function getFocusFnUrl() {
 // ── Custos Fixos Mensais (usados na Margem Real) ─────────────────────────────
 function getCustosFixos() {
   try {
-    const raw = localStorage.getItem('custos_fixos');
+    // Prioriza o dado do Firestore (sincronizado entre dispositivos); enquanto não carrega, usa o cache local.
+    const raw = custosFixosCarregado
+      ? (custosFixosRemoto ? JSON.stringify(custosFixosRemoto) : null)
+      : localStorage.getItem('custos_fixos');
     const cf = raw ? JSON.parse(raw) : {};
     return {
       aluguel: parseFloat(cf.aluguel) || 0,
@@ -5262,7 +5282,7 @@ window.atualizarTotalCustosFixosUI = () => {
   if (totGeralEl) totGeralEl.innerHTML = '<b>' + R$(totRS + impostoValor) + '</b>';
 };
 
-window.salvarCustosFixos = () => {
+window.salvarCustosFixos = async () => {
   const outros = Array.from(document.querySelectorAll('#cf-outros-lista .cf-outro-row')).map(row => ({
     nome: row.querySelector('.cf-outro-nome')?.value.trim() || '',
     valor: parseFloat(row.querySelector('.cf-outro-valor')?.value) || 0
@@ -5275,11 +5295,18 @@ window.salvarCustosFixos = () => {
     impostoPct: parseFloat(document.getElementById('cf-imposto')?.value) || 0,
     outros
   };
-  localStorage.setItem('custos_fixos', JSON.stringify(cf));
+  localStorage.setItem('custos_fixos', JSON.stringify(cf)); // cache offline imediato
+  const st = document.getElementById('cf-status');
+  try {
+    await setDoc(doc(db, 'config', 'custosFixos'), cf);
+    custosFixosRemoto = cf; custosFixosCarregado = true;
+    if (st) { st.innerHTML = '<span style="color:#185FA5;">✅ Custos fixos salvos e sincronizados!</span>'; setTimeout(() => { st.textContent=''; }, 3000); }
+  } catch (e) {
+    if (st) { st.innerHTML = '<span style="color:#D85A30;">⚠️ Salvo neste aparelho, mas houve erro ao sincronizar.</span>'; setTimeout(() => { st.textContent=''; }, 4000); }
+  }
   atualizarTotalCustosFixosUI();
   atualizarResultadoRealFinanceiro();
-  const st = document.getElementById('cf-status');
-  if (st) { st.innerHTML = '<span style="color:#185FA5;">✅ Custos fixos salvos!</span>'; setTimeout(() => { st.textContent=''; }, 3000); }
+  if (typeof atualizarResultadoRealDashboard === 'function') atualizarResultadoRealDashboard();
 };
 
 // ── Margem Real (lucro líquido de verdade: faturamento - CMV - custos fixos) ──
