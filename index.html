@@ -281,7 +281,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <button class="nav-item" onclick="goTo('estoque',this)" id="nav-estoque"><i class="ti ti-box"></i>Estoque e Produtos</button>
       <button class="nav-item" onclick="goTo('clientes',this)" id="nav-clientes"><i class="ti ti-users"></i>Clientes e CRM</button>
       <button class="nav-item" onclick="goTo('cfo',this)" id="nav-cfo"><i class="ti ti-chart-donut"></i>CFO • Rentabilidade</button>
-      <button class="nav-item" onclick="goTo('compras',this)" id="nav-compras"><i class="ti ti-truck"></i>Compras</button>
       <button class="nav-item" onclick="goTo('relatorios',this)" id="nav-relatorios"><i class="ti ti-chart-bar"></i>Relatórios</button>
       <button class="nav-item" onclick="goTo('ajustes',this)" id="nav-ajustes"><i class="ti ti-settings"></i>Ajustes</button>
     </nav>
@@ -315,7 +314,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <button class="nav-item" onclick="mobGoTo('estoque')" id="mob-nav-estoque"><i class="ti ti-box"></i>Estoque e Produtos</button>
         <button class="nav-item" onclick="mobGoTo('clientes')" id="mob-nav-clientes"><i class="ti ti-users"></i>Clientes e CRM</button>
         <button class="nav-item" onclick="mobGoTo('cfo')" id="mob-nav-cfo"><i class="ti ti-chart-donut"></i>CFO • Rentabilidade</button>
-        <button class="nav-item" onclick="mobGoTo('compras')" id="mob-nav-compras"><i class="ti ti-truck"></i>Compras</button>
         <button class="nav-item" onclick="mobGoTo('relatorios')" id="mob-nav-relatorios"><i class="ti ti-chart-bar"></i>Relatórios</button>
         <button class="nav-item" onclick="mobGoTo('ajustes')" id="mob-nav-ajustes"><i class="ti ti-settings"></i>Ajustes</button>
       </nav>
@@ -435,47 +433,16 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
           <table><thead><tr id="tabela-estoque-head"><th>Código</th><th>Produto</th><th>Categoria</th><th>Fornecedor</th><th>Estoque</th><th>Mínimo</th><th>Situação</th><th></th></tr></thead>
           <tbody id="tabela-estoque"></tbody></table>
         </div>
-      </div>
 
-      <!-- CLIENTES -->
-      <div class="screen" id="screen-clientes">
-        <div style="display:flex;gap:8px;margin-bottom:18px;">
-          <button class="btn-primary" onclick="openModal('modal-cliente')"><i class="ti ti-plus"></i> Novo cliente</button>
-          <input class="form-input" placeholder="Buscar cliente..." style="max-width:220px;height:36px;" oninput="filtrar('tabela-clientes',this.value)">
-        </div>
-        <div class="table-wrap">
-          <table><thead><tr><th>Cliente</th><th>CNPJ</th><th>Segmento</th><th>Último pedido</th><th>Total (ano)</th><th>Status</th><th></th></tr></thead>
-          <tbody id="tabela-clientes"></tbody></table>
-        </div>
-      </div>
-
-      <!-- COMPRAS -->
-      <div class="screen" id="screen-compras">
-        <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
-          <button class="btn-primary" onclick="openModal('modal-oc')"><i class="ti ti-plus"></i> Nova ordem de compra</button>
-          <button class="btn-ghost" onclick="openModal('modal-fornecedor')"><i class="ti ti-building-store"></i> Novo fornecedor</button>
-        </div>
-
-        <!-- Fornecedores cadastrados -->
-        <div id="forn-duplicados-aviso"></div>
-        <div class="card" style="margin-bottom:22px;">
-          <div class="section-title">Fornecedores cadastrados</div>
-          <div class="table-wrap" style="margin:0;">
-            <table><thead><tr><th>Empresa</th><th class="col-mobile-hide">CNPJ</th><th class="col-mobile-hide">Contato</th><th class="col-mobile-hide">Telefone</th><th class="col-mobile-hide">Email</th><th class="col-mobile-hide">Produtos</th><th>Status</th><th></th></tr></thead>
-            <tbody id="tabela-fornecedores"></tbody></table>
-          </div>
-        </div>
-
-        <div class="card" style="margin-bottom:22px;">
-          <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-            <span>Sugestão de reposição automática</span>
-            <button class="btn-primary" style="font-size:12px;padding:5px 12px;display:none;" id="btn-comprar-todos" onclick="abrirOCTodos()"><i class="ti ti-shopping-cart"></i> Comprar Todos</button>
-          </div>
-          <div id="cmp-sugestoes"></div>
-        </div>
-        <div class="table-wrap">
-          <table><thead><tr><th>Nº OC</th><th>Fornecedor</th><th>Data</th><th>Itens</th><th>Total</th><th>Status</th><th></th></tr></thead>
-          <tbody id="tabela-compras"></tbody></table>
+        <!-- COMPRAS INTEGRADAS AO ESTOQUE E PRODUTOS -->
+        <div style="margin-top:30px;padding-top:24px;border-top:2px solid #e8e7e0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:18px;">
+            <div>
+              <div class="section-title" style="margin-bottom:3px;">Compras e Fornecedores</div>
+              <div style="font-size:12px;color:#888;">Ordens de compra, fornecedores e reposição automática integrados ao estoque.</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn-primary" onclick="openModal('modal-oc')"><i class="ti ti-plus"></i> Nova       <tbody id="tabela-clientes"></tbody></table>
         </div>
       </div>
 
@@ -1127,7 +1094,7 @@ window.toggleDrawer = function() {
 };
 
 const MOB_TITLES = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',orcamentos:'Orçamentos',estoque:'Estoque e Produtos',
-  clientes:'Clientes e CRM',cfo:'CFO • Rentabilidade',compras:'Compras',relatorios:'Relatórios',ajustes:'Ajustes'};
+  clientes:'Clientes e CRM',cfo:'CFO • Rentabilidade',relatorios:'Relatórios',ajustes:'Ajustes'};
 
 window.mobGoTo = function(id) {
   if (id === 'financeiro') id = 'cfo';
@@ -1138,7 +1105,7 @@ window.mobGoTo = function(id) {
   const sessao  = verificarSessao();
   const perfil  = sessao?.perfil || 'admin';
   const perms   = perfil === 'admin'
-    ? ['dashboard','vendas','orcamentos','estoque','clientes','cfo','compras','relatorios','ajustes']
+    ? ['dashboard','vendas','orcamentos','estoque','clientes','cfo','relatorios','ajustes']
     : ['vendas','orcamentos','clientes'];
   if (!perms.includes(id)) { alert('Acesso não autorizado.'); return; }
 
@@ -1226,10 +1193,10 @@ function aplicarPerfil(perfil, nome) {
 
   if (perfil === 'vendedor') {
     // desktop: esconder itens (Clientes permanece visível)
-    ['nav-dashboard','nav-estoque','nav-compras','nav-relatorios','nav-ajustes']
+    ['nav-dashboard','nav-estoque','nav-relatorios','nav-ajustes']
       .forEach(id => { const b = document.getElementById(id); if(b) b.style.display='none'; });
     // mobile drawer: esconder itens (Clientes permanece visível)
-    ['mob-nav-dashboard','mob-nav-estoque','mob-nav-compras','mob-nav-relatorios','mob-nav-ajustes']
+    ['mob-nav-dashboard','mob-nav-estoque','mob-nav-relatorios','mob-nav-ajustes']
       .forEach(id => { const b = document.getElementById(id); if(b) b.style.display='none'; });
     // mobile bottom nav: esconder botões não permitidos (Clientes permanece visível)
     ['mbn-dashboard','mbn-estoque']
@@ -1255,11 +1222,12 @@ function aplicarPerfil(perfil, nome) {
 // Restaura a última tela visitada (sidebar, screens, nav mobile inferior, drawer e FAB)
 function restaurarTela(tela) {
   if (!tela) return;
+  if (tela === 'compras') tela = 'estoque';
   const titles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',orcamentos:'Orçamentos',estoque:'Estoque e Produtos',
-    clientes:'Clientes e CRM',cfo:'CFO • Rentabilidade',compras:'Compras e Fornecedores',
+    clientes:'Clientes e CRM',cfo:'CFO • Rentabilidade',
     relatorios:'Relatórios',ajustes:'Ajustes do Sistema'};
   const mobTitles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',orcamentos:'Orçamentos',estoque:'Estoque e Produtos',
-    clientes:'Clientes e CRM',cfo:'CFO • Rentabilidade',compras:'Compras',relatorios:'Relatórios',ajustes:'Ajustes'};
+    clientes:'Clientes e CRM',cfo:'CFO • Rentabilidade',relatorios:'Relatórios',ajustes:'Ajustes'};
 
   // telas
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -5252,10 +5220,10 @@ function renderUsuarios() {
 }
 
 // ── Navegação com controle de acesso ──────────────────────────────────────
-const ROTAS_ADMIN    = ['dashboard','vendas','orcamentos','estoque','clientes','cfo','compras','relatorios','ajustes'];
+const ROTAS_ADMIN    = ['dashboard','vendas','orcamentos','estoque','clientes','cfo','relatorios','ajustes'];
 const ROTAS_VENDEDOR = ['vendas','orcamentos','clientes'];
 const titles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',orcamentos:'Orçamentos',estoque:'Estoque e Produtos',
-  clientes:'Clientes e CRM',cfo:'CFO • Rentabilidade',compras:'Compras e Fornecedores',
+  clientes:'Clientes e CRM',cfo:'CFO • Rentabilidade',
   relatorios:'Relatórios',ajustes:'Ajustes do Sistema'};
 
 window.goTo = (id, btn) => {
