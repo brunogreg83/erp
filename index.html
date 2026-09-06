@@ -478,6 +478,18 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
           </div>
         </div>
 
+        <!-- Simulador de Pedido — Margem Real -->
+        <div class="card" style="margin-bottom:22px;">
+          <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+            <span><i class="ti ti-calculator" style="margin-right:6px;"></i>Simulador de Pedido — Margem Real</span>
+            <button class="btn-ghost" style="font-size:12px;padding:5px 12px;" onclick="addItemSim()"><i class="ti ti-plus"></i> Adicionar item</button>
+          </div>
+          <div style="font-size:12px;color:#888;margin-bottom:12px;">Digite os itens de um pedido e veja, na hora, a margem real de cada produto e se a venda está saudável — considerando o custo do produto e os custos fixos do mês (configurados em Ajustes).</div>
+          <div id="sim-itens"></div>
+          <div id="sim-vazio" class="form-hint" style="margin:6px 0 10px;">Nenhum item ainda — clique em "Adicionar item".</div>
+          <div id="sim-resultado"></div>
+        </div>
+
         <!-- Gráfico Receitas x Despesas — mês selecionado -->
         <div class="card" style="padding-bottom:14px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
@@ -524,7 +536,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <div class="two-col">
           <div class="report-card" onclick="relatorio('vendas')"><div class="rc-icon"><i class="ti ti-chart-bar"></i></div><div class="rc-title">Vendas por cliente</div><div class="rc-desc">Ranking, volume e ticket médio.</div><div class="rc-cta">Gerar →</div></div>
           <div class="report-card" onclick="relatorio('margem')"><div class="rc-icon"><i class="ti ti-percentage"></i></div><div class="rc-title">Margem por produto</div><div class="rc-desc">Custo, preço e margem bruta por SKU.</div><div class="rc-cta">Gerar →</div></div>
-          <div class="report-card" onclick="relatorio('margem-real')"><div class="rc-icon"><i class="ti ti-chart-donut"></i></div><div class="rc-title">Margem líquida real por pedido</div><div class="rc-desc">Lucro líquido após custo, descontos, impostos, frete, taxas e custos fixos.</div><div class="rc-cta">Gerar →</div></div>
+          <div class="report-card" onclick="relatorio('margemreal')"><div class="rc-icon"><i class="ti ti-report-money"></i></div><div class="rc-title">Margem Real (Lucro Líquido)</div><div class="rc-desc">Faturamento menos CMV e custos fixos do mês.</div><div class="rc-cta">Gerar →</div></div>
           <div class="report-card" onclick="relatorio('fluxo')"><div class="rc-icon"><i class="ti ti-cash"></i></div><div class="rc-title">Fluxo de caixa</div><div class="rc-desc">Entradas, saídas e saldo projetado.</div><div class="rc-cta">Gerar →</div></div>
           <div class="report-card" onclick="relatorio('giro')"><div class="rc-icon"><i class="ti ti-refresh"></i></div><div class="rc-title">Giro de estoque</div><div class="rc-desc">Produtos parados e curva ABC.</div><div class="rc-cta">Gerar →</div></div>
           <div class="report-card" onclick="relatorio('inadimplencia')"><div class="rc-icon"><i class="ti ti-alert-triangle" style="color:#EF9F27;"></i></div><div class="rc-title">Inadimplência</div><div class="rc-desc">Títulos em atraso e projeção.</div><div class="rc-cta">Gerar →</div></div>
@@ -564,6 +576,35 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
                 <button class="btn-primary" onclick="salvarAnthropicKey()"><i class="ti ti-check"></i> Salvar chave</button>
                 <span id="anthropic-key-status" style="font-size:12px;color:#888;"></span>
               </div>
+            </div>
+            <div class="card">
+              <div class="section-title"><i class="ti ti-building-store" style="margin-right:6px;"></i>Custos Fixos Mensais</div>
+              <div style="font-size:12px;color:#888;margin-bottom:14px;">Usados para calcular a <b>margem de lucro real</b> (Relatórios → Margem Real), descontando do lucro bruto os custos fixos do mês.</div>
+              <div class="form-group">
+                <label class="form-label">Aluguel</label>
+                <input class="form-input" id="cf-aluguel" type="number" step="0.01" placeholder="0,00">
+              </div>
+              <div class="form-group">
+                <label class="form-label">NF-e (mensalidade/serviço)</label>
+                <input class="form-input" id="cf-nfe" type="number" step="0.01" placeholder="0,00">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Contador</label>
+                <input class="form-input" id="cf-contador" type="number" step="0.01" placeholder="0,00">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Combustível</label>
+                <input class="form-input" id="cf-combustivel" type="number" step="0.01" placeholder="0,00">
+              </div>
+              <div class="form-group">
+                <label class="form-label" style="display:flex;align-items:center;justify-content:space-between;">Outros custos fixos <button class="btn-ghost" style="padding:3px 9px;font-size:11px;" onclick="addLinhaCustoFixo()"><i class="ti ti-plus"></i> Adicionar</button></label>
+                <div id="cf-outros-lista"></div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:center;margin-top:4px;">
+                <button class="btn-primary" onclick="salvarCustosFixos()"><i class="ti ti-check"></i> Salvar custos fixos</button>
+                <span id="cf-status" style="font-size:12px;color:#888;"></span>
+              </div>
+              <div class="stat-row" style="margin-top:10px;"><span class="stat-key">Total de custos fixos/mês</span><span class="stat-val" id="cf-total">R$ 0,00</span></div>
             </div>
             <div class="card">
               <div class="section-title"><i class="ti ti-receipt-2" style="margin-right:6px;"></i>Emissão de NF-e (Brasil NFe)</div>
@@ -3905,54 +3946,14 @@ window.relatorio = tipo => {
     const l=D.produtos.map(p=>{const mg=p.preco>0?Math.round((p.preco-p.custo)/p.preco*100):0;return `<tr><td>${p.nome}</td><td>${R$(p.custo)}</td><td>${R$(p.preco)}</td><td>${mg}%</td></tr>`;}).join('');
     showRel('Margem por produto',`<div class="table-wrap"><table><thead><tr><th>Produto</th><th>Custo</th><th>Preço</th><th>Margem</th></tr></thead><tbody>${l||'<tr><td colspan="4"><div class="empty-state">Sem produtos.</div></td></tr>'}</tbody></table></div>`);
   }
-  if (tipo==='margem-real') {
-    const cfg=JSON.parse(localStorage.getItem('ab_margem_real_cfg')||'{}');
-    const fixed={aluguel:470,nfe:49.90,contador:270,combustivel:0,funcionarios:0,outros:0,...cfg};
-    const meses=Object.values(fixed).reduce((a,b)=>a+(parseFloat(b)||0),0);
-    const vendas=D.pedidos.filter(p=>String(p.status||'').toLowerCase()!=='cancelado');
-    const totalVenda=vendas.reduce((s,p)=>s+totPed(p),0);
-    const cmv=vendas.reduce((s,p)=>s+(p.itens||[]).reduce((a,i)=>{const pr=D.produtos.find(x=>x.nome===i.produto);return a+(parseFloat(i.qty)||0)*(parseFloat(pr?.custo)||0)},0),0);
-    const margemContrib=totalVenda?Math.max(0,(totalVenda-cmv)/totalVenda):0;
-    const imposto=parseFloat(cfg.imposto)||0, frete=parseFloat(cfg.frete)||0, financeira=parseFloat(cfg.financeira)||0;
-    const linhas=vendas.map(p=>{
-      const receita=totPed(p), custo=(p.itens||[]).reduce((a,i)=>{const pr=D.produtos.find(x=>x.nome===i.produto);return a+(parseFloat(i.qty)||0)*(parseFloat(pr?.custo)||0)},0);
-      const imp=receita*imposto/100, fr=frete, fin=receita*financeira/100;
-      const lucro=receita-custo-imp-fr-fin;
-      return {p,receita,custo,imp,fr,fin,lucro};
-    });
-    const periodoBase=totalVenda||0;
-    const rateio=periodoBase>0?meses:0;
-    const resultado=linhas.map(x=>({...x,rateio: rateio*(x.receita/periodoBase), liquido:x.lucro-rateio*(x.receita/periodoBase)}));
-    const lucroTotal=resultado.reduce((s,x)=>s+x.liquido,0), margem=totalVenda?lucroTotal/totalVenda*100:0;
-    const status=m=>m<0?['Prejuízo','badge-red']:m<10?['Crítica','badge-red']:m<20?['Baixa','badge-amber']:m<30?['Aceitável','badge-blue']:['Boa','badge-green'];
-    const rows=resultado.sort((a,b)=>a.liquido-b.liquido).map(x=>{const m=x.receita?x.liquido/x.receita*100:0,st=status(m);return `<tr><td>${x.p.codigo||x.p.id||'—'}</td><td>${x.p.cliente||'—'}</td><td>${R$(x.receita)}</td><td>${R$(x.custo)}</td><td>${R$(x.imp)}</td><td>${R$(x.fr)}</td><td>${R$(x.fin)}</td><td>${R$(x.rateio)}</td><td><b>${R$(x.liquido)}</b></td><td>${m.toFixed(2)}%</td><td><span class="badge ${st[1]}">${st[0]}</span></td></tr>`}).join('');
-    const esc=v=>String(v??'').replace(/"/g,'&quot;');
-    showRel('Margem Líquida Real por Pedido',`
-      <div class="card" style="margin-bottom:14px;background:#fafaf8;">
-        <div class="section-title">Parâmetros de cálculo</div>
-        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;">
-          <label>Aluguel<input class="form-input" id="mr-aluguel" type="number" step="0.01" value="${esc(fixed.aluguel)}"></label>
-          <label>NFe<input class="form-input" id="mr-nfe" type="number" step="0.01" value="${esc(fixed.nfe)}"></label>
-          <label>Contador<input class="form-input" id="mr-contador" type="number" step="0.01" value="${esc(fixed.contador)}"></label>
-          <label>Combustível<input class="form-input" id="mr-combustivel" type="number" step="0.01" value="${esc(fixed.combustivel)}"></label>
-          <label>Funcionários<input class="form-input" id="mr-funcionarios" type="number" step="0.01" value="${esc(fixed.funcionarios)}"></label>
-          <label>Outros fixos<input class="form-input" id="mr-outros" type="number" step="0.01" value="${esc(fixed.outros)}"></label>
-          <label>Impostos %<input class="form-input" id="mr-imposto" type="number" step="0.01" value="${esc(imposto)}"></label>
-          <label>Frete por pedido<input class="form-input" id="mr-frete" type="number" step="0.01" value="${esc(frete)}"></label>
-          <label>Taxa financeira %<input class="form-input" id="mr-financeira" type="number" step="0.01" value="${esc(financeira)}"></label>
-        </div>
-        <button class="btn-primary" style="margin-top:10px;" onclick="salvarMargemRealCfg()"><i class="ti ti-check"></i> Salvar parâmetros e recalcular</button>
-        <div class="form-hint">O custo da mercadoria vem do cadastro de produtos do ERP. Os custos fixos informados são rateados proporcionalmente pelo valor dos pedidos no período.</div>
-      </div>
-      <div class="kpi-grid">
-        <div class="kpi-card"><div class="kpi-label">Faturamento</div><div class="kpi-value">${R$(totalVenda)}</div></div>
-        <div class="kpi-card"><div class="kpi-label">Custo mercadorias</div><div class="kpi-value">${R$(cmv)}</div></div>
-        <div class="kpi-card"><div class="kpi-label">Custos fixos</div><div class="kpi-value">${R$(meses)}</div></div>
-        <div class="kpi-card"><div class="kpi-label">Lucro líquido real</div><div class="kpi-value" style="color:${lucroTotal>=0?'#185FA5':'#A32D2D'}">${R$(lucroTotal)}</div><div class="kpi-delta">Margem líquida: ${margem.toFixed(2)}%</div></div>
-      </div>
-      <div class="table-wrap"><table><thead><tr><th>Pedido</th><th>Cliente</th><th>Receita</th><th>Custo</th><th>Impostos</th><th>Frete</th><th>Taxas</th><th>Rateio fixo</th><th>Lucro líquido</th><th>Margem</th><th>Situação</th></tr></thead><tbody>${rows||'<tr><td colspan="11"><div class="empty-state">Nenhum pedido disponível.</div></td></tr>'}</tbody></table></div>`);
+  if (tipo==='margemreal') {
+    const now = new Date();
+    const ymAtual = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    showRel('Margem Real (Lucro Líquido)',
+      '<div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><label style="font-size:12px;color:#888;">Mês:</label><select id="margreal-mes" onchange="window.atualizarMargemReal()" style="padding:8px 12px;border:1px solid #e8e7e0;border-radius:8px;font-family:inherit;"></select></div>' +
+      '<div id="margreal-corpo">' + renderMargemRealHtml(ymAtual) + '</div>');
+    setTimeout(() => { popularSeletorMeses('margreal-mes'); }, 0);
   }
-
   if (tipo==='fluxo') {
     const tR=D.receber.reduce((s,r)=>s+(parseFloat(r.valor)||0),0), tP=D.pagar.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
     showRel('Fluxo de caixa',`<div class="stat-row"><span class="stat-key">Total a receber</span><span class="stat-val" style="color:#185FA5">${R$(tR)}</span></div><div class="stat-row"><span class="stat-key">Total a pagar</span><span class="stat-val" style="color:#D85A30">${R$(tP)}</span></div><div class="stat-row"><span class="stat-key">Saldo projetado</span><span class="stat-val" style="font-size:16px;color:${tR-tP>=0?'#185FA5':'#D85A30'}">${R$(tR-tP)}</span></div>`);
@@ -5102,6 +5103,237 @@ function getFocusFnUrl() {
   return localStorage.getItem('focus_fn_url') || '';
 }
 
+// ── Custos Fixos Mensais (usados na Margem Real) ─────────────────────────────
+function getCustosFixos() {
+  try {
+    const raw = localStorage.getItem('custos_fixos');
+    const cf = raw ? JSON.parse(raw) : {};
+    return {
+      aluguel: parseFloat(cf.aluguel) || 0,
+      nfe: parseFloat(cf.nfe) || 0,
+      contador: parseFloat(cf.contador) || 0,
+      combustivel: parseFloat(cf.combustivel) || 0,
+      outros: Array.isArray(cf.outros) ? cf.outros.map(o => ({ nome: o.nome || '', valor: parseFloat(o.valor) || 0 })) : []
+    };
+  } catch(e) { return { aluguel:0, nfe:0, contador:0, combustivel:0, outros:[] }; }
+}
+
+function totalCustosFixos(cf) {
+  cf = cf || getCustosFixos();
+  return cf.aluguel + cf.nfe + cf.contador + cf.combustivel + cf.outros.reduce((s,o)=>s+(parseFloat(o.valor)||0), 0);
+}
+
+window.addLinhaCustoFixo = (nome, valor) => {
+  const lista = document.getElementById('cf-outros-lista');
+  if (!lista) return;
+  const row = document.createElement('div');
+  row.className = 'cf-outro-row';
+  row.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;align-items:center;';
+  row.innerHTML =
+    '<input class="form-input cf-outro-nome" placeholder="Descrição" style="flex:2;" value="' + (nome ? String(nome).replace(/"/g,'&quot;') : '') + '">' +
+    '<input class="form-input cf-outro-valor" type="number" step="0.01" placeholder="0,00" style="flex:1;" value="' + (valor !== undefined ? valor : '') + '">' +
+    '<button class="btn-danger" onclick="this.parentElement.remove(); atualizarTotalCustosFixosUI();" title="Remover"><i class="ti ti-x"></i></button>';
+  lista.appendChild(row);
+  const vInput = row.querySelector('.cf-outro-valor');
+  vInput.addEventListener('input', atualizarTotalCustosFixosUI);
+};
+
+function preencherCustosFixosUI() {
+  const cf = getCustosFixos();
+  const elA = document.getElementById('cf-aluguel'); if (elA) elA.value = cf.aluguel || '';
+  const elN = document.getElementById('cf-nfe'); if (elN) elN.value = cf.nfe || '';
+  const elC = document.getElementById('cf-contador'); if (elC) elC.value = cf.contador || '';
+  const elCb = document.getElementById('cf-combustivel'); if (elCb) elCb.value = cf.combustivel || '';
+  const lista = document.getElementById('cf-outros-lista');
+  if (lista) {
+    lista.innerHTML = '';
+    cf.outros.forEach(o => addLinhaCustoFixo(o.nome, o.valor));
+  }
+  atualizarTotalCustosFixosUI();
+}
+
+window.atualizarTotalCustosFixosUI = () => {
+  const aluguel = parseFloat(document.getElementById('cf-aluguel')?.value) || 0;
+  const nfe = parseFloat(document.getElementById('cf-nfe')?.value) || 0;
+  const contador = parseFloat(document.getElementById('cf-contador')?.value) || 0;
+  const combustivel = parseFloat(document.getElementById('cf-combustivel')?.value) || 0;
+  const outros = Array.from(document.querySelectorAll('#cf-outros-lista .cf-outro-row')).reduce((s,row) => {
+    return s + (parseFloat(row.querySelector('.cf-outro-valor')?.value) || 0);
+  }, 0);
+  const tot = aluguel + nfe + contador + combustivel + outros;
+  const totEl = document.getElementById('cf-total');
+  if (totEl) totEl.textContent = R$(tot);
+};
+
+window.salvarCustosFixos = () => {
+  const outros = Array.from(document.querySelectorAll('#cf-outros-lista .cf-outro-row')).map(row => ({
+    nome: row.querySelector('.cf-outro-nome')?.value.trim() || '',
+    valor: parseFloat(row.querySelector('.cf-outro-valor')?.value) || 0
+  })).filter(o => o.nome || o.valor);
+  const cf = {
+    aluguel: parseFloat(document.getElementById('cf-aluguel')?.value) || 0,
+    nfe: parseFloat(document.getElementById('cf-nfe')?.value) || 0,
+    contador: parseFloat(document.getElementById('cf-contador')?.value) || 0,
+    combustivel: parseFloat(document.getElementById('cf-combustivel')?.value) || 0,
+    outros
+  };
+  localStorage.setItem('custos_fixos', JSON.stringify(cf));
+  atualizarTotalCustosFixosUI();
+  const st = document.getElementById('cf-status');
+  if (st) { st.innerHTML = '<span style="color:#185FA5;">✅ Custos fixos salvos!</span>'; setTimeout(() => { st.textContent=''; }, 3000); }
+};
+
+// ── Margem Real (lucro líquido de verdade: faturamento - CMV - custos fixos) ──
+function calcMargemReal(ym) {
+  const custo = nome => {
+    const p = D.produtos.find(x => x.nome === nome);
+    return p ? (parseFloat(p.custo) || 0) : 0;
+  };
+  const pedidosMes = D.pedidos.filter(p => (p.status === 'Entregue' || p.status === 'Faturado') && (p.data || '').startsWith(ym));
+
+  let faturamentoBruto = 0, cmv = 0, descontos = 0;
+  pedidosMes.forEach(p => {
+    (p.itens || []).forEach(it => {
+      const qty = parseFloat(it.qty) || 0;
+      const preco = parseFloat(it.preco) || 0;
+      faturamentoBruto += qty * preco;
+      cmv += qty * custo(it.produto);
+    });
+    descontos += parseFloat(p.desconto) || 0;
+  });
+
+  const faturamentoLiquido = faturamentoBruto - descontos;
+  const margemBrutaValor = faturamentoBruto - cmv;
+  const margemBrutaPct = faturamentoBruto > 0 ? (margemBrutaValor / faturamentoBruto) * 100 : 0;
+
+  const cf = getCustosFixos();
+  const custosFixos = totalCustosFixos(cf);
+
+  const lucroLiquido = faturamentoLiquido - cmv - custosFixos;
+  const margemRealPct = faturamentoLiquido > 0 ? (lucroLiquido / faturamentoLiquido) * 100 : 0;
+
+  return { faturamentoBruto, descontos, faturamentoLiquido, cmv, margemBrutaValor, margemBrutaPct, cf, custosFixos, lucroLiquido, margemRealPct, nPedidos: pedidosMes.length };
+}
+
+function renderMargemRealHtml(ym) {
+  const r = calcMargemReal(ym);
+  const outrosLinhas = r.cf.outros.filter(o => o.nome || o.valor).map(o =>
+    '<div class="stat-row"><span class="stat-key">' + (o.nome || 'Outro custo') + '</span><span class="stat-val">' + R$(o.valor) + '</span></div>').join('');
+  const corMargem = r.margemRealPct >= 0 ? '#185FA5' : '#D85A30';
+  return `
+    <div class="card" style="padding:14px 16px;margin-bottom:16px;background:#f9f9f7;">
+      <div class="stat-row"><span class="stat-key">Faturamento bruto (sem desconto)</span><span class="stat-val">${R$(r.faturamentoBruto)}</span></div>
+      <div class="stat-row"><span class="stat-key">Descontos concedidos</span><span class="stat-val" style="color:#D85A30;">- ${R$(r.descontos)}</span></div>
+      <div class="stat-row"><span class="stat-key">Faturamento líquido</span><span class="stat-val">${R$(r.faturamentoLiquido)}</span></div>
+      <div class="stat-row"><span class="stat-key">Custo da mercadoria vendida (CMV)</span><span class="stat-val" style="color:#D85A30;">- ${R$(r.cmv)}</span></div>
+      <div class="stat-row"><span class="stat-key"><b>Margem bruta da mercadoria</b></span><span class="stat-val" style="color:#185FA5;"><b>${R$(r.margemBrutaValor)} (${r.margemBrutaPct.toFixed(1)}%)</b></span></div>
+    </div>
+    <div class="section-title">Custos fixos do mês</div>
+    <div class="card" style="padding:14px 16px;margin-bottom:16px;">
+      <div class="stat-row"><span class="stat-key">Aluguel</span><span class="stat-val">${R$(r.cf.aluguel)}</span></div>
+      <div class="stat-row"><span class="stat-key">NF-e</span><span class="stat-val">${R$(r.cf.nfe)}</span></div>
+      <div class="stat-row"><span class="stat-key">Contador</span><span class="stat-val">${R$(r.cf.contador)}</span></div>
+      <div class="stat-row"><span class="stat-key">Combustível</span><span class="stat-val">${R$(r.cf.combustivel)}</span></div>
+      ${outrosLinhas}
+      <div class="stat-row"><span class="stat-key"><b>Total de custos fixos</b></span><span class="stat-val" style="color:#D85A30;"><b>- ${R$(r.custosFixos)}</b></span></div>
+    </div>
+    <div class="card" style="padding:16px;">
+      <div class="stat-row" style="font-size:15px;"><span class="stat-key"><b>Lucro líquido real</b></span><span class="stat-val" style="color:${corMargem};font-size:17px;"><b>${R$(r.lucroLiquido)}</b></span></div>
+      <div class="stat-row"><span class="stat-key"><b>Margem de lucro real</b></span><span class="stat-val" style="color:${corMargem};"><b>${r.margemRealPct.toFixed(1)}%</b></span></div>
+      <div class="form-hint" style="margin-top:6px;">Baseado em ${r.nPedidos} pedido(s) entregue(s)/faturado(s) no mês. Configure os custos fixos em Ajustes.</div>
+    </div>`;
+}
+
+window.atualizarMargemReal = () => {
+  const sel = document.getElementById('margreal-mes');
+  if (!sel) return;
+  document.getElementById('margreal-corpo').innerHTML = renderMargemRealHtml(sel.value);
+};
+
+// ── Simulador de Pedido — Margem Real por item (tela Financeiro) ────────────
+window.simItens = [];
+
+function margemMinimaNecessaria() {
+  // % de margem bruta que a empresa precisa, em média, para cobrir os custos fixos do mês.
+  const now = new Date();
+  const ymAtual = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  const r = calcMargemReal(ymAtual);
+  if (r.faturamentoBruto > 0) return (r.custosFixos / r.faturamentoBruto) * 100;
+  // sem vendas ainda no mês: usa o total de custos fixos sobre o faturamento do mês anterior, se houver
+  const d = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  const ymAnterior = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  const rAnt = calcMargemReal(ymAnterior);
+  if (rAnt.faturamentoBruto > 0) return (rAnt.custosFixos / rAnt.faturamentoBruto) * 100;
+  return null; // sem dados suficientes para estimar
+}
+
+window.addItemSim = () => {
+  const idx = window.simItens.length;
+  window.simItens.push({ produto:'', qty:1, preco:0 });
+  const row = document.createElement('div');
+  row.className = 'pi-row'; row.id = 'sim-item-'+idx;
+  row.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;align-items:center;';
+  const opts = '<option value="">Selecione...</option>' + D.produtos.map(p => '<option value="' + p.nome + '">' + p.nome + '</option>').join('');
+  row.innerHTML =
+    '<select class="form-input" style="flex:2;" onchange="setSimItem(' + idx + ',this.value)">' + opts + '</select>' +
+    '<input type="text" inputmode="decimal" class="form-input" style="max-width:70px;" value="1" oninput="window.simItens[' + idx + '].qty=parseFloat(this.value.replace(\',\',\'.\'))||0; recalcSim();">' +
+    '<input type="text" inputmode="decimal" class="form-input" style="max-width:100px;" placeholder="Preço venda" id="sim-preco-' + idx + '" oninput="window.simItens[' + idx + '].preco=parseBR(this.value); recalcSim();">' +
+    '<button class="btn-danger" onclick="document.getElementById(\'sim-item-' + idx + '\').remove(); window.simItens[' + idx + ']=null; recalcSim();">✕</button>';
+  document.getElementById('sim-itens').appendChild(row);
+  document.getElementById('sim-vazio').style.display = 'none';
+  recalcSim();
+};
+
+window.setSimItem = (idx, nome) => {
+  const p = D.produtos.find(x => x.nome === nome);
+  window.simItens[idx] = { produto: nome, qty: window.simItens[idx]?.qty || 1, preco: p?.preco || 0 };
+  const el = document.getElementById('sim-preco-'+idx); if (el && p) el.value = p.preco;
+  recalcSim();
+};
+
+window.recalcSim = () => {
+  const itens = window.simItens.filter(Boolean).filter(i => i.produto);
+  const box = document.getElementById('sim-resultado');
+  if (!box) return;
+  if (!itens.length) { box.innerHTML = ''; return; }
+
+  const minima = margemMinimaNecessaria();
+  let faturamento = 0, cmv = 0;
+
+  const linhas = itens.map(it => {
+    const p = D.produtos.find(x => x.nome === it.produto);
+    const custo = p ? (parseFloat(p.custo) || 0) : 0;
+    const qty = parseFloat(it.qty) || 0;
+    const preco = parseFloat(it.preco) || 0;
+    const totalItem = qty * preco;
+    const custoItem = qty * custo;
+    faturamento += totalItem;
+    cmv += custoItem;
+    const margemPct = preco > 0 ? ((preco - custo) / preco) * 100 : 0;
+
+    let status, cor;
+    if (preco <= custo) { status = '🔴 Prejuízo — abaixo do custo'; cor = '#A32D2D'; }
+    else if (minima === null) { status = margemPct >= 30 ? '🟢 Margem boa' : (margemPct >= 15 ? '🟡 Margem OK' : '🟠 Margem baixa'); cor = margemPct >= 30 ? '#185FA5' : (margemPct >= 15 ? '#854F0B' : '#D85A30'); }
+    else if (margemPct >= minima + 10) { status = '🟢 Venda saudável'; cor = '#185FA5'; }
+    else if (margemPct >= minima) { status = '🟡 No ponto de equilíbrio'; cor = '#854F0B'; }
+    else { status = '🟠 Não cobre os custos fixos'; cor = '#D85A30'; }
+
+    return '<tr><td>' + it.produto + '</td><td>' + qty + '</td><td>' + R$(custo) + '</td><td>' + R$(preco) + '</td><td>' + margemPct.toFixed(1) + '%</td><td style="color:' + cor + ';font-weight:500;">' + status + '</td></tr>';
+  }).join('');
+
+  const margemTotalPct = faturamento > 0 ? ((faturamento - cmv) / faturamento) * 100 : 0;
+  const corTotal = minima !== null && margemTotalPct < minima ? '#D85A30' : '#185FA5';
+
+  box.innerHTML =
+    '<div class="table-wrap" style="margin:10px 0;"><table><thead><tr><th>Produto</th><th>Qtd</th><th>Custo</th><th>Preço</th><th>Margem</th><th>Situação</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
+    '<div class="stat-row"><span class="stat-key">Faturamento do pedido</span><span class="stat-val">' + R$(faturamento) + '</span></div>' +
+    '<div class="stat-row"><span class="stat-key">Custo da mercadoria (CMV)</span><span class="stat-val" style="color:#D85A30;">- ' + R$(cmv) + '</span></div>' +
+    '<div class="stat-row"><span class="stat-key"><b>Margem bruta do pedido</b></span><span class="stat-val" style="color:' + corTotal + ';"><b>' + margemTotalPct.toFixed(1) + '%</b></span></div>' +
+    (minima !== null
+      ? '<div class="form-hint">Margem mínima necessária para cobrir os custos fixos do mês: <b>' + minima.toFixed(1) + '%</b>. Configure/ajuste os custos fixos em Ajustes.</div>'
+      : '<div class="form-hint">Cadastre os custos fixos em Ajustes e registre vendas no mês para calcular a margem mínima necessária.</div>');
+};
+
 // Preenchimento da chave Anthropic ao entrar em Ajustes
 // (integrado diretamente no goTo final abaixo)
 
@@ -5215,6 +5447,7 @@ window.goTo = (id, btn) => {
       const elF = document.getElementById('focus-fn-url-input');
       const stF = document.getElementById('focus-fn-url-status');
       if (elF && fu) { elF.value = fu; if (stF) stF.innerHTML = '<span style="color:#185FA5;">✅ URL configurada</span>'; }
+      preencherCustosFixosUI();
     }, 50);
   }
   // redesenhar gráficos que dependem de visibilidade
@@ -5279,13 +5512,6 @@ function gerarAlertasInteligentes(){
           : '<div style="color:#185FA5;font-size:13px;">✅ Nenhum alerta crítico.</div>');
     }
   }catch(e){console.error(e);}
-}
-
-function salvarMargemRealCfg(){
-  const cfg={};
-  ['aluguel','nfe','contador','combustivel','funcionarios','outros','imposto','frete','financeira'].forEach(k=>cfg[k]=parseFloat(document.getElementById('mr-'+k)?.value)||0);
-  localStorage.setItem('ab_margem_real_cfg',JSON.stringify(cfg));
-  relatorio('margem-real');
 }
 </script>
 </body>
