@@ -4525,10 +4525,20 @@ window.emitirNFeFocus = async () => {
       return;
     }
 
-    // Status inicial costuma ser "processando_autorizacao"
-    statusEl.innerHTML = '<span style="color:#185FA5;">⏳ Status: ' + (data.status || 'processando') + '. Clique em "Consultar status" em alguns segundos.</span>';
     document.getElementById('btn-consultar-focus').style.display = 'inline-flex';
     document.getElementById('modal-emissao-nf').dataset.focusRef = ref;
+
+    // A própria emissão pode retornar rejeição imediatamente. Mostrar o motivo completo.
+    if (data.status === 'rejeitado') {
+      const codigo = data.codigo_sefaz ? ('Código SEFAZ: <b>' + data.codigo_sefaz + '</b><br>') : '';
+      const erros = Array.isArray(data.erros_sefaz) && data.erros_sefaz.length
+        ? '<br><small>' + data.erros_sefaz.join('<br>') + '</small>' : '';
+      statusEl.innerHTML = '<span style="color:#C0392B;">❌ <b>NF-e rejeitada</b><br>' + codigo + (data.mensagem || 'A SEFAZ rejeitou a nota, mas não retornou uma descrição.') + erros + '</span>';
+      return;
+    }
+
+    // Status inicial quando a autorização ainda está em processamento.
+    statusEl.innerHTML = '<span style="color:#185FA5;">⏳ Status: ' + (data.status || 'processando') + '. Clique em "Consultar status" em alguns segundos.</span>';
 
     // Se já vier autorizada (raro na primeira resposta, mas possível)
     if (data.status === 'autorizado' && data.numero) {
@@ -4581,8 +4591,12 @@ window.consultarNFeFocus = async () => {
       const danfeLink = ' <a href="' + _focusDanfeUrl(ref) + '" target="_blank" style="color:#185FA5;font-weight:600;"><i class="ti ti-file-text"></i> Ver DANFE</a>';
       const xmlLink   = ' <a href="' + _focusXmlUrl(ref)   + '" target="_blank" style="color:#185FA5;font-weight:600;"><i class="ti ti-code"></i> Baixar XML</a>';
       statusEl.innerHTML = '<span style="color:#185FA5;">✅ NF-e autorizada! Número ' + (data.numero||'') + '.' + danfeLink + xmlLink + ' Clique em "Registrar NF no pedido" para salvar.</span>';
-    } else if (data.status === 'erro_autorizacao' || data.status === 'cancelado' || data.status === 'denegado') {
-      statusEl.innerHTML = '<span style="color:#C0392B;">❌ Status: ' + data.status + (data.mensagem ? (' — ' + data.mensagem) : '') + '</span>';
+    } else if (data.status === 'rejeitado' || data.status === 'erro_autorizacao' || data.status === 'cancelado' || data.status === 'denegado') {
+      const codigo = data.codigo_sefaz ? ('<br>Código SEFAZ: <b>' + data.codigo_sefaz + '</b>') : '';
+      const detalhes = data.detalhes_rejeicao ? ('<br><small>' + data.detalhes_rejeicao + '</small>') : '';
+      const erros = Array.isArray(data.erros_sefaz) && data.erros_sefaz.length
+        ? ('<br><small>' + data.erros_sefaz.join('<br>') + '</small>') : '';
+      statusEl.innerHTML = '<span style="color:#C0392B;">❌ <b>NF-e rejeitada</b>' + codigo + '<br>' + (data.mensagem || data.status) + detalhes + erros + '</span>';
     } else {
       statusEl.innerHTML = '<span style="color:#185FA5;">⏳ Status: ' + (data.status||'processando') + '. Aguarde e consulte novamente.</span>';
     }
