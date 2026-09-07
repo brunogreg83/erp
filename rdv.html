@@ -503,7 +503,7 @@
       Manifesto Nº <span class="num" id="manifestId">—</span><br>
       Emitido em <span id="issuedAt">—</span><br>
       <div style="display:flex;align-items:center;gap:10px;">
-        <button type="button" id="backToErpBtn" class="ghost" style="display:none;padding:6px 12px;">← Voltar ao ERP</button>
+        <button type="button" id="backToErpBtn" class="ghost" onclick="window.location.href='./index.html'" style="display:inline-flex;padding:6px 12px;">← Voltar ao ERP</button>
         <a href="#" id="logoutLink" style="color:var(--teal);text-decoration:underline;">Sair (<span id="loggedInAs"></span>)</a>
       </div>
     </div>
@@ -742,8 +742,13 @@ if (rdvEmbeddedAdmin) {
   const backBtn = document.getElementById('backToErpBtn');
   if (backBtn) {
     backBtn.style.display = 'inline-flex';
-    backBtn.addEventListener('click', () => {
-      if (window.parent && window.parent !== window) window.parent.postMessage('AB_RDV_VOLTAR_ERP', '*');
+    backBtn.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage('AB_RDV_VOLTAR_ERP', '*');
+      } else {
+        window.location.href = './index.html';
+      }
     });
   }
 }
