@@ -460,29 +460,9 @@
     .panel.form, .actions, .row-actions, footer .hint, .modal-overlay{display:none !important;}
     body{background:#fff;}
   }
-/* GESTÃO RDV DENTRO DO ERP */
-body.rdv-manager #loginOverlay{display:none !important;}
-body.rdv-manager #appWrap{display:block !important;}
-body.rdv-manager #sellerView{display:none !important;}
-body.rdv-manager #adminDashboardView{display:block !important;}
 </style>
-<script>
-window.IS_RDV_MANAGER = true;
-(function(){
-  try{
-    const s = JSON.parse(localStorage.getItem('abc_auth') || 'null');
-    if(!s || s.perfil !== 'admin'){
-      document.documentElement.innerHTML =
-        '<body style="font-family:Arial,sans-serif;padding:40px;text-align:center">' +
-        '<h2>Acesso não autorizado</h2>' +
-        '<p>Entre no AB | ERP como administrador para acessar a Gestão RDV.</p>' +
-        '<button onclick="location.href=\'index.html\'">Voltar ao ERP</button></body>';
-    }
-  }catch(e){ location.href='index.html'; }
-})();
-</script>
 </head>
-<body class="rdv-manager">
+<body>
 <div class="login-overlay" id="loginOverlay">
   <div class="review-card">
     <div class="brand" style="margin-bottom:18px;">
@@ -750,7 +730,7 @@ import {
   getStorage, ref, uploadString, getDownloadURL, deleteObject
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 import {
-  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signInAnonymously, signOut, createUserWithEmailAndPassword, sendPasswordResetEmail
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   getFunctions, httpsCallable
@@ -758,16 +738,12 @@ import {
 
 
 const rdvEmbeddedAdmin = new URLSearchParams(window.location.search).get('embedded') === 'admin';
-if (rdvEmbeddedAdmin || window.IS_RDV_MANAGER) {
+if (rdvEmbeddedAdmin) {
   const backBtn = document.getElementById('backToErpBtn');
   if (backBtn) {
     backBtn.style.display = 'inline-flex';
     backBtn.addEventListener('click', () => {
-      if (window.parent && window.parent !== window) {
-        window.parent.postMessage('AB_RDV_VOLTAR_ERP', '*');
-      } else {
-        window.location.href = 'index.html';
-      }
+      if (window.parent && window.parent !== window) window.parent.postMessage('AB_RDV_VOLTAR_ERP', '*');
     });
   }
 }
@@ -785,13 +761,6 @@ const app     = initializeApp(firebaseConfig);
 const db      = getFirestore(app);
 const storage = getStorage(app);
 const auth    = getAuth(app);
-if(window.IS_RDV_MANAGER){
-  signInAnonymously(auth).catch(err=>{
-    console.error('Falha ao conectar à Gestão RDV:', err);
-    const el=document.getElementById('statusLineAdmin');
-    if(el) el.textContent='Erro ao conectar ao Firebase do RDV.';
-  });
-}
 const functionsInstance = getFunctions(app);
 const COL     = "despesas_viagem";
 
@@ -1649,10 +1618,6 @@ window._fb = {
 
   const loginOverlay = document.getElementById('loginOverlay');
   const appWrap = document.getElementById('appWrap');
-  if(rdvEmbeddedAdmin){
-    loginOverlay.classList.add('hidden');
-    appWrap.style.display = '';
-  }
   const loginForm = document.getElementById('loginForm');
   const loginError = document.getElementById('loginError');
   const loginBtn = document.getElementById('loginBtn');
@@ -1711,13 +1676,6 @@ window._fb = {
 
   (async function(){
     const fb = await waitForFb();
-    if(rdvEmbeddedAdmin){
-      try{
-        await signInAnonymously(auth);
-      }catch(err){
-        console.error('Falha na autenticação do RDV integrado:', err);
-      }
-    }
     fb.onAuthChange(async function(user){
       if(user){
         loginOverlay.classList.add('hidden');
@@ -1725,7 +1683,6 @@ window._fb = {
         document.getElementById('loggedInAs').textContent = user.email;
         isLoggedIn = true;
         resetIdleTimer();
-        if(window.IS_RDV_MANAGER) isAdminUser = true;
 
         let role = 'vendedor';
         let perfil = null;
@@ -1752,7 +1709,7 @@ window._fb = {
         fColaborador.readOnly = true;
         document.getElementById('loggedInAs').textContent = currentUserLabel;
 
-        if(role === 'admin' || rdvEmbeddedAdmin){
+        if(role === 'admin'){
           isAdminUser = true;
           document.getElementById('sellerView').style.display = 'none';
           document.getElementById('adminDashboardView').style.display = '';
@@ -1773,24 +1730,8 @@ window._fb = {
       } else {
         isLoggedIn = false;
         clearTimeout(idleTimer);
-        document.getElementById('reviewOverlay').classList.remove('open');
-
-        if(rdvEmbeddedAdmin){
-          // O RDV incorporado ao ERP não usa o login de vendedor.
-          // Autenticação anônima mantém o acesso ao Firebase sem expor a tela de login.
-          loginOverlay.classList.add('hidden');
-          appWrap.style.display = '';
-          isAdminUser = true;
-          document.getElementById('sellerView').style.display = 'none';
-          document.getElementById('adminDashboardView').style.display = '';
-          if(!initialized){
-            initialized = true;
-            init();
-          }
-          return;
-        }
-
         appWrap.style.display = 'none';
+        document.getElementById('reviewOverlay').classList.remove('open');
         loginOverlay.classList.remove('hidden');
         if(autoLoggedOut){
           loginError.textContent = 'Sessão encerrada por inatividade (10 minutos). Faça login novamente.';
@@ -1800,7 +1741,6 @@ window._fb = {
           loginError.textContent = 'Esta conta foi desativada. Contate o administrador.';
           loginError.style.display = 'block';
           contaDesativada = false;
-        }
         }
       }
     });
