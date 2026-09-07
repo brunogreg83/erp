@@ -460,9 +460,29 @@
     .panel.form, .actions, .row-actions, footer .hint, .modal-overlay{display:none !important;}
     body{background:#fff;}
   }
+/* GESTÃO RDV DENTRO DO ERP */
+body.rdv-manager #loginOverlay{display:none !important;}
+body.rdv-manager #appWrap{display:block !important;}
+body.rdv-manager #sellerView{display:none !important;}
+body.rdv-manager #adminDashboardView{display:block !important;}
 </style>
+<script>
+window.IS_RDV_MANAGER = true;
+(function(){
+  try{
+    const s = JSON.parse(localStorage.getItem('abc_auth') || 'null');
+    if(!s || s.perfil !== 'admin'){
+      document.documentElement.innerHTML =
+        '<body style="font-family:Arial,sans-serif;padding:40px;text-align:center">' +
+        '<h2>Acesso não autorizado</h2>' +
+        '<p>Entre no AB | ERP como administrador para acessar a Gestão RDV.</p>' +
+        '<button onclick="location.href=\'index.html\'">Voltar ao ERP</button></body>';
+    }
+  }catch(e){ location.href='index.html'; }
+})();
+</script>
 </head>
-<body>
+<body class="rdv-manager">
 <div class="login-overlay" id="loginOverlay">
   <div class="review-card">
     <div class="brand" style="margin-bottom:18px;">
@@ -496,7 +516,7 @@
       <div class="brand-mark">AB</div>
       <div>
         <h1>AB Chemicals</h1>
-        <p>Gestão de despesas de viagem e aprovações</p>
+        <p>Relatório de despesas de viagem</p>
       </div>
     </div>
     <div class="manifest-id">
@@ -509,7 +529,7 @@
     </div>
   </header>
 
-  <div id="sellerView" style="display:none !important;">
+  <div id="sellerView">
 
   <div class="route-rail" id="routeRail"></div>
 
@@ -720,7 +740,6 @@
   </div>
 </div>
 
-<script>window.IS_RDV_MANAGER = true;</script>
 <script type="module">
 import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
@@ -738,7 +757,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js";
 
 
-const rdvEmbeddedAdmin = false;
+const rdvEmbeddedAdmin = new URLSearchParams(window.location.search).get('embedded') === 'admin';
 if (rdvEmbeddedAdmin || window.IS_RDV_MANAGER) {
   const backBtn = document.getElementById('backToErpBtn');
   if (backBtn) {
@@ -746,7 +765,7 @@ if (rdvEmbeddedAdmin || window.IS_RDV_MANAGER) {
     backBtn.addEventListener('click', () => {
       if (window.parent && window.parent !== window) {
         window.parent.postMessage('AB_RDV_VOLTAR_ERP', '*');
-      } else if (window.IS_RDV_MANAGER) {
+      } else {
         window.location.href = 'index.html';
       }
     });
@@ -766,6 +785,13 @@ const app     = initializeApp(firebaseConfig);
 const db      = getFirestore(app);
 const storage = getStorage(app);
 const auth    = getAuth(app);
+if(window.IS_RDV_MANAGER){
+  signInAnonymously(auth).catch(err=>{
+    console.error('Falha ao conectar à Gestão RDV:', err);
+    const el=document.getElementById('statusLineAdmin');
+    if(el) el.textContent='Erro ao conectar ao Firebase do RDV.';
+  });
+}
 const functionsInstance = getFunctions(app);
 const COL     = "despesas_viagem";
 
@@ -1685,6 +1711,13 @@ window._fb = {
 
   (async function(){
     const fb = await waitForFb();
+    if(rdvEmbeddedAdmin){
+      try{
+        await signInAnonymously(auth);
+      }catch(err){
+        console.error('Falha na autenticação do RDV integrado:', err);
+      }
+    }
     fb.onAuthChange(async function(user){
       if(user){
         loginOverlay.classList.add('hidden');
@@ -1692,6 +1725,7 @@ window._fb = {
         document.getElementById('loggedInAs').textContent = user.email;
         isLoggedIn = true;
         resetIdleTimer();
+        if(window.IS_RDV_MANAGER) isAdminUser = true;
 
         let role = 'vendedor';
         let perfil = null;
@@ -1718,7 +1752,7 @@ window._fb = {
         fColaborador.readOnly = true;
         document.getElementById('loggedInAs').textContent = currentUserLabel;
 
-        if(role === 'admin'){
+        if(role === 'admin' || rdvEmbeddedAdmin){
           isAdminUser = true;
           document.getElementById('sellerView').style.display = 'none';
           document.getElementById('adminDashboardView').style.display = '';
@@ -1728,12 +1762,6 @@ window._fb = {
           }
         } else {
           isAdminUser = false;
-          if(window.IS_RDV_MANAGER){
-            await fb.logout();
-            loginError.textContent = 'A Gestão do RDV é exclusiva para administradores.';
-            loginError.style.display = 'block';
-            return;
-          }
           document.getElementById('sellerView').style.display = '';
           document.getElementById('adminDashboardView').style.display = 'none';
         }
@@ -1772,6 +1800,7 @@ window._fb = {
           loginError.textContent = 'Esta conta foi desativada. Contate o administrador.';
           loginError.style.display = 'block';
           contaDesativada = false;
+        }
         }
       }
     });
