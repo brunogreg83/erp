@@ -417,7 +417,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
           <input class="form-input" id="vendas-busca" placeholder="🔍 Buscar por cliente, status ou nº pedido..." style="max-width:300px;height:36px;margin-left:auto;" oninput="filtrarVendas(this.value)">
         </div>
         <div class="table-wrap">
-          <table><thead><tr><th>Nº Pedido</th><th>Data</th><th>Cliente</th><th>Itens</th><th>Total</th><th>Status</th><th></th></tr></thead>
+          <table><thead><tr><th>Nº Pedido / Orçamento</th><th>Data</th><th>Cliente</th><th>Itens</th><th>Total</th><th>Status</th><th></th></tr></thead>
           <tbody id="tabela-pedidos"></tbody></table>
         </div>
       </div>
@@ -2105,29 +2105,33 @@ window.atualizarPedido = async id => {
 };
 
 function renderPedidos() {
-  const rows = D.pedidos.filter(p => p.status !== 'Orçamento').sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  // Vendas e Pedidos reúne pedidos e orçamentos.
+  const rows = [...(D.pedidos || [])].sort((a,b)=>(b.data||'').localeCompare(a.data||''));
   document.getElementById('tabela-pedidos').innerHTML = rows.length
     ? rows.map(p => {
         const nfBtn = p.nf_emitida
           ? `<button class="btn-nf emitida" title="NF já emitida: ${p.nf_numero||'—'}" onclick="verDadosNF('${p.id}')">
                <i class="ti ti-file-check"></i> NF ${p.nf_numero||'emitida'}
              </button>`
-          : `<button class="btn-nf" onclick="abrirEmissaoNF('${p.id}')" title="Faturar / Emitir NF">
-               <i class="ti ti-receipt-2"></i> Faturar
-             </button>`;
+          : (p.status === 'Orçamento'
+              ? ''
+              : `<button class="btn-nf" onclick="abrirEmissaoNF('${p.id}')" title="Faturar / Emitir NF">
+                   <i class="ti ti-receipt-2"></i> Faturar
+                 </button>`);
+        const tipo = p.status === 'Orçamento' ? 'Orçamento' : 'Pedido';
         return `<tr>
-          <td>#${p.id.slice(-6).toUpperCase()}</td>
+          <td>#${p.id.slice(-6).toUpperCase()} <span style="font-size:10px;color:#999;">${tipo}</span></td>
           <td>${fmtDt(p.data)}</td><td>${p.cliente}</td>
           <td>${(p.itens||[]).length}</td><td>${R$(totPed(p))}</td>
           <td>${badge(p.status)}</td>
           <td><div class="td-actions">
             ${nfBtn}
-            <button class="btn-view" onclick="verPedido('${p.id}')" title="Ver pedido"><i class="ti ti-file-text"></i></button>
+            <button class="btn-view" onclick="verPedido('${p.id}')" title="Ver ${tipo.toLowerCase()}"><i class="ti ti-file-text"></i></button>
             <button class="btn-edit" onclick="editPedido('${p.id}')">Editar</button>
             <button class="btn-danger" onclick="delPedido('${p.id}')">Excluir</button>
           </div></td></tr>`;
       }).join('')
-    : '<tr><td colspan="7"><div class="empty-state">Nenhum pedido ainda. Crie o primeiro!</div></td></tr>';
+    : '<tr><td colspan="7"><div class="empty-state">Nenhum pedido ou orçamento ainda. Crie o primeiro!</div></td></tr>';
 }
 function renderOrcamentos() {
   const rows = D.pedidos.filter(p => p.status === 'Orçamento').sort((a,b)=>(b.data||'').localeCompare(a.data||''));
@@ -2141,7 +2145,7 @@ function renderOrcamentos() {
                <i class="ti ti-receipt-2"></i> Faturar
              </button>`;
         return `<tr>
-          <td>#${p.id.slice(-6).toUpperCase()}</td>
+          <td>#${p.id.slice(-6).toUpperCase()} <span style="font-size:10px;color:#999;">${p.status === 'Orçamento' ? 'Orçamento' : 'Pedido'}</span></td>
           <td>${fmtDt(p.data)}</td><td>${p.cliente}</td>
           <td>${(p.itens||[]).length}</td><td>${R$(totPed(p))}</td>
           <td>${badge(p.status)}</td>
@@ -2166,7 +2170,7 @@ window.filtrarOrcamentos = (q) => {
     ? filtradas.map(p => {
         const nfBtn = p.nf_emitida
           ? `<button class="btn-nf emitida" title="NF emitida: ${p.nf_numero||'—'}" onclick="verDadosNF('${p.id}')"><i class="ti ti-file-check"></i> NF ${p.nf_numero||'emitida'}</button>`
-          : `<button class="btn-nf" onclick="abrirEmissaoNF('${p.id}')" title="Faturar / Emitir NF"><i class="ti ti-receipt-2"></i> Faturar</button>`;
+          : (p.status === 'Orçamento' ? '' : `<button class="btn-nf" onclick="abrirEmissaoNF('${p.id}')" title="Faturar / Emitir NF"><i class="ti ti-receipt-2"></i> Faturar</button>`);
         return `<tr>
           <td>#${p.id.slice(-6).toUpperCase()}</td>
           <td>${fmtDt(p.data)}</td><td>${p.cliente}</td>
@@ -2183,10 +2187,11 @@ window.filtrarOrcamentos = (q) => {
 };
 window.filtrarVendas = (q) => {
   const lo = q.toLowerCase().trim();
-  const rows = D.pedidos.filter(p => p.status !== 'Orçamento').sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  const rows = [...(D.pedidos || [])].sort((a,b)=>(b.data||'').localeCompare(a.data||''));
   const filtradas = lo ? rows.filter(p =>
     (p.cliente||'').toLowerCase().includes(lo) ||
     (p.status||'').toLowerCase().includes(lo) ||
+    (p.status === 'Orçamento' ? 'orçamento' : 'pedido').includes(lo) ||
     p.id.slice(-6).toLowerCase().includes(lo)
   ) : rows;
 
@@ -2202,12 +2207,12 @@ window.filtrarVendas = (q) => {
           <td>${badge(p.status)}</td>
           <td><div class="td-actions">
             ${nfBtn}
-            <button class="btn-view" onclick="verPedido('${p.id}')" title="Ver pedido"><i class="ti ti-file-text"></i></button>
+            <button class="btn-view" onclick="verPedido('${p.id}')" title="Ver ${p.status === 'Orçamento' ? 'orçamento' : 'pedido'}"><i class="ti ti-file-text"></i></button>
             <button class="btn-edit" onclick="editPedido('${p.id}')">Editar</button>
             <button class="btn-danger" onclick="delPedido('${p.id}')">Excluir</button>
           </div></td></tr>`;
       }).join('')
-    : `<tr><td colspan="7"><div class="empty-state">Nenhum pedido encontrado para "${q}".</div></td></tr>`;
+    : `<tr><td colspan="7"><div class="empty-state">Nenhum pedido ou orçamento encontrado para "${q}".</div></td></tr>`;
 };
 
 window.exportCSV = () => {
