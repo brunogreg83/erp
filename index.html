@@ -1871,22 +1871,62 @@ function prepPedido() {
   if (descEl) descEl.value = '0';
 
 }
+function escapeHtmlPI(v) {
+  return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function fornecedoresProdutosPedido() {
+  const grupos = {};
+  (D.produtos || []).forEach(p => {
+    const forn = (p.fornecedor || '').trim() || 'Sem fabricante informado';
+    if (!grupos[forn]) grupos[forn] = [];
+    grupos[forn].push(p);
+  });
+  return Object.keys(grupos).sort((a,b) => a.localeCompare(b,'pt-BR')).map(f => {
+    grupos[f].sort((a,b) => (a.nome||'').localeCompare(b.nome||'','pt-BR'));
+    return { nome:f, produtos:grupos[f] };
+  });
+}
+function preencherProdutosPedido(idx, fornecedor, produtoSelecionado) {
+  const selProd = document.getElementById('pi-prod-'+idx);
+  if (!selProd) return;
+  const lista = (D.produtos || [])
+    .filter(p => ((p.fornecedor || '').trim() || 'Sem fabricante informado') === fornecedor)
+    .sort((a,b) => (a.nome||'').localeCompare(b.nome||'','pt-BR'));
+  selProd.innerHTML = '<option value="">Selecione o produto...</option>' +
+    lista.map(p => '<option value="' + escapeHtmlPI(p.nome) + '"' +
+      (p.nome === produtoSelecionado ? ' selected' : '') + '>' +
+      escapeHtmlPI(p.nome) + '</option>').join('');
+}
+function setPIFabricante(idx, fornecedor) {
+  const item = window.pitens[idx] || {produto:'',qty:1,preco:0};
+  item.fornecedor = fornecedor;
+  item.produto = '';
+  item.preco = 0;
+  window.pitens[idx] = item;
+  preencherProdutosPedido(idx, fornecedor, '');
+  const preco = document.getElementById('pp-'+idx);
+  if (preco) preco.value = '';
+}
 window.addItem = () => {
   const idx = window.pitens.length;
-  window.pitens.push({ produto:'', qty:1, preco:0 });
+  window.pitens.push({ produto:'', qty:1, preco:0, fornecedor:'' });
   const row = document.createElement('div');
   row.className = 'pi-row'; row.id = 'pi-'+idx;
-  const opts = D.produtos.map(p => '<option>' + p.nome + '</option>').join('');
-  row.innerHTML = '<select class="form-input" onchange="setPI(' + idx + ',this.value)">' + opts + '</select>' +
+  const grupos = fornecedoresProdutosPedido();
+  const fornOpts = '<option value="">Fabricante...</option>' +
+    grupos.map(g => '<option value="' + escapeHtmlPI(g.nome) + '">' + escapeHtmlPI(g.nome) + '</option>').join('');
+  row.innerHTML =
+    '<select class="form-input" style="min-width:150px;" onchange="setPIFabricante(' + idx + ',this.value)">' + fornOpts + '</select>' +
+    '<select class="form-input" id="pi-prod-' + idx + '" style="min-width:220px;" onchange="setPI(' + idx + ',this.value)"><option value="">Selecione o produto...</option></select>' +
     '<input type="text" inputmode="decimal" class="form-input" style="max-width:70px;" value="1" oninput="window.pitens[' + idx + '].qty=+this.value">' +
     '<input type="text" inputmode="decimal" class="form-input" style="max-width:90px;" placeholder="Preço" id="pp-' + idx + '" oninput="window.pitens[' + idx + '].preco=parseBR(this.value)">' +
     '<button class="btn-danger" onclick="document.getElementById(\'pi-' + idx + '\').remove();window.pitens[' + idx + ']=null">✕</button>';
   document.getElementById('ped-itens').appendChild(row);
-  if (D.produtos[0]) setPI(idx, D.produtos[0].nome);
 };
 window.setPI = (idx, nome) => {
   const p = D.produtos.find(x => x.nome === nome);
-  window.pitens[idx] = { produto:nome, qty:window.pitens[idx]?.qty||1, preco:p?.preco||0 };
+  const atual = window.pitens[idx] || {qty:1};
+  window.pitens[idx] = { produto:nome, qty:atual.qty||1, preco:p?.preco||0, fornecedor:p?.fornecedor||atual.fornecedor||'' };
   const el = document.getElementById('pp-'+idx); if(el && p) el.value = p.preco;
 };
 
@@ -1990,14 +2030,18 @@ window.editPedido = id => {
     const idx = window.pitens.length;
     window.pitens.push({ produto: it.produto, qty: it.qty, preco: it.preco });
 
-    const opts = D.produtos.map(pr =>
-      '<option' + (pr.nome === it.produto ? ' selected' : '') + '>' + pr.nome + '</option>'
-    ).join('');
+    const produtoAtual = D.produtos.find(pr => pr.nome === it.produto);
+    const fornecedorAtual = ((produtoAtual?.fornecedor || it.fornecedor || '').trim() || 'Sem fabricante informado');
+    const grupos = fornecedoresProdutosPedido();
+    const fornOpts = '<option value="">Fabricante...</option>' +
+      grupos.map(g => '<option value="' + escapeHtmlPI(g.nome) + '"' +
+        (g.nome === fornecedorAtual ? ' selected' : '') + '>' + escapeHtmlPI(g.nome) + '</option>').join('');
 
     const row = document.createElement('div');
     row.className = 'pi-row'; row.id = 'pi-' + idx;
     row.innerHTML =
-      '<select class="form-input" onchange="window.pitens[' + idx + '].produto=this.value">' + opts + '</select>' +
+      '<select class="form-input" style="min-width:150px;" onchange="setPIFabricante(' + idx + ',this.value)">' + fornOpts + '</select>' +
+      '<select class="form-input" id="pi-prod-' + idx + '" style="min-width:220px;" onchange="setPI(' + idx + ',this.value)"></select>' +
       '<input type="text" inputmode="decimal" class="form-input" style="max-width:70px;" value="' + it.qty + '" ' +
         'oninput="window.pitens[' + idx + '].qty=+this.value">' +
       '<input type="text" inputmode="decimal" class="form-input" style="max-width:90px;" id="pp-' + idx + '" value="' + it.preco + '" ' +
@@ -2005,6 +2049,7 @@ window.editPedido = id => {
       '<button class="btn-danger" onclick="document.getElementById(\'pi-' + idx + '\').remove();window.pitens[' + idx + ']=null">✕</button>';
 
     document.getElementById('ped-itens').appendChild(row);
+    preencherProdutosPedido(idx, fornecedorAtual, it.produto);
   });
 
   // trocar botão para salvar alterações
