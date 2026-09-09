@@ -289,7 +289,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <button class="nav-item" onclick="goTo('estoque',this)" id="nav-estoque"><i class="ti ti-box"></i>Estoque e Produtos</button>
       <button class="nav-item" onclick="goTo('clientes',this)" id="nav-clientes"><i class="ti ti-users"></i>Clientes e CRM</button>
       <button class="nav-item" onclick="goTo('cfo',this)" id="nav-cfo"><i class="ti ti-chart-donut"></i>Financeiro</button>
-      <button class="nav-item" type="button" onclick="window.location.assign('./rdv.html')" id="nav-rdv"><i class="ti ti-car"></i>RDV</button>
       <button class="nav-item nav-catalogos-toggle" onclick="toggleCatalogos('desktop')" id="nav-catalogos"><i class="ti ti-book"></i><span style="flex:1">Catálogos</span><i class="ti ti-chevron-down catalogos-chevron" id="catalogos-chevron-desktop"></i></button>
       <div class="catalogos-submenu" id="catalogos-submenu-desktop">
         <a href="./catalogo-ab-chemicals.html"><i class="ti ti-building-store"></i>Catálogo AB Chemicals</a>
@@ -330,7 +329,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <button class="nav-item" onclick="mobGoTo('estoque')" id="mob-nav-estoque"><i class="ti ti-box"></i>Estoque e Produtos</button>
         <button class="nav-item" onclick="mobGoTo('clientes')" id="mob-nav-clientes"><i class="ti ti-users"></i>Clientes e CRM</button>
         <button class="nav-item" onclick="mobGoTo('cfo')" id="mob-nav-cfo"><i class="ti ti-chart-donut"></i>Financeiro</button>
-        <button class="nav-item" type="button" onclick="window.location.assign('./rdv.html')" id="mob-nav-rdv"><i class="ti ti-car"></i>RDV</button>
         <button class="nav-item nav-catalogos-toggle" onclick="toggleCatalogos('mobile')" id="mob-nav-catalogos"><i class="ti ti-book"></i><span style="flex:1">Catálogos</span><i class="ti ti-chevron-down catalogos-chevron" id="catalogos-chevron-mobile"></i></button>
         <div class="catalogos-submenu mobile" id="catalogos-submenu-mobile">
           <a href="./catalogo-ab-chemicals.html"><i class="ti ti-building-store"></i>Catálogo AB Chemicals</a>
@@ -588,9 +586,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       </div>
 
       <!-- AJUSTES -->
-      <div class="screen" id="screen-rdv" style="display:none;"></div>
-
-<div class="screen" id="screen-ajustes">
+      <div class="screen" id="screen-ajustes">
         <div class="two-col" style="align-items:start;">
           <div class="card">
             <div class="section-title">Usuários do sistema</div>
@@ -1170,7 +1166,7 @@ window.mobGoTo = function(id) {
   const sessao  = verificarSessao();
   const perfil  = sessao?.perfil || 'admin';
   const perms   = perfil === 'admin'
-    ? ['dashboard','vendas','estoque','clientes','cfo','rdv','relatorios','ajustes']
+    ? ['dashboard','vendas','estoque','clientes','cfo','relatorios','ajustes']
     : ['vendas','clientes'];
   if (!perms.includes(id)) { alert('Acesso não autorizado.'); return; }
 
@@ -2109,7 +2105,7 @@ window.atualizarPedido = async id => {
 };
 
 function renderPedidos() {
-  const rows = D.pedidos.slice().sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  const rows = D.pedidos.filter(p => p.status !== 'Orçamento').sort((a,b)=>(b.data||'').localeCompare(a.data||''));
   document.getElementById('tabela-pedidos').innerHTML = rows.length
     ? rows.map(p => {
         const nfBtn = p.nf_emitida
@@ -2187,7 +2183,7 @@ window.filtrarOrcamentos = (q) => {
 };
 window.filtrarVendas = (q) => {
   const lo = q.toLowerCase().trim();
-  const rows = D.pedidos.slice().sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  const rows = D.pedidos.filter(p => p.status !== 'Orçamento').sort((a,b)=>(b.data||'').localeCompare(a.data||''));
   const filtradas = lo ? rows.filter(p =>
     (p.cliente||'').toLowerCase().includes(lo) ||
     (p.status||'').toLowerCase().includes(lo) ||
@@ -5284,10 +5280,10 @@ function renderUsuarios() {
 }
 
 // ── Navegação com controle de acesso ──────────────────────────────────────
-const ROTAS_ADMIN    = ['dashboard','vendas','estoque','clientes','cfo','rdv','relatorios','ajustes'];
+const ROTAS_ADMIN    = ['dashboard','vendas','estoque','clientes','cfo','relatorios','ajustes'];
 const ROTAS_VENDEDOR = ['vendas','clientes'];
 const titles = {dashboard:'Dashboard',vendas:'Vendas e Pedidos',estoque:'Estoque e Produtos',
-  clientes:'Clientes e CRM',cfo:'Financeiro',rdv:'RDV',
+  clientes:'Clientes e CRM',cfo:'Financeiro',
   relatorios:'Relatórios',ajustes:'Ajustes do Sistema'};
 
 window.goTo = (id, btn) => {
