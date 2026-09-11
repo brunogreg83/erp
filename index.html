@@ -909,8 +909,8 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     <div class="form-group"><label class="form-label">Fornecedor</label><input class="form-input" id="pr-forn" placeholder="Digite ou selecione..." list="forn-datalist-produto"><datalist id="forn-datalist-produto"></datalist></div>
     <div class="form-group"><label class="form-label">Estoque atual</label><input class="form-input" type="text" inputmode="decimal" id="pr-est" value="0" min="0"></div>
     <div class="form-group"><label class="form-label">Estoque mínimo</label><input class="form-input" type="text" inputmode="decimal" id="pr-min" value="10" min="0"></div>
-    <div class="form-group"><label class="form-label">Custo (R$)</label><input class="form-input" type="text" inputmode="decimal" id="pr-custo" value="0" step="0.01" oninput="calcularPrecoVenda()"></div>
-    <div class="form-group"><label class="form-label">Preço de venda (R$)</label><input class="form-input" type="text" inputmode="decimal" id="pr-preco" value="0" step="0.01"><span class="form-hint" id="pr-preco-hint"></span></div>
+    <div class="form-group"><label class="form-label">Custo (R$)</label><input class="form-input" type="text" inputmode="decimal" id="pr-custo" value="0" step="0.01"></div>
+    <div class="form-group"><label class="form-label">Preço de venda (R$)</label><input class="form-input" type="text" inputmode="decimal" id="pr-preco" value="0" step="0.01"><span class="form-hint" id="pr-preco-hint">Digite o preço de venda desejado.</span></div>
     <div class="form-group"><label class="form-label">Observações</label><textarea class="form-input" id="pr-obs" rows="3" placeholder="Informações adicionais sobre o produto..." style="resize:vertical;"></textarea></div>
     </div>
     <div class="modal-footer">
@@ -2189,48 +2189,27 @@ window.exportCSV = () => {
 };
 
 // ── Produtos ───────────────────────────────────────────────────────────────
-// Regra: preço de venda = custo × 2 (200% do custo), fixo e bloqueado.
-// Exceção: categoria "Descartáveis" mantém o preço livre para edição manual.
-// Enquanto nenhuma categoria foi escolhida ainda, o campo também fica livre
-// (senão o usuário pode digitar um preço antes de escolher a categoria e o
-// valor digitado é perdido silenciosamente quando o campo travar depois).
-function categoriaLivrePreco(cat) {
-  return cat === 'Descartáveis' || !cat;
-}
+// O preço de venda é definido manualmente pelo usuário.
+// O custo continua sendo armazenado para análises de margem e rentabilidade,
+// mas não altera nem bloqueia o preço de venda.
 window.aplicarRegraPrecoCategoria = () => {
-  const cat = document.getElementById('pr-cat').value;
   const precoEl = document.getElementById('pr-preco');
   const hintEl = document.getElementById('pr-preco-hint');
-  if (!cat) {
-    precoEl.readOnly = false;
-    precoEl.classList.remove('input-locked');
-    hintEl.textContent = 'Selecione uma categoria para calcular automaticamente (ou digite manualmente).';
-  } else if (categoriaLivrePreco(cat)) {
-    precoEl.readOnly = false;
-    precoEl.classList.remove('input-locked');
-    hintEl.textContent = 'Descartáveis: preço livre para edição.';
-  } else {
-    precoEl.readOnly = true;
-    precoEl.classList.add('input-locked');
-    hintEl.textContent = 'Calculado automaticamente: 200% do custo.';
-    calcularPrecoVenda();
-  }
+  if (!precoEl) return;
+  precoEl.readOnly = false;
+  precoEl.classList.remove('input-locked');
+  if (hintEl) hintEl.textContent = 'Digite o preço de venda desejado.';
 };
 window.calcularPrecoVenda = () => {
-  // Sugere sempre preço = custo × 2 ao digitar o custo — inclusive em
-  // "Descartáveis", que continua com o campo destravado/editável, mas assim
-  // não fica esquecido em 0 caso ninguém digite o preço manualmente depois.
-  const custo = parseBR(document.getElementById('pr-custo').value) || 0;
-  document.getElementById('pr-preco').value = (custo * 2).toFixed(2);
+  // Mantida apenas para compatibilidade com chamadas antigas.
+  // O preço de venda não é mais calculado com base no custo.
 };
 window.salvarProduto = async () => {
   const nome = document.getElementById('pr-nome').value;
   if (!nome) { toast('Informe o nome do produto.'); return; }
   const categoria = document.getElementById('pr-cat').value;
   const custo = parseBR(document.getElementById('pr-custo').value);
-  const preco = categoriaLivrePreco(categoria)
-    ? parseBR(document.getElementById('pr-preco').value)
-    : custo * 2;
+  const preco = parseBR(document.getElementById('pr-preco').value);
   await add('produtos', {
     cod:      document.getElementById('pr-cod').value || 'COD-'+Date.now().toString().slice(-4),
     nome,
@@ -2296,9 +2275,7 @@ window.atualizarProduto = async id => {
 
   const categoria = document.getElementById('pr-cat').value;
   const custo = parseBR(document.getElementById('pr-custo').value);
-  const preco = categoriaLivrePreco(categoria)
-    ? parseBR(document.getElementById('pr-preco').value)
-    : custo * 2;
+  const preco = parseBR(document.getElementById('pr-preco').value);
 
   const dados = {
     nome,
