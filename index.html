@@ -4625,7 +4625,13 @@ window.confirmarCancelamentoSEFAZ = async () => {
   const p = D.pedidos.find(x => x.id === _pedidoNFId);
   if (!p) return;
 
-  const ref = 'pedido-' + p.id;
+  // Usa a mesma referência única gravada na emissão da NF-e.
+  // A ref original contém o timestamp e é a chave do documento nfe_emissoes.
+  const ref = p.nf_focus_ref || '';
+  if (!ref) {
+    statusEl.innerHTML = '<span style="color:#C0392B;">❌ Esta NF-e não possui a referência de emissão necessária para cancelamento.</span>';
+    return;
+  }
   const btn = document.querySelector('#ver-nf-cancelar-area .btn-primary');
   btn.disabled = true;
   btn.innerHTML = '<i class="ti ti-loader-2"></i> Cancelando...';
