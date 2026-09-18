@@ -244,6 +244,22 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 
 /* Ocultar qualquer resumo de alertas postergados no Dashboard */
 #dash-inativos-postergados, #dash-postergados, .dash-postergados, [data-postergados="true"] { display:none !important; }
+
+/* ── APPs no menu lateral ─────────────────────────────────────────────── */
+.apps-menu { margin-top: 2px; }
+.apps-toggle { position: relative; }
+.apps-toggle .apps-chevron { margin-left: auto; font-size: 14px; transition: transform .18s ease; }
+.apps-toggle.open .apps-chevron { transform: rotate(180deg); }
+.apps-submenu { display: none; padding: 2px 0 7px 0; }
+.apps-submenu.open { display: block; }
+.apps-link { display: flex; align-items: center; gap: 8px; padding: 7px 12px 7px 45px; font-size: 12px; color: #789bc2; text-decoration: none; transition: background .12s, color .12s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.apps-link:hover { background: #112244; color: #fff; }
+.apps-link i { font-size: 14px; flex-shrink: 0; }
+@media (max-width: 768px) {
+  .mobile-drawer .apps-submenu { padding-bottom: 8px; }
+  .mobile-drawer .apps-link { padding-left: 45px; }
+}
+
 </style>
 </head>
 <body>
@@ -282,6 +298,17 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <button class="nav-item" onclick="goTo('cfo',this)" id="nav-cfo"><i class="ti ti-chart-donut"></i>Financeiro</button>
 <button class="nav-item" onclick="goTo('relatorios',this)" id="nav-relatorios"><i class="ti ti-chart-bar"></i>Relatórios</button>
       <button class="nav-item" onclick="goTo('ajustes',this)" id="nav-ajustes"><i class="ti ti-settings"></i>Ajustes</button>
+      <div class="apps-menu">
+        <button class="nav-item apps-toggle" type="button" onclick="toggleAppsMenu(this)"><i class="ti ti-apps"></i>APPs<i class="ti ti-chevron-down apps-chevron"></i></button>
+        <div class="apps-submenu" id="apps-submenu-desktop">
+          <a class="apps-link" href="https://brunogreg83.github.io/catalogo" target="_blank" rel="noopener noreferrer"><i class="ti ti-book"></i>Catálogo AB Chemicals</a>
+          <a class="apps-link" href="https://brunogreg83.github.io/catalogosynthera" target="_blank" rel="noopener noreferrer"><i class="ti ti-book-2"></i>Catálogo Synthera</a>
+          <a class="apps-link" href="https://brunogreg83.github.io/rdv" target="_blank" rel="noopener noreferrer"><i class="ti ti-route"></i>RDV</a>
+          <a class="apps-link" href="https://brunogreg83.github.io/rdv" target="_blank" rel="noopener noreferrer"><i class="ti ti-file-invoice"></i>Conta Corrente</a>
+          <a class="apps-link" href="https://brunogreg83.github.io/qr" target="_blank" rel="noopener noreferrer"><i class="ti ti-qrcode"></i>QR Code</a>
+          <a class="apps-link" href="https://brunogreg83.github.io/calculadora" target="_blank" rel="noopener noreferrer"><i class="ti ti-calculator"></i>Calculadora</a>
+        </div>
+      </div>
     </nav>
     <div class="sidebar-user">
       <div class="u-label">Nuvem · <span id="fb-label-side">conectando...</span></div>
@@ -314,6 +341,17 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <button class="nav-item" onclick="mobGoTo('cfo')" id="mob-nav-cfo"><i class="ti ti-chart-donut"></i>Financeiro</button>
 <button class="nav-item" onclick="mobGoTo('relatorios')" id="mob-nav-relatorios"><i class="ti ti-chart-bar"></i>Relatórios</button>
         <button class="nav-item" onclick="mobGoTo('ajustes')" id="mob-nav-ajustes"><i class="ti ti-settings"></i>Ajustes</button>
+        <div class="apps-menu">
+          <button class="nav-item apps-toggle" type="button" onclick="toggleAppsMenu(this)"><i class="ti ti-apps"></i>APPs<i class="ti ti-chevron-down apps-chevron"></i></button>
+          <div class="apps-submenu" id="apps-submenu-mobile">
+            <a class="apps-link" href="https://brunogreg83.github.io/catalogo" target="_blank" rel="noopener noreferrer"><i class="ti ti-book"></i>Catálogo AB Chemicals</a>
+            <a class="apps-link" href="https://brunogreg83.github.io/catalogosynthera" target="_blank" rel="noopener noreferrer"><i class="ti ti-book-2"></i>Catálogo Synthera</a>
+            <a class="apps-link" href="https://brunogreg83.github.io/rdv" target="_blank" rel="noopener noreferrer"><i class="ti ti-route"></i>RDV</a>
+            <a class="apps-link" href="https://brunogreg83.github.io/rdv" target="_blank" rel="noopener noreferrer"><i class="ti ti-file-invoice"></i>Conta Corrente</a>
+            <a class="apps-link" href="https://brunogreg83.github.io/qr" target="_blank" rel="noopener noreferrer"><i class="ti ti-qrcode"></i>QR Code</a>
+            <a class="apps-link" href="https://brunogreg83.github.io/calculadora" target="_blank" rel="noopener noreferrer"><i class="ti ti-calculator"></i>Calculadora</a>
+          </div>
+        </div>
       </nav>
       <div style="padding:14px 18px;border-top:1px solid #1a3a6b;">
         <div style="font-size:11px;color:#6b8cba;">Usuário</div>
@@ -1111,6 +1149,16 @@ window.fazerLogout = function() {
   localStorage.removeItem(SESSION_KEY);
   location.reload();
 };
+
+// ── Menu APPs ───────────────────────────────────────────────────────────────
+window.toggleAppsMenu = function(btn) {
+  const submenu = btn.nextElementSibling;
+  if (!submenu) return;
+  const abrir = !submenu.classList.contains('open');
+  submenu.classList.toggle('open', abrir);
+  btn.classList.toggle('open', abrir);
+};
+
 // ── Mobile nav ─────────────────────────────────────────────────────────────
 window.toggleDrawer = function() {
   const drawer  = document.getElementById('mob-drawer');
