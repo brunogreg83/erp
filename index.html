@@ -4625,11 +4625,14 @@ window.confirmarCancelamentoSEFAZ = async () => {
   const p = D.pedidos.find(x => x.id === _pedidoNFId);
   if (!p) return;
 
-  // Usa a mesma referência única gravada na emissão da NF-e.
-  // A ref original contém o timestamp e é a chave do documento nfe_emissoes.
+  // Prioriza a referência original gravada na emissão.
+  // Para NFs emitidas antes desta correção, envia também a chave/numero para
+  // a Cloud Function localizar o registro correto no Firestore.
   const ref = p.nf_focus_ref || '';
-  if (!ref) {
-    statusEl.innerHTML = '<span style="color:#C0392B;">❌ Esta NF-e não possui a referência de emissão necessária para cancelamento.</span>';
+  const chaveNfe = (p.nf_chave || '').replace(/\D/g, '');
+  const numeroNfe = (p.nf_numero || '').toString().replace(/\D/g, '');
+  if (!ref && !chaveNfe && !numeroNfe) {
+    statusEl.innerHTML = '<span style="color:#C0392B;">❌ Não foi possível localizar os dados da NF-e para cancelamento.</span>';
     return;
   }
   const btn = document.querySelector('#ver-nf-cancelar-area .btn-primary');
@@ -4641,7 +4644,7 @@ window.confirmarCancelamentoSEFAZ = async () => {
     const resp = await fetch(_focusEndpoint('cancelarNFeFocus'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ref, justificativa })
+      body: JSON.stringify({ ref, chave_nfe: chaveNfe, numero: numeroNfe, justificativa })
     });
     const data = await resp.json();
 
