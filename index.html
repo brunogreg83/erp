@@ -214,10 +214,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 .report-card .rc-desc { font-size: 12px; color: #888; }
 .report-card .rc-cta { font-size: 11px; color: #185FA5; margin-top: 12px; }
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; align-items: center; justify-content: center; }
-/* Modal de postergação sempre em primeiro plano */
-#modal-postergar-inativo { position: fixed !important; inset: 0 !important; z-index: 2147483647 !important; display: none; align-items: center !important; justify-content: center !important; background: rgba(0,0,0,.55) !important; }
-#modal-postergar-inativo.open { display: flex !important; }
-#modal-postergar-inativo .modal { position: relative !important; z-index: 2147483647 !important; margin: auto; }
 .modal-overlay.open { display: flex; }
 .modal {
   background: #fff; border-radius: 14px; padding: 0; width: 480px; max-width: 95vw;
@@ -241,9 +237,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 .pi-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
 .pi-row select, .pi-row input { flex: 1; }
 .empty-state { text-align: center; padding: 32px; color: #aaa; font-size: 13px; }
-
-/* Ocultar qualquer resumo de alertas postergados no Dashboard */
-#dash-inativos-postergados, #dash-postergados, .dash-postergados, [data-postergados="true"] { display:none !important; }
 
 /* APPs — submenu do menu lateral */
 .apps-menu{width:100%;}
@@ -391,16 +384,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     <div class="content">
       <!-- DASHBOARD -->
       <div class="screen active" id="screen-dashboard">
-        <div class="card" id="dash-clientes-sem-compra" style="margin-bottom:18px;cursor:pointer;" onclick="window.relatorio('inativos')">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;">
-            <div class="section-title" style="margin-bottom:0;">Clientes sem Compra <span style="font-weight:400;color:#aaa;font-size:12px;">(30 dias ou mais)</span></div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <div style="font-size:24px;font-weight:700;color:#D85A30;" id="dash-inativos-count">—</div>
-              <i class="ti ti-chevron-right" style="color:#bbb;"></i>
-            </div>
-          </div>
-          <div id="dash-inativos-preview" style="font-size:12px;color:#888;">Carregando...</div>
-        </div>
         <div class="kpi-grid" id="dash-kpis">
           <div class="kpi-card"><div class="kpi-label">Aguardando Firebase...</div><div class="kpi-value">—</div></div>
           <div class="kpi-card"><div class="kpi-label">Aguardando Firebase...</div><div class="kpi-value">—</div></div>
@@ -544,7 +527,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
           <div class="report-card" onclick="relatorio('fluxo')"><div class="rc-icon"><i class="ti ti-cash"></i></div><div class="rc-title">Fluxo de caixa</div><div class="rc-desc">Entradas, saídas e saldo projetado.</div><div class="rc-cta">Gerar →</div></div>
           <div class="report-card" onclick="relatorio('giro')"><div class="rc-icon"><i class="ti ti-refresh"></i></div><div class="rc-title">Giro de estoque</div><div class="rc-desc">Produtos parados e curva ABC.</div><div class="rc-cta">Gerar →</div></div>
           <div class="report-card" onclick="relatorio('inadimplencia')"><div class="rc-icon"><i class="ti ti-alert-triangle" style="color:#EF9F27;"></i></div><div class="rc-title">Inadimplência</div><div class="rc-desc">Títulos em atraso e projeção.</div><div class="rc-cta">Gerar →</div></div>
-          <div class="report-card" onclick="relatorio('inativos')"><div class="rc-icon"><i class="ti ti-user-off" style="color:#D85A30;"></i></div><div class="rc-title">Clientes sem compra</div><div class="rc-desc">Inatividade por período (7 a 60+ dias).</div><div class="rc-cta">Gerar →</div></div>
           <div class="report-card"><div class="rc-icon"><i class="ti ti-truck"></i></div><div class="rc-title">Desempenho fornecedores</div><div class="rc-desc">Prazo de entrega e volume.</div><div class="rc-cta">Em breve →</div></div>
         </div>
       </div>
@@ -843,24 +825,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <button class="btn-ghost" id="btn-analisar-nf" onclick="analisarNF()" style="display:none;"><i class="ti ti-cpu"></i> Analisar com IA</button>
       <button class="btn-primary" id="btn-confirmar-nf" onclick="confirmarImportacao()" style="display:none;">Confirmar importação</button>
     </div>
-  </div>
-</div>
-
-<!-- Modal Postergar alerta de cliente sem compra -->
-<div class="modal-overlay" id="modal-postergar-inativo">
-  <div class="modal" style="width:520px;">
-    <div class="modal-header"><span class="modal-header-title">Postergar alerta de cliente</span><span class="modal-drag-hint"><i class="ti ti-arrows-move"></i> mover</span></div>
-    <div class="modal-body">
-      <div id="postergar-cliente-nome" style="font-size:15px;font-weight:600;margin-bottom:16px;"></div>
-      <div class="form-group"><label class="form-label">Motivo da não compra</label>
-        <select class="form-input" id="postergar-motivo">
-          <option>Sem demanda no momento</option><option>Estoque ainda alto</option><option>Comprou de outro fornecedor</option><option>Aguardando aprovação</option><option>Problema financeiro</option><option>Cliente pediu retorno posteriormente</option><option>Negociação em andamento</option><option>Outro</option>
-        </select>
-      </div>
-      <div class="form-group"><label class="form-label">Comentário / observação</label><textarea class="form-input" id="postergar-comentario" rows="4" placeholder="Registre o motivo e o contexto do acompanhamento..." style="resize:vertical;"></textarea></div>
-      <div class="form-group"><label class="form-label">Voltar a alertar em</label><input class="form-input" type="date" id="postergar-data"><span class="form-hint">O cliente ficará fora dos alertas até esta data.</span></div>
-    </div>
-    <div class="modal-footer"><button class="btn-ghost" onclick="closeModal('modal-postergar-inativo')">Cancelar</button><button class="btn-primary" onclick="salvarPostergacaoInativo()"><i class="ti ti-clock-pause"></i> Postergar alerta</button></div>
   </div>
 </div>
 
@@ -1733,14 +1697,6 @@ window.filtrar = (id, q) => {
 
 // ── Modais ─────────────────────────────────────────────────────────────────
 window.openModal = id => {
-  // A janela de postergação é elevada para o body para nunca ficar presa
-  // ao contexto de empilhamento do relatório de clientes sem compra.
-  if (id === 'modal-postergar-inativo') {
-    const pm = document.getElementById(id);
-    if (pm && pm.parentElement !== document.body) document.body.appendChild(pm);
-    pm.style.position = 'fixed';
-    pm.style.zIndex = '2147483647';
-  }
   if (id === 'modal-pedido')  prepPedido();
   if (id === 'modal-receber') { document.getElementById('rec-venc').value = today(); sel('rec-cli', D.clientes.map(c=>c.nome)); }
   if (id === 'modal-pagar') {
@@ -3628,26 +3584,13 @@ function renderDashboard() {
   const mesDash = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][new Date().getMonth()];
   const ab   = D.pedidos.filter(p=>p.status!=='Entregue' && p.status!=='Faturado' && p.status!=='Orçamento').length;
   const ag   = D.pedidos.filter(p=>p.status==='Separação').length;
-  const al   = D.produtos.filter(p=>elegivelAlertaEstoque(p) && sit(p.estoque,p.minimo)!=='OK');
   const ativos = D.clientes.filter(c=>c.status==='Ativo').length;
 
   document.getElementById('dash-kpis').innerHTML = `
     <div class="kpi-card"><div class="kpi-label">Faturamento (${mesDash})</div><div class="kpi-value">${R$(fat)}</div></div>
     <div class="kpi-card"><div class="kpi-label">Pedidos abertos</div><div class="kpi-value">${ab}</div><div class="kpi-delta">${ag} aguardam separação</div></div>
     <div class="kpi-card"><div class="kpi-label">Clientes ativos</div><div class="kpi-value">${ativos}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Itens em alerta</div><div class="kpi-value">${al.length}</div><div class="kpi-delta">Estoque mínimo atingido</div></div>`;
-
-  const inativosDash = calcularClientesInativos(30);
-  document.getElementById('dash-inativos-count').textContent = inativosDash.length;
-  const dashPreview = document.getElementById('dash-inativos-preview');
-  dashPreview.innerHTML = inativosDash.length
-    ? inativosDash.slice(0,3).map(c => c.nome + ' <span style="color:#D85A30;">(' + (c.ultima ? c.dias + ' dias' : 'nunca comprou') + ')</span>').join(' &nbsp;•&nbsp; ') + (inativosDash.length > 3 ? ` &nbsp;e mais ${inativosDash.length - 3}...` : '')
-    : 'Nenhum cliente sem compra no período.';
-  // Este espaço é reservado exclusivamente para clientes sem compra.
-  // Nunca exibir aqui resumo de alertas postergados.
-  dashPreview.querySelectorAll('[data-postergados="true"], #dash-inativos-postergados, #dash-postergados, .dash-postergados').forEach(el => el.remove());
-  if (/alerta\(s\)?\s+postergado/i.test(dashPreview.textContent)) dashPreview.textContent = inativosDash.length ? inativosDash.slice(0,3).map(c => c.nome).join(' • ') : 'Nenhum cliente sem compra no período.';
-
+`;
 
 
   // ── Gráfico de faturamento — Canvas animado com comparativo ──────────────
@@ -3798,97 +3741,6 @@ function showRel(titulo, html) {
   openModal('modal-rel');
 }
 
-// ── Relatório: Clientes sem compra (inatividade) ───────────────────────────
-function normalizarNomeCliente(s) {
-  return (s || '').toString().trim().toLowerCase().replace(/\s+/g, ' ');
-}
-function calcularClientesInativos(minDias) {
-  const hoje = today();
-  const ultimaPorCliente = {};
-  D.pedidos.forEach(p => {
-    if (!p.cliente || !p.data) return;
-    const chave = normalizarNomeCliente(p.cliente);
-    if (!ultimaPorCliente[chave] || p.data > ultimaPorCliente[chave]) ultimaPorCliente[chave] = p.data;
-  });
-  return D.clientes.map(c => {
-    const ultima = ultimaPorCliente[normalizarNomeCliente(c.nome)] || null;
-    const dias = ultima ? Math.abs(daysTo(ultima)) : null;
-    const post = c.alertaInativoPostergado || null;
-    const postAtivo = post && post.ate && post.ate > hoje;
-    return { ...c, ultima, dias, post, postAtivo };
-  }).filter(c => (c.dias === null || c.dias >= minDias) && !c.postAtivo)
-    .sort((a,b) => (b.dias === null ? 99999 : b.dias) - (a.dias === null ? 99999 : a.dias));
-}
-function renderClientesInativosHtml(minDias) {
-  const lista = calcularClientesInativos(minDias);
-  const opcoes = [7,15,30,45,60].map(d => `<option value="${d}" ${minDias===d?'selected':''}>${d} dias ou mais</option>`).join('');
-  const linhas = lista.map(c => `<tr><td><b>${c.nome}</b></td><td>${c.ultima ? fmtDt(c.ultima) : '<span style="color:#D85A30">Nunca comprou</span>'}</td><td>${c.dias===null?'—':c.dias+' dias'}</td><td><div class="td-actions"><button class="btn-ghost" style="padding:5px 9px;color:#185FA5;" onclick="abrirPostergacaoInativo('${c.id}')"><i class="ti ti-clock-pause"></i> Postergar</button><button class="btn-view" title="Ver histórico" onclick="verHistoricoInativo('${c.id}')"><i class="ti ti-history"></i></button></div></td></tr>`).join('');
-  return `<div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><label style="font-size:12px;color:#888;">Sem compra há:</label><select id="sel-inativos-dias" onchange="window.atualizarClientesInativos()" style="padding:8px 12px;border:1px solid #e8e7e0;border-radius:8px;font-family:inherit;">${opcoes}</select><span style="font-size:11px;color:#999;margin-left:auto;">${lista.length} cliente(s) no alerta</span></div><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Última Compra</th><th>Dias sem Comprar</th><th>Ação</th></tr></thead><tbody>${linhas || '<tr><td colspan="4"><div class="empty-state">Nenhum cliente neste período.</div></td></tr>'}</tbody></table></div><div class="stat-row"><span class="stat-key">Total de clientes no filtro</span><span class="stat-val">${lista.length}</span></div>`;
-}
-window.abrirPostergacaoInativo = id => {
-  const c = D.clientes.find(x=>x.id===id); if(!c) return;
-  const m = document.getElementById('modal-postergar-inativo');
-  m.dataset.clienteId = id;
-  document.getElementById('postergar-cliente-nome').textContent = c.nome;
-  document.getElementById('postergar-motivo').value = c.alertaInativoPostergado?.motivo || 'Sem demanda no momento';
-  document.getElementById('postergar-comentario').value = c.alertaInativoPostergado?.comentario || '';
-  const d = new Date(); d.setDate(d.getDate()+15);
-  document.getElementById('postergar-data').value = c.alertaInativoPostergado?.ate || d.toISOString().split('T')[0];
-  openModal('modal-postergar-inativo');
-};
-
-window.salvarPostergacaoInativo = async () => {
-  const m = document.getElementById('modal-postergar-inativo');
-  const id = m.dataset.clienteId;
-  const data = document.getElementById('postergar-data').value;
-  const motivo = document.getElementById('postergar-motivo').value;
-  const comentario = document.getElementById('postergar-comentario').value.trim();
-  const c = D.clientes.find(x=>x.id===id);
-  if(!id || !c){ toast('Cliente não encontrado.'); return; }
-  if(!data){ toast('Informe a data para voltar a alertar.'); return; }
-  if(data <= today()){ toast('A data precisa ser futura.'); return; }
-  if(!comentario){ toast('Informe um comentário sobre o motivo da não compra.'); return; }
-
-  const registro = { em: today(), ate: data, motivo, comentario };
-  const historico = Array.isArray(c.alertaInativoHistorico) ? [...c.alertaInativoHistorico] : [];
-  historico.unshift(registro);
-
-  const ok = await upd('clientes', id, {
-    alertaInativoPostergado: registro,
-    alertaInativoHistorico: historico.slice(0,30)
-  });
-  if(!ok) return;
-
-  closeModal('modal-postergar-inativo');
-  toast('✓ Alerta de '+c.nome+' postergado até '+fmtDt(data)+'.');
-  renderDashboard();
-  const sel = document.getElementById('sel-inativos-dias');
-  if(sel) window.atualizarClientesInativos();
-};
-
-window.verHistoricoInativo = id => {
-  const c = D.clientes.find(x=>x.id===id); if(!c) return;
-  const hist = Array.isArray(c.alertaInativoHistorico) ? c.alertaInativoHistorico : [];
-  const atual = c.alertaInativoPostergado;
-  const rows = hist.map(h => `<div style="border-bottom:1px solid #f0f0ec;padding:10px 0;">
-    <div style="display:flex;justify-content:space-between;gap:10px;font-size:11px;color:#999;"><span>Registrado em ${fmtDt(h.em)}</span><b style="color:#185FA5;">Alerta até ${fmtDt(h.ate)}</b></div>
-    <div style="font-size:12px;font-weight:600;margin-top:4px;">${h.motivo||'—'}</div>
-    <div style="font-size:12px;color:#666;margin-top:3px;white-space:pre-wrap;">${h.comentario||'Sem comentário.'}</div>
-  </div>`).join('');
-  showRel('Histórico de acompanhamento — '+c.nome,
-    `<div class="card" style="padding:12px;margin-bottom:14px;background:#f9f9f7;">
-      <div class="stat-row"><span class="stat-key">Última compra</span><span class="stat-val">${c.ultimaCompra ? fmtDt(c.ultimaCompra) : '—'}</span></div>
-      ${atual ? `<div class="stat-row"><span class="stat-key">Alerta atual</span><span class="stat-val">até ${fmtDt(atual.ate)}</span></div>` : ''}
-    </div>
-    ${rows || '<div class="empty-state">Nenhum histórico de postergação registrado.</div>'}`);
-};
-
-window.atualizarClientesInativos = () => {
-  const dias = parseInt(document.getElementById('sel-inativos-dias').value);
-  document.getElementById('rel-corpo').innerHTML = renderClientesInativosHtml(dias);
-};
-
-
 // ── Margem líquida real por pedido ─────────────────────────────────────────
 const MARGEM_CFG_KEY = 'abc_margem_real_cfg_v1';
 function margemCfg(){
@@ -3991,9 +3843,6 @@ window.relatorio = tipo => {
     showRel('Inadimplência', v.length
       ? `<div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Vencimento</th><th>Valor</th><th>Atraso</th></tr></thead><tbody>${l}</tbody></table></div><div class="stat-row"><span class="stat-key">Total em atraso</span><span class="stat-val" style="color:#D85A30">${R$(tot)}</span></div>`
       : '<div class="empty-state" style="padding:24px;">Nenhum título em atraso!</div>');
-  }
-  if (tipo==='inativos') {
-    showRel('Clientes sem Compra', renderClientesInativosHtml(30));
   }
 };
 
