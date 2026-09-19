@@ -245,27 +245,68 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 /* Ocultar qualquer resumo de alertas postergados no Dashboard */
 #dash-inativos-postergados, #dash-postergados, .dash-postergados, [data-postergados="true"] { display:none !important; }
 
-/* ── APPs no menu lateral ─────────────────────────────────────────────── */
-.apps-menu { margin-top: 2px; }
-.apps-toggle { position: relative; }
-.apps-toggle .apps-chevron { margin-left: auto; font-size: 14px; transition: transform .18s ease; }
-.apps-toggle.open .apps-chevron { transform: rotate(180deg); }
-.apps-submenu { display: none; padding: 2px 0 7px 0; }
-.apps-submenu.open { display: block; }
-.apps-link { display: flex; align-items: center; gap: 8px; padding: 7px 12px 7px 45px; font-size: 12px; color: #789bc2; text-decoration: none; transition: background .12s, color .12s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.apps-link:hover { background: #112244; color: #fff; }
-.apps-link i { font-size: 14px; flex-shrink: 0; }
-@media (max-width: 768px) {
-  .mobile-drawer .apps-submenu { padding-bottom: 8px; }
-  .mobile-drawer .apps-link { padding-left: 45px; }
+<style id="dash-profit-box-style">
+.dash-profit-box{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;
+  gap:28px;
+  margin-bottom:22px;
+  padding:28px 32px;
+  background:linear-gradient(135deg,#071522 0%,#0b1d2d 52%,#102b3f 100%);
+  border:1px solid #23465e;
+  border-radius:18px;
+  color:#eef7fb;
+  box-sizing:border-box;
 }
-
-
-@media (max-width: 768px) {
-  .dashboard-profit-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
-  .dashboard-profit-box { min-height: 130px !important; padding: 20px !important; }
-  .dashboard-profit-box #dash-lucro-liquido, .dashboard-profit-box #dash-margem-liquida { font-size: 30px !important; }
+.dash-profit-item{min-width:0;}
+.dash-profit-label{
+  font-size:clamp(14px,1.4vw,20px);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:#a9c0cf;
+  margin-bottom:12px;
 }
+.dash-profit-item:nth-child(3) .dash-profit-label{
+  text-transform:none;
+  letter-spacing:0;
+  color:#eef7fb;
+  font-weight:600;
+}
+.dash-profit-value{
+  font-size:clamp(30px,4vw,54px);
+  line-height:1.05;
+  font-weight:700;
+  color:#35c7e8;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.dash-profit-status{
+  margin-top:12px;
+  font-size:clamp(14px,1.5vw,20px);
+  color:#a9c0cf;
+}
+.dash-profit-divider{
+  width:1px;
+  height:78%;
+  min-height:70px;
+  background:#2b5269;
+}
+@media (max-width:700px){
+  .dash-profit-box{
+    grid-template-columns:1fr;
+    gap:20px;
+    padding:22px;
+  }
+  .dash-profit-divider{
+    width:100%;
+    height:1px;
+    min-height:1px;
+  }
+  .dash-profit-value{font-size:clamp(30px,9vw,46px);}
+}
+</style>
 </style>
 </head>
 <body>
@@ -304,17 +345,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <button class="nav-item" onclick="goTo('cfo',this)" id="nav-cfo"><i class="ti ti-chart-donut"></i>Financeiro</button>
 <button class="nav-item" onclick="goTo('relatorios',this)" id="nav-relatorios"><i class="ti ti-chart-bar"></i>Relatórios</button>
       <button class="nav-item" onclick="goTo('ajustes',this)" id="nav-ajustes"><i class="ti ti-settings"></i>Ajustes</button>
-      <div class="apps-menu">
-        <button class="nav-item apps-toggle" type="button" onclick="toggleAppsMenu(this)"><i class="ti ti-apps"></i>APPs<i class="ti ti-chevron-down apps-chevron"></i></button>
-        <div class="apps-submenu" id="apps-submenu-desktop">
-          <a class="apps-link" href="https://brunogreg83.github.io/erp/catalogo/" target="_blank" rel="noopener noreferrer"><i class="ti ti-book"></i>Catálogo AB Chemicals</a>
-          <a class="apps-link" href="https://brunogreg83.github.io/erp/catalogo/synthera" target="_blank" rel="noopener noreferrer"><i class="ti ti-book-2"></i>Catálogo Synthera</a>
-          <a class="apps-link" href="https://brunogreg83.github.io/erp/rdv/" target="_blank" rel="noopener noreferrer"><i class="ti ti-route"></i>RDV</a>
-          <a class="apps-link" href="https://brunogreg83.github.io/erp/cc/" target="_blank" rel="noopener noreferrer"><i class="ti ti-file-invoice"></i>Conta Corrente</a>
-          <a class="apps-link" href="https://brunogreg83.github.io/erp/qr/" target="_blank" rel="noopener noreferrer"><i class="ti ti-qrcode"></i>QR Code</a>
-          <a class="apps-link" href="https://brunogreg83.github.io/erp/calculadora/" target="_blank" rel="noopener noreferrer"><i class="ti ti-calculator"></i>Calculadora</a>
-        </div>
-      </div>
     </nav>
     <div class="sidebar-user">
       <div class="u-label">Nuvem · <span id="fb-label-side">conectando...</span></div>
@@ -347,17 +377,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <button class="nav-item" onclick="mobGoTo('cfo')" id="mob-nav-cfo"><i class="ti ti-chart-donut"></i>Financeiro</button>
 <button class="nav-item" onclick="mobGoTo('relatorios')" id="mob-nav-relatorios"><i class="ti ti-chart-bar"></i>Relatórios</button>
         <button class="nav-item" onclick="mobGoTo('ajustes')" id="mob-nav-ajustes"><i class="ti ti-settings"></i>Ajustes</button>
-        <div class="apps-menu">
-          <button class="nav-item apps-toggle" type="button" onclick="toggleAppsMenu(this)"><i class="ti ti-apps"></i>APPs<i class="ti ti-chevron-down apps-chevron"></i></button>
-          <div class="apps-submenu" id="apps-submenu-mobile">
-            <a class="apps-link" href="https://brunogreg83.github.io/erp/catalogo/" target="_blank" rel="noopener noreferrer"><i class="ti ti-book"></i>Catálogo AB Chemicals</a>
-            <a class="apps-link" href="https://brunogreg83.github.io/erp/catalogo/synthera" target="_blank" rel="noopener noreferrer"><i class="ti ti-book-2"></i>Catálogo Synthera</a>
-            <a class="apps-link" href="https://brunogreg83.github.io/erp/rdv/" target="_blank" rel="noopener noreferrer"><i class="ti ti-route"></i>RDV</a>
-            <a class="apps-link" href="https://brunogreg83.github.io/erp/cc/" target="_blank" rel="noopener noreferrer"><i class="ti ti-file-invoice"></i>Conta Corrente</a>
-            <a class="apps-link" href="https://brunogreg83.github.io/erp/qr/" target="_blank" rel="noopener noreferrer"><i class="ti ti-qrcode"></i>QR Code</a>
-            <a class="apps-link" href="https://brunogreg83.github.io/erp/calculadora/" target="_blank" rel="noopener noreferrer"><i class="ti ti-calculator"></i>Calculadora</a>
-          </div>
-        </div>
       </nav>
       <div style="padding:14px 18px;border-top:1px solid #1a3a6b;">
         <div style="font-size:11px;color:#6b8cba;">Usuário</div>
@@ -386,23 +405,30 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     <div class="content">
       <!-- DASHBOARD -->
       <div class="screen active" id="screen-dashboard">
-        <div class="dashboard-profit-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px;">
-          <div class="card dashboard-profit-box" style="background:linear-gradient(135deg,#071522 0%,#0b1d2d 100%);border:1px solid #28536b;border-radius:16px;padding:22px;color:#fff;min-height:150px;">
-            <div style="font-size:13px;font-weight:700;letter-spacing:.08em;color:#a9c3d2;text-transform:uppercase;margin-bottom:18px;">Lucro líquido estimado</div>
-            <div id="dash-lucro-liquido" style="font-size:34px;font-weight:800;color:#35d2ec;line-height:1.1;">R$ 0,00</div>
+        <div class="card" id="dash-clientes-sem-compra" style="margin-bottom:18px;cursor:pointer;" onclick="window.relatorio('inativos')">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;">
+            <div class="section-title" style="margin-bottom:0;">Clientes sem Compra <span style="font-weight:400;color:#aaa;font-size:12px;">(30 dias ou mais)</span></div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="font-size:24px;font-weight:700;color:#D85A30;" id="dash-inativos-count">—</div>
+              <i class="ti ti-chevron-right" style="color:#bbb;"></i>
+            </div>
           </div>
-          <div class="card dashboard-profit-box" style="background:linear-gradient(135deg,#071522 0%,#0b1d2d 100%);border:1px solid #28536b;border-radius:16px;padding:22px;color:#fff;min-height:150px;">
-            <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:18px;">Margem líquida</div>
-            <div id="dash-margem-liquida" style="font-size:34px;font-weight:800;color:#35d2ec;line-height:1.1;">0,00%</div>
-            <div id="dash-margem-status" style="margin-top:10px;font-size:14px;color:#a9c3d2;"></div>
+          <div id="dash-inativos-preview" style="font-size:12px;color:#888;">Carregando...</div>
+        </div>
+
+        <div class="card dash-profit-box" id="dash-profit-box">
+          <div class="dash-profit-item">
+            <div class="dash-profit-label">LUCRO LÍQUIDO ESTIMADO</div>
+            <div class="dash-profit-value" id="dash-lucro-liquido">R$ 0,00</div>
+          </div>
+          <div class="dash-profit-divider"></div>
+          <div class="dash-profit-item">
+            <div class="dash-profit-label">Margem líquida</div>
+            <div class="dash-profit-value" id="dash-margem-liquida">0,00%</div>
+            <div class="dash-profit-status" id="dash-margem-status"></div>
           </div>
         </div>
-        <div class="kpi-grid" id="dash-kpis">
-          <div class="kpi-card"><div class="kpi-label">Aguardando Firebase...</div><div class="kpi-value">—</div></div>
-          <div class="kpi-card"><div class="kpi-label">Aguardando Firebase...</div><div class="kpi-value">—</div></div>
-          <div class="kpi-card"><div class="kpi-label">Aguardando Firebase...</div><div class="kpi-value">—</div></div>
-          <div class="kpi-card"><div class="kpi-label">Aguardando Firebase...</div><div class="kpi-value">—</div></div>
-        </div>
+
         <div class="two-col">
           <div class="card" style="padding-bottom:12px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
@@ -584,6 +610,27 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
           </div>
         </div>
 
+        <!-- CUSTOS FIXOS E PARÂMETROS -->
+        <div class="card cfo-cost-card" style="margin-top:20px;">
+          <div class="cfo-cost-head">
+            <div><div class="section-title"><i class="ti ti-settings-dollar" style="color:#20c2df;margin-right:7px;"></i>Custos fixos e parâmetros</div>
+            <div class="cfo-cost-help">Cadastre ou altere aqui os custos mensais e os percentuais usados na rentabilidade do CFO.</div></div>
+            <div id="cfo-cost-status" class="cfo-cost-status">Sincronizado com o Firebase</div>
+          </div>
+          <div class="cfo-cost-grid">
+            <div><label class="form-label">Aluguel / mês</label><input class="form-input" id="cfo-fix-aluguel" type="number" step="0.01"></div>
+            <div><label class="form-label">NFe / mês</label><input class="form-input" id="cfo-fix-nfe" type="number" step="0.01"></div>
+            <div><label class="form-label">Contador / mês</label><input class="form-input" id="cfo-fix-contador" type="number" step="0.01"></div>
+            <div><label class="form-label">Combustível / mês</label><input class="form-input" id="cfo-fix-combustivel" type="number" step="0.01"></div>
+            <div><label class="form-label">Funcionários / mês</label><input class="form-input" id="cfo-fix-funcionarios" type="number" step="0.01"></div>
+            <div><label class="form-label">Outros custos fixos / mês</label><input class="form-input" id="cfo-fix-outrosFixos" type="number" step="0.01"></div>
+            <div><label class="form-label">Impostos (%)</label><input class="form-input" id="cfo-tax" type="number" step="0.01"></div>
+            <div><label class="form-label">Comissão (%)</label><input class="form-input" id="cfo-com" type="number" step="0.01"></div>
+            <div><label class="form-label">Frete (%)</label><input class="form-input" id="cfo-frete" type="number" step="0.01"></div>
+            <div><label class="form-label">Outros variáveis (%)</label><input class="form-input" id="cfo-outros" type="number" step="0.01"></div>
+          </div>
+          <div class="cfo-cost-footer"><div><b id="cfo-cost-total">R$ 0,00</b><span> custo fixo mensal total</span></div><button class="btn-primary" onclick="cfoSaveCustos()"><i class="ti ti-device-floppy"></i> Salvar custos e parâmetros</button></div>
+        </div>
       </div>
 
       <!-- AJUSTES -->
@@ -1135,16 +1182,6 @@ window.fazerLogout = function() {
   localStorage.removeItem(SESSION_KEY);
   location.reload();
 };
-
-// ── Menu APPs ───────────────────────────────────────────────────────────────
-window.toggleAppsMenu = function(btn) {
-  const submenu = btn.nextElementSibling;
-  if (!submenu) return;
-  const abrir = !submenu.classList.contains('open');
-  submenu.classList.toggle('open', abrir);
-  btn.classList.toggle('open', abrir);
-};
-
 // ── Mobile nav ─────────────────────────────────────────────────────────────
 window.toggleDrawer = function() {
   const drawer  = document.getElementById('mob-drawer');
@@ -3660,18 +3697,41 @@ function desenharRxD(containerId, legendaId, badgeId, receitas, despesas, ym) {
 }
 
 // ── Dashboard ──────────────────────────────────────────────────────────────
-window._dashboardRentabilidade = function(liq, ml, status) {
-  const lucroEl = document.getElementById('dash-lucro-liquido');
-  const margemEl = document.getElementById('dash-margem-liquida');
-  const statusEl = document.getElementById('dash-margem-status');
-  if (typeof liq === 'number') {
-    if (lucroEl) lucroEl.textContent = R$(liq);
-    if (margemEl) margemEl.textContent = Number(ml||0).toFixed(2).replace('.',',') + '%';
-    if (statusEl) statusEl.textContent = status || '';
-  }
-};
+
+function atualizarDashboardLucroMargem(){
+  try{
+    const pedidos = (D.pedidos || []).filter(p => p.status === 'Entregue' || p.status === 'Faturado');
+    const faturamento = pedidos.reduce((s,p)=>s+totPed(p),0);
+    let lucro = 0, margem = 0;
+
+    if (typeof margemCfg === 'function' && typeof calcMargemPedidoReal === 'function' && typeof custoFixoMensalReal === 'function') {
+      const c = margemCfg();
+      const ctx = {faturamento, fixoMensal:custoFixoMensalReal(c)};
+      const resultados = pedidos.map(p => calcMargemPedidoReal(p,c,ctx));
+      const receita = resultados.reduce((s,r)=>s+(r.receita||0),0);
+      const custo = resultados.reduce((s,r)=>s+(r.custoMerc||0),0);
+      const impostos = resultados.reduce((s,r)=>s+(r.imposto||0),0);
+      const fretes = resultados.reduce((s,r)=>s+(r.frete||0),0);
+      const taxas = resultados.reduce((s,r)=>s+(r.taxaFin||0),0);
+      const fixos = resultados.reduce((s,r)=>s+(r.fixoRateado||0),0);
+      lucro = receita - custo - impostos - fretes - taxas - fixos;
+      margem = receita ? (lucro / receita) * 100 : 0;
+    } else {
+      lucro = faturamento;
+      margem = faturamento ? 100 : 0;
+    }
+
+    const elLucro=document.getElementById('dash-lucro-liquido');
+    const elMargem=document.getElementById('dash-margem-liquida');
+    const elStatus=document.getElementById('dash-margem-status');
+    if(elLucro) elLucro.textContent = R$(lucro);
+    if(elMargem) elMargem.textContent = Number(margem).toFixed(2).replace('.',',') + '%';
+    if(elStatus) elStatus.textContent = margem >= 20 ? 'Boa' : (margem >= 10 ? 'Atenção' : 'Baixa');
+  }catch(e){ console.error('Erro ao atualizar lucro/margem do Dashboard:',e); }
+}
 
 function renderDashboard() {
+  atualizarDashboardLucroMargem();
   const ymAtualDash = new Date().toISOString().slice(0,7);
   const fat  = D.pedidos.filter(p => (p.status==='Entregue' || p.status==='Faturado') && (p.data||'').startsWith(ymAtualDash)).reduce((s,p)=>s+totPed(p),0);
   const mesDash = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][new Date().getMonth()];
@@ -3686,9 +3746,18 @@ function renderDashboard() {
     <div class="kpi-card"><div class="kpi-label">Clientes ativos</div><div class="kpi-value">${ativos}</div></div>
     <div class="kpi-card"><div class="kpi-label">Itens em alerta</div><div class="kpi-value">${al.length}</div><div class="kpi-delta">Estoque mínimo atingido</div></div>`;
 
-  // Os boxes de rentabilidade do Dashboard são atualizados pelo módulo Financeiro,
-  // usando exatamente os mesmos cálculos e parâmetros do CFO.
-  if (window._dashboardRentabilidade) window._dashboardRentabilidade();
+  const inativosDash = calcularClientesInativos(30);
+  document.getElementById('dash-inativos-count').textContent = inativosDash.length;
+  const dashPreview = document.getElementById('dash-inativos-preview');
+  dashPreview.innerHTML = inativosDash.length
+    ? inativosDash.slice(0,3).map(c => c.nome + ' <span style="color:#D85A30;">(' + (c.ultima ? c.dias + ' dias' : 'nunca comprou') + ')</span>').join(' &nbsp;•&nbsp; ') + (inativosDash.length > 3 ? ` &nbsp;e mais ${inativosDash.length - 3}...` : '')
+    : 'Nenhum cliente sem compra no período.';
+  // Este espaço é reservado exclusivamente para clientes sem compra.
+  // Nunca exibir aqui resumo de alertas postergados.
+  dashPreview.querySelectorAll('[data-postergados="true"], #dash-inativos-postergados, #dash-postergados, .dash-postergados').forEach(el => el.remove());
+  if (/alerta\(s\)?\s+postergado/i.test(dashPreview.textContent)) dashPreview.textContent = inativosDash.length ? inativosDash.slice(0,3).map(c => c.nome).join(' • ') : 'Nenhum cliente sem compra no período.';
+
+
 
   // ── Gráfico de faturamento — Canvas animado com comparativo ──────────────
   const porMes = {};
@@ -5482,7 +5551,6 @@ function gerarAlertasInteligentes(){
     const mbe=document.getElementById('cfo-mb');if(mbe)mbe.textContent=pct(mb);
     const mle=document.getElementById('cfo-ml');if(mle)mle.textContent=pct(ml);
     const st=document.getElementById('cfo-status');if(st)st.textContent=ml>=15?'Excelente':ml>=10?'Boa':ml>=5?'Atenção':ml>=0?'Margem baixa':'Prejuízo';
-    if(window._dashboardRentabilidade) window._dashboardRentabilidade(liq,ml,st?st.textContent:'');
     const tb=document.getElementById('cfo-pedidos');
     if(tb)tb.innerHTML=ps.length?ps.map((p,i)=>{const v=venda(p),cc=cmv(p),b=v-cc,va=v*((c.com+c.frete+c.outros)/100),ii=v*(c.tax/100),l=b-va-ii-(fix/Math.max(ps.length,1));return '<tr><td>'+((p.numero||p.id||('Pedido '+(i+1))))+'</td><td>'+(p.cliente||'—')+'</td><td>'+money(v)+'</td><td>'+money(cc)+'</td><td>'+money(b)+'</td><td>'+pct(v?b/v*100:0)+'</td><td>'+money(l)+'</td><td>'+pct(v?l/v*100:0)+'</td></tr>';}).join(''):'<tr><td colspan="8" style="text-align:center;color:#9fb7c4;padding:24px;">Nenhum pedido faturado ou entregue neste mês.</td></tr>';
   }
