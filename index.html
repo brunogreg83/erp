@@ -3713,12 +3713,23 @@ function desenharRxD(containerId, legendaId, badgeId, receitas, despesas, ym) {
 
 function atualizarDashboardLucroMargem(){
   try{
-    const pedidos = (D.pedidos || []).filter(p => p.status === 'Entregue' || p.status === 'Faturado');
+    // Dashboard: considerar exclusivamente pedidos faturados/entregues do mês vigente.
+    const agora = new Date();
+    const ymAtual = agora.getFullYear() + '-' + String(agora.getMonth()+1).padStart(2,'0');
+
+    const pedidos = (D.pedidos || []).filter(p => {
+      if (!(p.status === 'Entregue' || p.status === 'Faturado')) return false;
+      if (!p.data) return false;
+      return String(p.data).slice(0,7) === ymAtual;
+    });
+
     const faturamento = pedidos.reduce((s,p)=>s+totPed(p),0);
     let lucro = 0, margem = 0;
 
     if (typeof margemCfg === 'function' && typeof calcMargemPedidoReal === 'function' && typeof custoFixoMensalReal === 'function') {
       const c = margemCfg();
+      // O custo fixo utilizado é o custo mensal, aplicado somente sobre a receita
+      // dos pedidos do mês vigente.
       const ctx = {faturamento, fixoMensal:custoFixoMensalReal(c)};
       const resultados = pedidos.map(p => calcMargemPedidoReal(p,c,ctx));
       const receita = resultados.reduce((s,r)=>s+(r.receita||0),0);
