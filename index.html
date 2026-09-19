@@ -245,7 +245,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 /* Ocultar qualquer resumo de alertas postergados no Dashboard */
 #dash-inativos-postergados, #dash-postergados, .dash-postergados, [data-postergados="true"] { display:none !important; }
 
-<style id="dash-profit-box-style">
+
 .dash-profit-box{
   display:grid;
   grid-template-columns:minmax(0,1fr) minmax(0,1fr);
@@ -429,15 +429,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     <div class="content">
       <!-- DASHBOARD -->
       <div class="screen active" id="screen-dashboard">
-<div style="display:flex;align-items:center;gap:8px;">
-              <div style="font-size:24px;font-weight:700;color:#D85A30;" id="dash-inativos-count">—</div>
-              <i class="ti ti-chevron-right" style="color:#bbb;"></i>
-            </div>
-          </div>
-          <div id="dash-inativos-preview" style="font-size:12px;color:#888;">Carregando...</div>
-        </div>
-
-        <div class="card dash-profit-box" id="dash-profit-box">
+<div class="card dash-profit-box" id="dash-profit-box">
           <div class="dash-profit-item">
             <div class="dash-profit-label">LUCRO LÍQUIDO ESTIMADO</div>
             <div class="dash-profit-value" id="dash-lucro-liquido">R$ 0,00</div>
@@ -3753,30 +3745,6 @@ function atualizarDashboardLucroMargem(){
 
 function renderDashboard() {
   atualizarDashboardLucroMargem();
-  const ymAtualDash = new Date().toISOString().slice(0,7);
-  const fat  = D.pedidos.filter(p => (p.status==='Entregue' || p.status==='Faturado') && (p.data||'').startsWith(ymAtualDash)).reduce((s,p)=>s+totPed(p),0);
-  const mesDash = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][new Date().getMonth()];
-  const ab   = D.pedidos.filter(p=>p.status!=='Entregue' && p.status!=='Faturado' && p.status!=='Orçamento').length;
-  const ag   = D.pedidos.filter(p=>p.status==='Separação').length;
-  const al   = D.produtos.filter(p=>elegivelAlertaEstoque(p) && sit(p.estoque,p.minimo)!=='OK');
-  const ativos = D.clientes.filter(c=>c.status==='Ativo').length;
-
-  document.getElementById('dash-kpis').innerHTML = `
-    <div class="kpi-card"><div class="kpi-label">Faturamento (${mesDash})</div><div class="kpi-value">${R$(fat)}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Pedidos abertos</div><div class="kpi-value">${ab}</div><div class="kpi-delta">${ag} aguardam separação</div></div>
-    <div class="kpi-card"><div class="kpi-label">Clientes ativos</div><div class="kpi-value">${ativos}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Itens em alerta</div><div class="kpi-value">${al.length}</div><div class="kpi-delta">Estoque mínimo atingido</div></div>`;
-
-  const inativosDash = calcularClientesInativos(30);
-  document.getElementById('dash-inativos-count').textContent = inativosDash.length;
-  const dashPreview = document.getElementById('dash-inativos-preview');
-  dashPreview.innerHTML = inativosDash.length
-    ? inativosDash.slice(0,3).map(c => c.nome + ' <span style="color:#D85A30;">(' + (c.ultima ? c.dias + ' dias' : 'nunca comprou') + ')</span>').join(' &nbsp;•&nbsp; ') + (inativosDash.length > 3 ? ` &nbsp;e mais ${inativosDash.length - 3}...` : '')
-    : 'Nenhum cliente sem compra no período.';
-  // Este espaço é reservado exclusivamente para clientes sem compra.
-  // Nunca exibir aqui resumo de alertas postergados.
-  dashPreview.querySelectorAll('[data-postergados="true"], #dash-inativos-postergados, #dash-postergados, .dash-postergados').forEach(el => el.remove());
-  if (/alerta\(s\)?\s+postergado/i.test(dashPreview.textContent)) dashPreview.textContent = inativosDash.length ? inativosDash.slice(0,3).map(c => c.nome).join(' • ') : 'Nenhum cliente sem compra no período.';
 
 
 
