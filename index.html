@@ -449,10 +449,14 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 
       <!-- ESTOQUE -->
       <div class="screen" id="screen-estoque">
-        <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
+        <div class="estoque-acoes-topo">
+          <button class="btn-primary" onclick="openModal('modal-oc')"><i class="ti ti-plus"></i> Nova ordem de compra</button>
+          <button class="btn-ghost" onclick="openModal('modal-fornecedor')"><i class="ti ti-building-store"></i> Novo fornecedor</button>
           <button class="btn-primary" onclick="openModal('modal-produto')"><i class="ti ti-plus"></i> Novo produto</button>
           <button class="btn-ghost" onclick="openModal('modal-importar-nf')"><i class="ti ti-file-import"></i> Importar XML / NF-e</button>
-          <input class="form-input" placeholder="Buscar produto..." style="max-width:220px;height:36px;" oninput="filtrar('tabela-estoque',this.value)">
+        </div>
+        <div class="estoque-busca-topo">
+          <input class="form-input" placeholder="Buscar produto..." oninput="filtrar('tabela-estoque',this.value)">
         </div>
         <div class="two-col">
           <div class="card"><div class="section-title">Resumo</div><div id="est-resumo"></div></div>
@@ -469,10 +473,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
               <div class="section-title" style="margin-bottom:3px;">Compras e Fornecedores</div>
               <div style="font-size:12px;color:#888;">Ordens de compra e fornecedores integrados ao estoque.</div>
             </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button class="btn-primary" onclick="openModal('modal-oc')"><i class="ti ti-plus"></i> Nova ordem de compra</button>
-              <button class="btn-ghost" onclick="openModal('modal-fornecedor')"><i class="ti ti-building-store"></i> Novo fornecedor</button>
-            </div>
+
           </div>
           <div id="forn-duplicados-aviso"></div>
           <div class="card" style="margin-bottom:18px;">
@@ -5085,6 +5086,36 @@ window._getSessao = () => { try { return JSON.parse(localStorage.getItem(SESSION
 
 #screen-cfo .cfo-margin-card{margin-bottom:14px;}
 @media(max-width:700px){#screen-cfo{padding:15px;border-radius:14px;}#screen-cfo .cfo-title{font-size:21px;}#screen-cfo .cfo-month-tools{width:100%;}#screen-cfo .cfo-month-select{flex:1;min-width:0;}#screen-cfo .cfo-refresh{padding:10px 11px;}#screen-cfo .kpi-card .kpi-value{font-size:18px;}}
+
+    /* Organização dos botões de Estoque e Produtos */
+    .estoque-acoes-topo{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px;
+      margin-bottom:12px;
+      align-items:stretch;
+    }
+    .estoque-acoes-topo button{
+      width:100%;
+      min-height:58px;
+      margin:0;
+      justify-content:center;
+    }
+    .estoque-busca-topo{
+      width:100%;
+      margin-bottom:18px;
+    }
+    .estoque-busca-topo .form-input{
+      width:100%;
+      max-width:none;
+      height:48px;
+      box-sizing:border-box;
+    }
+    @media (max-width:700px){
+      .estoque-acoes-topo{
+        grid-template-columns:1fr;
+      }
+    }
 </style>
 <script>
 (function(){
