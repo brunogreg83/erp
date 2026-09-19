@@ -260,6 +260,12 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   .mobile-drawer .apps-link { padding-left: 45px; }
 }
 
+
+@media (max-width: 768px) {
+  .dashboard-profit-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+  .dashboard-profit-box { min-height: 130px !important; padding: 20px !important; }
+  .dashboard-profit-box #dash-lucro-liquido, .dashboard-profit-box #dash-margem-liquida { font-size: 30px !important; }
+}
 </style>
 </head>
 <body>
@@ -301,12 +307,12 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <div class="apps-menu">
         <button class="nav-item apps-toggle" type="button" onclick="toggleAppsMenu(this)"><i class="ti ti-apps"></i>APPs<i class="ti ti-chevron-down apps-chevron"></i></button>
         <div class="apps-submenu" id="apps-submenu-desktop">
-          <a class="apps-link" href="https://brunogreg83.github.io/catalogo" target="_blank" rel="noopener noreferrer"><i class="ti ti-book"></i>Catálogo AB Chemicals</a>
-          <a class="apps-link" href="https://brunogreg83.github.io/catalogosynthera" target="_blank" rel="noopener noreferrer"><i class="ti ti-book-2"></i>Catálogo Synthera</a>
-          <a class="apps-link" href="https://brunogreg83.github.io/rdv" target="_blank" rel="noopener noreferrer"><i class="ti ti-route"></i>RDV</a>
-          <a class="apps-link" href="https://brunogreg83.github.io/cc" target="_blank" rel="noopener noreferrer"><i class="ti ti-file-invoice"></i>Conta Corrente</a>
-          <a class="apps-link" href="https://brunogreg83.github.io/qr" target="_blank" rel="noopener noreferrer"><i class="ti ti-qrcode"></i>QR Code</a>
-          <a class="apps-link" href="https://brunogreg83.github.io/calculadora" target="_blank" rel="noopener noreferrer"><i class="ti ti-calculator"></i>Calculadora</a>
+          <a class="apps-link" href="https://brunogreg83.github.io/erp/catalogo/" target="_blank" rel="noopener noreferrer"><i class="ti ti-book"></i>Catálogo AB Chemicals</a>
+          <a class="apps-link" href="https://brunogreg83.github.io/erp/catalogo/synthera" target="_blank" rel="noopener noreferrer"><i class="ti ti-book-2"></i>Catálogo Synthera</a>
+          <a class="apps-link" href="https://brunogreg83.github.io/erp/rdv/" target="_blank" rel="noopener noreferrer"><i class="ti ti-route"></i>RDV</a>
+          <a class="apps-link" href="https://brunogreg83.github.io/erp/cc/" target="_blank" rel="noopener noreferrer"><i class="ti ti-file-invoice"></i>Conta Corrente</a>
+          <a class="apps-link" href="https://brunogreg83.github.io/erp/qr/" target="_blank" rel="noopener noreferrer"><i class="ti ti-qrcode"></i>QR Code</a>
+          <a class="apps-link" href="https://brunogreg83.github.io/erp/calculadora/" target="_blank" rel="noopener noreferrer"><i class="ti ti-calculator"></i>Calculadora</a>
         </div>
       </div>
     </nav>
@@ -344,12 +350,12 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <div class="apps-menu">
           <button class="nav-item apps-toggle" type="button" onclick="toggleAppsMenu(this)"><i class="ti ti-apps"></i>APPs<i class="ti ti-chevron-down apps-chevron"></i></button>
           <div class="apps-submenu" id="apps-submenu-mobile">
-            <a class="apps-link" href="https://brunogreg83.github.io/catalogo" target="_blank" rel="noopener noreferrer"><i class="ti ti-book"></i>Catálogo AB Chemicals</a>
-            <a class="apps-link" href="https://brunogreg83.github.io/catalogosynthera" target="_blank" rel="noopener noreferrer"><i class="ti ti-book-2"></i>Catálogo Synthera</a>
-            <a class="apps-link" href="https://brunogreg83.github.io/rdv" target="_blank" rel="noopener noreferrer"><i class="ti ti-route"></i>RDV</a>
-            <a class="apps-link" href="https://brunogreg83.github.io/cc" target="_blank" rel="noopener noreferrer"><i class="ti ti-file-invoice"></i>Conta Corrente</a>
-            <a class="apps-link" href="https://brunogreg83.github.io/qr" target="_blank" rel="noopener noreferrer"><i class="ti ti-qrcode"></i>QR Code</a>
-            <a class="apps-link" href="https://brunogreg83.github.io/calculadora" target="_blank" rel="noopener noreferrer"><i class="ti ti-calculator"></i>Calculadora</a>
+            <a class="apps-link" href="https://brunogreg83.github.io/erp/catalogo/" target="_blank" rel="noopener noreferrer"><i class="ti ti-book"></i>Catálogo AB Chemicals</a>
+            <a class="apps-link" href="https://brunogreg83.github.io/erp/catalogo/synthera" target="_blank" rel="noopener noreferrer"><i class="ti ti-book-2"></i>Catálogo Synthera</a>
+            <a class="apps-link" href="https://brunogreg83.github.io/erp/rdv/" target="_blank" rel="noopener noreferrer"><i class="ti ti-route"></i>RDV</a>
+            <a class="apps-link" href="https://brunogreg83.github.io/erp/cc/" target="_blank" rel="noopener noreferrer"><i class="ti ti-file-invoice"></i>Conta Corrente</a>
+            <a class="apps-link" href="https://brunogreg83.github.io/erp/qr/" target="_blank" rel="noopener noreferrer"><i class="ti ti-qrcode"></i>QR Code</a>
+            <a class="apps-link" href="https://brunogreg83.github.io/erp/calculadora/" target="_blank" rel="noopener noreferrer"><i class="ti ti-calculator"></i>Calculadora</a>
           </div>
         </div>
       </nav>
@@ -380,15 +386,16 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     <div class="content">
       <!-- DASHBOARD -->
       <div class="screen active" id="screen-dashboard">
-        <div class="card" id="dash-clientes-sem-compra" style="margin-bottom:18px;cursor:pointer;" onclick="window.relatorio('inativos')">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;">
-            <div class="section-title" style="margin-bottom:0;">Clientes sem Compra <span style="font-weight:400;color:#aaa;font-size:12px;">(30 dias ou mais)</span></div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <div style="font-size:24px;font-weight:700;color:#D85A30;" id="dash-inativos-count">—</div>
-              <i class="ti ti-chevron-right" style="color:#bbb;"></i>
-            </div>
+        <div class="dashboard-profit-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px;">
+          <div class="card dashboard-profit-box" style="background:linear-gradient(135deg,#071522 0%,#0b1d2d 100%);border:1px solid #28536b;border-radius:16px;padding:22px;color:#fff;min-height:150px;">
+            <div style="font-size:13px;font-weight:700;letter-spacing:.08em;color:#a9c3d2;text-transform:uppercase;margin-bottom:18px;">Lucro líquido estimado</div>
+            <div id="dash-lucro-liquido" style="font-size:34px;font-weight:800;color:#35d2ec;line-height:1.1;">R$ 0,00</div>
           </div>
-          <div id="dash-inativos-preview" style="font-size:12px;color:#888;">Carregando...</div>
+          <div class="card dashboard-profit-box" style="background:linear-gradient(135deg,#071522 0%,#0b1d2d 100%);border:1px solid #28536b;border-radius:16px;padding:22px;color:#fff;min-height:150px;">
+            <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:18px;">Margem líquida</div>
+            <div id="dash-margem-liquida" style="font-size:34px;font-weight:800;color:#35d2ec;line-height:1.1;">0,00%</div>
+            <div id="dash-margem-status" style="margin-top:10px;font-size:14px;color:#a9c3d2;"></div>
+          </div>
         </div>
         <div class="kpi-grid" id="dash-kpis">
           <div class="kpi-card"><div class="kpi-label">Aguardando Firebase...</div><div class="kpi-value">—</div></div>
@@ -577,27 +584,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
           </div>
         </div>
 
-        <!-- CUSTOS FIXOS E PARÂMETROS -->
-        <div class="card cfo-cost-card" style="margin-top:20px;">
-          <div class="cfo-cost-head">
-            <div><div class="section-title"><i class="ti ti-settings-dollar" style="color:#20c2df;margin-right:7px;"></i>Custos fixos e parâmetros</div>
-            <div class="cfo-cost-help">Cadastre ou altere aqui os custos mensais e os percentuais usados na rentabilidade do CFO.</div></div>
-            <div id="cfo-cost-status" class="cfo-cost-status">Sincronizado com o Firebase</div>
-          </div>
-          <div class="cfo-cost-grid">
-            <div><label class="form-label">Aluguel / mês</label><input class="form-input" id="cfo-fix-aluguel" type="number" step="0.01"></div>
-            <div><label class="form-label">NFe / mês</label><input class="form-input" id="cfo-fix-nfe" type="number" step="0.01"></div>
-            <div><label class="form-label">Contador / mês</label><input class="form-input" id="cfo-fix-contador" type="number" step="0.01"></div>
-            <div><label class="form-label">Combustível / mês</label><input class="form-input" id="cfo-fix-combustivel" type="number" step="0.01"></div>
-            <div><label class="form-label">Funcionários / mês</label><input class="form-input" id="cfo-fix-funcionarios" type="number" step="0.01"></div>
-            <div><label class="form-label">Outros custos fixos / mês</label><input class="form-input" id="cfo-fix-outrosFixos" type="number" step="0.01"></div>
-            <div><label class="form-label">Impostos (%)</label><input class="form-input" id="cfo-tax" type="number" step="0.01"></div>
-            <div><label class="form-label">Comissão (%)</label><input class="form-input" id="cfo-com" type="number" step="0.01"></div>
-            <div><label class="form-label">Frete (%)</label><input class="form-input" id="cfo-frete" type="number" step="0.01"></div>
-            <div><label class="form-label">Outros variáveis (%)</label><input class="form-input" id="cfo-outros" type="number" step="0.01"></div>
-          </div>
-          <div class="cfo-cost-footer"><div><b id="cfo-cost-total">R$ 0,00</b><span> custo fixo mensal total</span></div><button class="btn-primary" onclick="cfoSaveCustos()"><i class="ti ti-device-floppy"></i> Salvar custos e parâmetros</button></div>
-        </div>
       </div>
 
       <!-- AJUSTES -->
@@ -3674,6 +3660,17 @@ function desenharRxD(containerId, legendaId, badgeId, receitas, despesas, ym) {
 }
 
 // ── Dashboard ──────────────────────────────────────────────────────────────
+window._dashboardRentabilidade = function(liq, ml, status) {
+  const lucroEl = document.getElementById('dash-lucro-liquido');
+  const margemEl = document.getElementById('dash-margem-liquida');
+  const statusEl = document.getElementById('dash-margem-status');
+  if (typeof liq === 'number') {
+    if (lucroEl) lucroEl.textContent = R$(liq);
+    if (margemEl) margemEl.textContent = Number(ml||0).toFixed(2).replace('.',',') + '%';
+    if (statusEl) statusEl.textContent = status || '';
+  }
+};
+
 function renderDashboard() {
   const ymAtualDash = new Date().toISOString().slice(0,7);
   const fat  = D.pedidos.filter(p => (p.status==='Entregue' || p.status==='Faturado') && (p.data||'').startsWith(ymAtualDash)).reduce((s,p)=>s+totPed(p),0);
@@ -3689,18 +3686,9 @@ function renderDashboard() {
     <div class="kpi-card"><div class="kpi-label">Clientes ativos</div><div class="kpi-value">${ativos}</div></div>
     <div class="kpi-card"><div class="kpi-label">Itens em alerta</div><div class="kpi-value">${al.length}</div><div class="kpi-delta">Estoque mínimo atingido</div></div>`;
 
-  const inativosDash = calcularClientesInativos(30);
-  document.getElementById('dash-inativos-count').textContent = inativosDash.length;
-  const dashPreview = document.getElementById('dash-inativos-preview');
-  dashPreview.innerHTML = inativosDash.length
-    ? inativosDash.slice(0,3).map(c => c.nome + ' <span style="color:#D85A30;">(' + (c.ultima ? c.dias + ' dias' : 'nunca comprou') + ')</span>').join(' &nbsp;•&nbsp; ') + (inativosDash.length > 3 ? ` &nbsp;e mais ${inativosDash.length - 3}...` : '')
-    : 'Nenhum cliente sem compra no período.';
-  // Este espaço é reservado exclusivamente para clientes sem compra.
-  // Nunca exibir aqui resumo de alertas postergados.
-  dashPreview.querySelectorAll('[data-postergados="true"], #dash-inativos-postergados, #dash-postergados, .dash-postergados').forEach(el => el.remove());
-  if (/alerta\(s\)?\s+postergado/i.test(dashPreview.textContent)) dashPreview.textContent = inativosDash.length ? inativosDash.slice(0,3).map(c => c.nome).join(' • ') : 'Nenhum cliente sem compra no período.';
-
-
+  // Os boxes de rentabilidade do Dashboard são atualizados pelo módulo Financeiro,
+  // usando exatamente os mesmos cálculos e parâmetros do CFO.
+  if (window._dashboardRentabilidade) window._dashboardRentabilidade();
 
   // ── Gráfico de faturamento — Canvas animado com comparativo ──────────────
   const porMes = {};
@@ -5494,6 +5482,7 @@ function gerarAlertasInteligentes(){
     const mbe=document.getElementById('cfo-mb');if(mbe)mbe.textContent=pct(mb);
     const mle=document.getElementById('cfo-ml');if(mle)mle.textContent=pct(ml);
     const st=document.getElementById('cfo-status');if(st)st.textContent=ml>=15?'Excelente':ml>=10?'Boa':ml>=5?'Atenção':ml>=0?'Margem baixa':'Prejuízo';
+    if(window._dashboardRentabilidade) window._dashboardRentabilidade(liq,ml,st?st.textContent:'');
     const tb=document.getElementById('cfo-pedidos');
     if(tb)tb.innerHTML=ps.length?ps.map((p,i)=>{const v=venda(p),cc=cmv(p),b=v-cc,va=v*((c.com+c.frete+c.outros)/100),ii=v*(c.tax/100),l=b-va-ii-(fix/Math.max(ps.length,1));return '<tr><td>'+((p.numero||p.id||('Pedido '+(i+1))))+'</td><td>'+(p.cliente||'—')+'</td><td>'+money(v)+'</td><td>'+money(cc)+'</td><td>'+money(b)+'</td><td>'+pct(v?b/v*100:0)+'</td><td>'+money(l)+'</td><td>'+pct(v?l/v*100:0)+'</td></tr>';}).join(''):'<tr><td colspan="8" style="text-align:center;color:#9fb7c4;padding:24px;">Nenhum pedido faturado ou entregue neste mês.</td></tr>';
   }
