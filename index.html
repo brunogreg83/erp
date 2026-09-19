@@ -384,13 +384,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     <div class="content">
       <!-- DASHBOARD -->
       <div class="screen active" id="screen-dashboard">
-        <div class="kpi-grid" id="dash-kpis">
-          <div class="kpi-card"><div class="kpi-label">Aguardando Firebase...</div><div class="kpi-value">—</div></div>
-          <div class="kpi-card"><div class="kpi-label">Aguardando Firebase...</div><div class="kpi-value">—</div></div>
-          <div class="kpi-card"><div class="kpi-label">Aguardando Firebase...</div><div class="kpi-value">—</div></div>
-          <div class="kpi-card"><div class="kpi-label">Aguardando Firebase...</div><div class="kpi-value">—</div></div>
-        </div>
-
         <div class="dash-profit-box" id="dash-profit-box">
           <div class="dash-profit-item">
             <div class="dash-profit-label">LUCRO LÍQUIDO ESTIMADO</div>
@@ -3580,19 +3573,6 @@ function renderDashboard() {
     if (me) me.textContent = m.margem.toFixed(2).replace('.',',') + '%';
     if (se) se.textContent = m.status;
   }
-  const fat  = D.pedidos.filter(p => (p.status==='Entregue' || p.status==='Faturado') && (p.data||'').startsWith(ymAtualDash)).reduce((s,p)=>s+totPed(p),0);
-  const mesDash = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][new Date().getMonth()];
-  const ab   = D.pedidos.filter(p=>p.status!=='Entregue' && p.status!=='Faturado' && p.status!=='Orçamento').length;
-  const ag   = D.pedidos.filter(p=>p.status==='Separação').length;
-  const ativos = D.clientes.filter(c=>c.status==='Ativo').length;
-
-  document.getElementById('dash-kpis').innerHTML = `
-    <div class="kpi-card"><div class="kpi-label">Faturamento (${mesDash})</div><div class="kpi-value">${R$(fat)}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Pedidos abertos</div><div class="kpi-value">${ab}</div><div class="kpi-delta">${ag} aguardam separação</div></div>
-    <div class="kpi-card"><div class="kpi-label">Clientes ativos</div><div class="kpi-value">${ativos}</div></div>
-`;
-
-
   // ── Gráfico de faturamento — Canvas animado com comparativo ──────────────
   const porMes = {};
   D.pedidos.filter(p => p.status === 'Entregue' || p.status === 'Faturado').forEach(p => {
