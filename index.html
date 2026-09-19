@@ -49,28 +49,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 .btn-primary { background: #185FA5; color: #fff; border: none; border-radius: 8px; padding: 7px 16px; font-size: 13px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
 .btn-primary:hover { background: #0F4A7D; }
-.estoque-actions {
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  margin-bottom:18px;
-}
-.estoque-action-buttons {
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  align-items:center;
-}
-.estoque-action-buttons .btn-primary,
-.estoque-action-buttons .btn-ghost {
-  min-height:38px;
-  white-space:nowrap;
-}
-.estoque-search {
-  width:100%;
-  max-width:300px;
-  height:38px;
-}
 .btn-ghost { background: none; border: 1px solid #ddd; border-radius: 8px; padding: 7px 12px; font-size: 13px; color: #555; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
 .btn-ghost:hover { background: #f5f5f3; }
 .btn-danger { background: none; border: 1px solid #f5c6c6; border-radius: 8px; padding: 4px 10px; font-size: 12px; color: #A32D2D; cursor: pointer; }
@@ -219,17 +197,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   /* Form inputs maiores no touch */
   .form-input { padding: 12px 14px; font-size: 16px; }
   .btn-primary, .btn-ghost { padding: 12px 18px; font-size: 14px; }
-  .estoque-action-buttons {
-    display:grid;
-    grid-template-columns:1fr;
-    gap:8px;
-  }
-  .estoque-action-buttons .btn-primary,
-  .estoque-action-buttons .btn-ghost {
-    width:100%;
-    justify-content:center;
-  }
-  .estoque-search { max-width:none; }
   .pi-row { flex-wrap: wrap; gap: 6px; }
   .pi-row select { min-width: 100%; }
   .pi-row input  { flex: 1; min-width: 80px; }
@@ -413,6 +380,10 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <!-- DASHBOARD -->
       <div class="screen active" id="screen-dashboard">
         <div class="dash-profit-box" id="dash-profit-box">
+          <div class="dash-profit-item dash-profit-revenue">
+            <div class="dash-profit-label">Faturamento do mês</div>
+            <div class="dash-profit-value" id="dash-faturamento-mes">R$ 0,00</div>
+          </div>
           <div class="dash-profit-item">
             <div class="dash-profit-label">LUCRO LÍQUIDO ESTIMADO</div>
             <div class="dash-profit-value" id="dash-lucro-liquido">R$ 0,00</div>
@@ -478,15 +449,11 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 
       <!-- ESTOQUE -->
       <div class="screen" id="screen-estoque">
-        <div class="estoque-actions">
-          <div class="estoque-action-buttons">
-            <button class="btn-primary" onclick="openModal('modal-oc')"><i class="ti ti-plus"></i> Nova ordem de compra</button>
-            <button class="btn-ghost" onclick="openModal('modal-fornecedor')"><i class="ti ti-building-store"></i> Novo fornecedor</button>
-            <button class="btn-primary" onclick="openModal('modal-produto')"><i class="ti ti-plus"></i> Novo produto</button>
-            <button class="btn-ghost" onclick="openModal('modal-importar-nf')"><i class="ti ti-file-import"></i> Importar XML / NF-e</button>
-            <button class="btn-primary" id="btn-agrupar-forn" onclick="toggleAgruparPorFornecedor()"><i class="ti ti-building-store"></i> Agrupar por fornecedor</button>
-          </div>
-          <input class="form-input estoque-search" placeholder="Buscar produto..." oninput="filtrar('tabela-estoque',this.value)">
+        <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
+          <button class="btn-primary" onclick="openModal('modal-produto')"><i class="ti ti-plus"></i> Novo produto</button>
+          <button class="btn-ghost" onclick="openModal('modal-importar-nf')"><i class="ti ti-file-import"></i> Importar XML / NF-e</button>
+          <button class="btn-primary" id="btn-agrupar-forn" onclick="toggleAgruparPorFornecedor()"><i class="ti ti-building-store"></i> Agrupar por fornecedor</button>
+          <input class="form-input" placeholder="Buscar produto..." style="max-width:220px;height:36px;" oninput="filtrar('tabela-estoque',this.value)">
         </div>
         <div class="two-col">
           <div class="card"><div class="section-title">Resumo</div><div id="est-resumo"></div></div>
@@ -502,6 +469,10 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
             <div>
               <div class="section-title" style="margin-bottom:3px;">Compras e Fornecedores</div>
               <div style="font-size:12px;color:#888;">Ordens de compra e fornecedores integrados ao estoque.</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn-primary" onclick="openModal('modal-oc')"><i class="ti ti-plus"></i> Nova ordem de compra</button>
+              <button class="btn-ghost" onclick="openModal('modal-fornecedor')"><i class="ti ti-building-store"></i> Novo fornecedor</button>
             </div>
           </div>
           <div id="forn-duplicados-aviso"></div>
@@ -3530,9 +3501,11 @@ function renderDashboard() {
   // Lucro/margem do Dashboard usam exatamente a mesma fórmula do Financeiro.
   if (window.getCfoCurrentMetrics) {
     const m = window.getCfoCurrentMetrics(ymAtualDash);
+    const fe = document.getElementById('dash-faturamento-mes');
     const le = document.getElementById('dash-lucro-liquido');
     const me = document.getElementById('dash-margem-liquida');
     const se = document.getElementById('dash-margem-status');
+    if (fe) fe.textContent = R$(m.faturamento);
     if (le) le.textContent = R$(m.lucro);
     if (me) me.textContent = m.margem.toFixed(2).replace('.',',') + '%';
     if (se) se.textContent = m.status;
@@ -5066,16 +5039,18 @@ window._getSessao = () => { try { return JSON.parse(localStorage.getItem(SESSION
 <style>
 /* CFO — destaque visual */
 /* Dashboard — lucro líquido e margem: mesma fórmula do Financeiro, mês vigente */
-.dash-profit-box{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;background:linear-gradient(135deg,#071522 0%,#0b1d2d 52%,#102b3f 100%);border:1px solid #23465e;border-radius:18px;padding:30px 38px;margin:18px 0 22px;color:#eef7fb;box-shadow:0 14px 40px rgba(2,12,20,.18);box-sizing:border-box;}
+.dash-profit-box{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto;gap:0;background:linear-gradient(135deg,#071522 0%,#0b1d2d 52%,#102b3f 100%);border:1px solid #23465e;border-radius:18px;padding:26px 38px 30px;margin:18px 0 22px;color:#eef7fb;box-shadow:0 14px 40px rgba(2,12,20,.18);box-sizing:border-box;}
 .dash-profit-item{min-width:0;padding:0 26px;}
-.dash-profit-item:first-child{padding-left:18px;}
+.dash-profit-revenue{grid-column:1 / -1;text-align:center;padding:0 18px 22px;border-bottom:1px solid #28536b;margin-bottom:22px;}
+.dash-profit-revenue .dash-profit-label{text-transform:none;letter-spacing:0;color:#fff;font-size:18px;font-weight:700;margin-bottom:10px;}
+.dash-profit-item:nth-child(2){padding-left:18px;}
 .dash-profit-item:last-child{padding-right:18px;border-left:1px solid #28536b;}
 .dash-profit-label{font-size:16px;letter-spacing:1.4px;text-transform:uppercase;color:#a9c3d2;font-weight:500;margin-bottom:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .dash-profit-margin .dash-profit-label{text-transform:none;letter-spacing:0;color:#fff;font-size:18px;font-weight:700;}
 .dash-profit-value{font-size:42px;line-height:1.05;font-weight:700;color:#35d2ec;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .dash-profit-status{font-size:18px;color:#9fb9c7;margin-top:16px;min-height:22px;}
-@media(max-width:700px){.dash-profit-box{grid-template-columns:minmax(0,1fr) minmax(0,1fr);padding:24px 12px;border-radius:14px;} .dash-profit-item{padding:0 12px;} .dash-profit-item:first-child{padding-left:8px;} .dash-profit-item:last-child{padding-right:8px;} .dash-profit-label{font-size:11px;letter-spacing:1px;margin-bottom:16px;} .dash-profit-margin .dash-profit-label{font-size:15px;} .dash-profit-value{font-size:30px;} .dash-profit-status{font-size:14px;margin-top:12px;}}
-@media(max-width:420px){.dash-profit-value{font-size:25px;}.dash-profit-box{padding-left:8px;padding-right:8px;}}
+@media(max-width:700px){.dash-profit-box{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto;padding:22px 12px 24px;border-radius:14px;} .dash-profit-item{padding:0 12px;} .dash-profit-revenue{padding:0 8px 18px;margin-bottom:18px;} .dash-profit-revenue .dash-profit-label{font-size:15px;margin-bottom:8px;} .dash-profit-item:nth-child(2){padding-left:8px;} .dash-profit-item:last-child{padding-right:8px;} .dash-profit-label{font-size:11px;letter-spacing:1px;margin-bottom:16px;} .dash-profit-margin .dash-profit-label{font-size:15px;} .dash-profit-value{font-size:30px;} .dash-profit-status{font-size:14px;margin-top:12px;}}
+@media(max-width:420px){.dash-profit-value{font-size:25px;}.dash-profit-box{padding-left:8px;padding-right:8px;}.dash-profit-revenue .dash-profit-value{font-size:29px;}}
 
 #screen-cfo{background:linear-gradient(135deg,#071522 0%,#0b1d2d 52%,#102b3f 100%);border:1px solid #23465e;border-radius:18px;padding:22px;box-shadow:0 14px 40px rgba(2,12,20,.28);color:#eef7fb;}
 #screen-cfo .cfo-head{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:14px;}
@@ -5192,7 +5167,7 @@ window._getSessao = () => { try { return JSON.parse(localStorage.getItem(SESSION
 
   window.getCfoCurrentMetrics=function(ym){
     const m=calcCfoMetrics(ym);
-    return {lucro:m.liq,margem:m.ml,status:m.status};
+    return {lucro:m.liq,margem:m.ml,status:m.status,faturamento:m.fat};
   };
 
   window.cfoChangeMonth=function(v){
