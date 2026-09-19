@@ -1212,8 +1212,6 @@ window.mobGoTo = function(id) {
   // redesenhar gráficos ao navegar
   if (id === 'cfo') setTimeout(() => { if(window.renderCFO) window.renderCFO(); }, 30);
   if (id === 'dashboard') {
-    const tR = D.receber.reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
-    const tP = D.pagar.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
     setTimeout(() => { const rxd = calcRxDMesAtual(); desenharRxD('rxd-chart','rxd-legenda','dash-saldo-badge', rxd.tR, rxd.tP); }, 30);
     setTimeout(desenharGrafico, 60);
   }
@@ -3278,64 +3276,6 @@ window.abrirOCTodos = () => {
   document.getElementById('modal-oc').classList.add('open');
 };
 
-// ── Envio automático de OC por email ──────────────────────────────────────
-function enviarOCPorEmail(o, forn) {
-  if (!forn?.email) return;
-  // Carregar EmailJS e enviar
-  const s = document.createElement('script');
-  s.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
-  s.onload = () => {
-    emailjs.init('e2QZvVniF5T6aJuRA');
-    const cod  = 'OC-' + o.id.slice(-6).toUpperCase();
-    const itens = (o.itens || []);
-    const total = o.total || 0;
-    const itensRows = itens.map((it,i) =>
-      '<tr><td>' + (i+1) + '</td><td>' + it.produto + '</td>' +
-      '<td style="text-align:center;">' + it.qty + '</td>' +
-      '<td style="text-align:right;">R$ ' + Number(it.custo).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td>' +
-      '<td style="text-align:right;">R$ ' + Number((parseFloat(it.qty)||0)*(parseFloat(it.custo)||0)).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>'
-    ).join('');
-
-    const htmlOC =
-      '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' +
-      'body{font-family:Arial,sans-serif;color:#1a1a18;padding:32px;font-size:13px;}' +
-      'h1{color:#0a1628;font-size:18px;margin-bottom:4px;}' +
-      '.sub{color:#888;font-size:12px;margin-bottom:24px;}' +
-      'table{width:100%;border-collapse:collapse;margin-top:16px;}' +
-      'th{background:#f5f5f3;padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#888;}' +
-      'td{padding:10px 12px;border-bottom:1px solid #f0f0ec;font-size:13px;}' +
-      '.total{text-align:right;font-size:15px;font-weight:700;color:#0a1628;margin-top:16px;}' +
-      '.footer{margin-top:32px;font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:12px;}' +
-      '</style></head><body>' +
-      '<h1>Ordem de Compra ' + cod + '</h1>' +
-      '<div class="sub">AB Chemicals — Londrina/PR — abchemicalspr@gmail.com — (43) 98871-2001</div>' +
-      '<p>Prezado(a) <b>' + (forn.contato || forn.nome) + '</b>,</p>' +
-      '<p style="margin-top:8px;">Segue abaixo nossa Ordem de Compra <b>' + cod + '</b> de ' + fmtDt(o.data) + ':</p>' +
-      '<table><thead><tr><th>#</th><th>Produto</th><th>Qtd.</th><th style="text-align:right;">Custo unit.</th><th style="text-align:right;">Total</th></tr></thead>' +
-      '<tbody>' + itensRows + '</tbody></table>' +
-      '<div class="total">Total: R$ ' + Number(parseFloat(total)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</div>' +
-      (o.obs ? '<p style="margin-top:16px;background:#f9f9f7;padding:12px;border-radius:6px;white-space:pre-wrap;"><b>Observações:</b> ' + o.obs + '</p>' : '') +
-      '<p style="margin-top:24px;">Aguardamos confirmação do recebimento desta OC.</p>' +
-      '<p style="margin-top:8px;">Atenciosamente,<br><b>AB Chemicals</b><br>abchemicalspr@gmail.com — (43) 98871-2001 — Londrina/PR</p>' +
-      '<div class="footer">Este email foi gerado automaticamente pelo sistema ERP AB Chemicals.</div>' +
-      '</body></html>';
-
-    emailjs.send('service_pedidos', 'template_xk8fggd', {
-      doc_titulo:   'Ordem de Compra',
-      pedido_cod:   cod,
-      cliente_nome: forn.nome,
-      para_email:   forn.email,
-      html_pedido:  htmlOC
-    }).then(() => {
-      toast('✅ OC enviada para ' + forn.email);
-    }).catch(err => {
-      console.error('EmailJS OC:', err);
-      toast('⚠️ OC salva, mas falha no email: ' + (err.text || err.message || ''));
-    });
-  };
-  document.head.appendChild(s);
-}
-
 // ── Envio de OC chamado pelo popup (via window.opener) ────────────────────
 window.__enviarOCEmail = function(ocId, cb) {
   const o    = D.ordens.find(x => x.id === ocId);
@@ -5015,17 +4955,6 @@ Extraia todos os produtos, mesmo que sejam muitos. Use os valores numéricos exa
 }
 
 
-// Normaliza string para comparação: remove acentos, especiais, padroniza unidades
-function normalizarNome(s) {
-  return s.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/c\/|c\/s|com /g, '')
-    .replace(/\/|\\|-/g, ' ')
-    .replace(/\b(litros?|lts?|kgs?|kilos?|gramas?|grs?|ml|un|unid|pcs?)\b/g, '')
-    .replace(/(\d+)(l|lt|lts|kg|kgs|g|gr|ml|un)\b/g, '$1') // 50L→50, 20kg→20
-    .replace(/\s+/g, ' ').trim();
-}
-
 window.analisarNF = async () => {
   const file = document.getElementById('nf-file').files[0];
   if (!file) { toast('Selecione um arquivo primeiro.'); return; }
@@ -5327,8 +5256,6 @@ window.goTo = (id, btn) => {
   // redesenhar gráficos que dependem de visibilidade
   if (id === 'cfo') setTimeout(() => { if(window.renderCFO) window.renderCFO(); }, 30);
   if (id === 'dashboard') {
-    const tR = D.receber.reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
-    const tP = D.pagar.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
     setTimeout(() => { const rxd = calcRxDMesAtual(); desenharRxD('rxd-chart','rxd-legenda','dash-saldo-badge', rxd.tR, rxd.tP); }, 30);
     setTimeout(desenharGrafico, 60);
   }
@@ -5342,45 +5269,6 @@ function renderAll() {
 window.renderDashboard = renderDashboard;
 window._getSessao = () => { try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch(e){ return null; } };
 
-function gerarAlertasInteligentes(){
-  try{
-    const alertas=[];
-
-    (D.produtos||[]).forEach(p=>{
-      const e=parseFloat(p.estoque||0);
-      const m=parseFloat(p.minimo||0);
-      if(m>0 && e<m){
-        alertas.push('⚠️ Estoque baixo: '+(p.nome||p.produto));
-      }
-    });
-
-    (D.pagar||[]).forEach(c=>{
-      if(!c.pago){
-        const v=new Date(c.vencimento||c.data||0);
-        if(v < new Date()){
-          alertas.push('🔴 Conta vencida: '+(c.descricao||'Pagamento'));
-        }
-      }
-    });
-
-    (D.receber||[]).forEach(r=>{
-      if(!r.recebido){
-        const v=new Date(r.vencimento||r.data||0);
-        if(v < new Date()){
-          alertas.push('🟠 Recebimento pendente: '+(r.cliente||'Cliente'));
-        }
-      }
-    });
-
-    const el=document.getElementById('dash-alertas');
-    if(el){
-      el.innerHTML='<div class="section-title">Alertas do sistema</div>' +
-        (alertas.length
-          ? '<div style="font-size:13px;">'+alertas.map(a=>'<div style="margin:6px 0;">'+a+'</div>').join('')+'</div>'
-          : '<div style="color:#185FA5;font-size:13px;">✅ Nenhum alerta crítico.</div>');
-    }
-  }catch(e){console.error(e);}
-}
 </script>
 <style>
 /* CFO — destaque visual */
@@ -5452,80 +5340,167 @@ function gerarAlertasInteligentes(){
 (function(){
   const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0);
   const pct=v=>(Number(v)||0).toFixed(2)+'%';
-  const cfgKey='ab_cfo_cfg_v2';
   let selectedMonth='';
+
   function pad(n){return String(n).padStart(2,'0');}
   function ymOf(d){return d.getFullYear()+'-'+pad(d.getMonth()+1);}
-  function monthLabel(ym){const [y,m]=ym.split('-').map(Number);return new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric'}).format(new Date(y,m-1,1)).replace(/^./,x=>x.toUpperCase());}
+  function monthLabel(ym){
+    const [y,m]=ym.split('-').map(Number);
+    return new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric'})
+      .format(new Date(y,m-1,1)).replace(/^./,x=>x.toUpperCase());
+  }
   function monthOptions(){
     const now=new Date(), arr=[];
-    for(let i=-2;i<=2;i++){const d=new Date(now.getFullYear(),now.getMonth()+i,1);arr.push(ymOf(d));}
+    for(let i=-2;i<=2;i++){
+      const d=new Date(now.getFullYear(),now.getMonth()+i,1);
+      arr.push(ymOf(d));
+    }
     if(!selectedMonth) selectedMonth=ymOf(now);
     const el=document.getElementById('cfo-mes');
-    if(el){el.innerHTML=arr.map(ym=>'<option value="'+ym+'">'+monthLabel(ym)+(ym===ymOf(now)?' • Atual':'')+'</option>').join('');el.value=arr.includes(selectedMonth)?selectedMonth:ymOf(now);}
-    const lab=document.getElementById('cfo-period-label');if(lab)lab.textContent=monthLabel(selectedMonth);
+    if(el){
+      el.innerHTML=arr.map(ym=>'<option value="'+ym+'">'+monthLabel(ym)+(ym===ymOf(now)?' • Atual':'')+'</option>').join('');
+      el.value=arr.includes(selectedMonth)?selectedMonth:ymOf(now);
+    }
+    const lab=document.getElementById('cfo-period-label');
+    if(lab)lab.textContent=monthLabel(selectedMonth);
   }
-  // Fonte única para o Dashboard: replica exatamente o cálculo do Financeiro.
-  window.getCfoCurrentMetrics=function(ym){
-    const D=window.D;if(!D)return {lucro:0,margem:0,status:'Margem baixa'};
-    const c=getCfg();
+
+  // Fonte única do cálculo de rentabilidade do CFO e do Dashboard.
+  // Custos fixos foram removidos do sistema; impostos e demais custos
+  // variáveis só entram quando houver uma fonte ativa para eles.
+  function calcCfoMetrics(ym){
+    const D=window.D||{};
     const month=ym||ymOf(new Date());
-    const ps=(D.pedidos||[]).filter(p=>(p.status==='Entregue'||p.status==='Faturado')&&(p.data||'').slice(0,7)===month);
+    const ps=(D.pedidos||[]).filter(p=>
+      (p.status==='Entregue'||p.status==='Faturado') &&
+      (p.data||'').slice(0,7)===month
+    );
     const produtos=D.produtos||[];
-    const custo=i=>{const p=produtos.find(x=>x.nome===i.produto);return p?Number(p.custo)||0:0;};
-    const venda=p=>Math.max(0,(p.itens||[]).reduce((s,i)=>s+(Number(i.qty)||0)*(Number(i.preco)||0),0)-(Number(p.desconto)||0));
+    const custo=i=>{
+      const p=produtos.find(x=>x.nome===i.produto);
+      return p?Number(p.custo)||0:0;
+    };
+    const venda=p=>Math.max(0,
+      (p.itens||[]).reduce((s,i)=>s+(Number(i.qty)||0)*(Number(i.preco)||0),0)
+      -(Number(p.desconto)||0)
+    );
     const cmv=p=>(p.itens||[]).reduce((s,i)=>s+(Number(i.qty)||0)*custo(i),0);
-    const fat=ps.reduce((s,p)=>s+venda(p),0),cv=ps.reduce((s,p)=>s+cmv(p),0),bruto=fat-cv;
-    const vari=fat*((c.com+c.frete+c.outros)/100),imp=fat*(c.tax/100);
-    const lucro=bruto-vari-imp,margem=fat?lucro/fat*100:0;
-    const status=margem>=15?'Excelente':margem>=10?'Boa':margem>=5?'Atenção':margem>=0?'Margem baixa':'Prejuízo';
-    return {lucro,margem,status};
+    const fat=ps.reduce((s,p)=>s+venda(p),0);
+    const cv=ps.reduce((s,p)=>s+cmv(p),0);
+    const bruto=fat-cv;
+    const imp=0;
+    const vari=0;
+    const liq=bruto-vari-imp;
+    const mb=fat?bruto/fat*100:0;
+    const ml=fat?liq/fat*100:0;
+    const status=ml>=15?'Excelente':ml>=10?'Boa':ml>=5?'Atenção':ml>=0?'Margem baixa':'Prejuízo';
+    return {ps,venda,cmv,fat,cv,bruto,imp,vari,liq,mb,ml,status};
+  }
+
+  window.getCfoCurrentMetrics=function(ym){
+    const m=calcCfoMetrics(ym);
+    return {lucro:m.liq,margem:m.ml,status:m.status};
   };
 
-  window.cfoChangeMonth=function(v){selectedMonth=v||ymOf(new Date());render();};
-  function getCfg(){try{return Object.assign({tax:0,com:0,frete:0,outros:0},JSON.parse(localStorage.getItem(cfgKey)||'{}'));}catch(e){return {tax:0,com:0,frete:0,outros:0};}}
-  function setInputs(c){['tax','com','frete','outros'].forEach(k=>{const e=document.getElementById('cfo-'+k);if(e)e.value=c[k]||0;});}
+  window.cfoChangeMonth=function(v){
+    selectedMonth=v||ymOf(new Date());
+    render();
+  };
+
   function render(){
-    const D=window.D;if(!D)return;
+    if(!window.D)return;
     monthOptions();
-    const c=getCfg();setInputs(c);
-    const ps=(D.pedidos||[]).filter(p=>(p.status==='Entregue'||p.status==='Faturado')&&(p.data||'').slice(0,7)===selectedMonth);
-    const produtos=D.produtos||[];
-    const custo=i=>{const p=produtos.find(x=>x.nome===i.produto);return p?Number(p.custo)||0:0;};
-    const venda=p=>Math.max(0,(p.itens||[]).reduce((s,i)=>s+(Number(i.qty)||0)*(Number(i.preco)||0),0)-(Number(p.desconto)||0));
-    const cmv=p=>(p.itens||[]).reduce((s,i)=>s+(Number(i.qty)||0)*custo(i),0);
-    const fat=ps.reduce((s,p)=>s+venda(p),0),cv=ps.reduce((s,p)=>s+cmv(p),0),bruto=fat-cv;
-    const vari=fat*((c.com+c.frete+c.outros)/100),imp=fat*(c.tax/100);
-    const liq=bruto-vari-imp,ml=fat?liq/fat*100:0;
-    [['cfo-fat',fat],['cfo-cmv',cv],['cfo-bruto',bruto],['cfo-imp',imp],['cfo-var',vari],['cfo-liq',liq]].forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.textContent=money(v);});
-    const mb=fat?bruto/fat*100:0;
-    const mbe=document.getElementById('cfo-mb');if(mbe)mbe.textContent=pct(mb);
-    const mle=document.getElementById('cfo-ml');if(mle)mle.textContent=pct(ml);
-    const st=document.getElementById('cfo-status');if(st)st.textContent=ml>=15?'Excelente':ml>=10?'Boa':ml>=5?'Atenção':ml>=0?'Margem baixa':'Prejuízo';
+    const m=calcCfoMetrics(selectedMonth);
+    const values=[
+      ['cfo-fat',m.fat],['cfo-cmv',m.cv],['cfo-bruto',m.bruto],
+      ['cfo-imp',m.imp],['cfo-var',m.vari],['cfo-liq',m.liq]
+    ];
+    values.forEach(([id,v])=>{
+      const e=document.getElementById(id);
+      if(e)e.textContent=money(v);
+    });
+    const mbe=document.getElementById('cfo-mb');
+    if(mbe)mbe.textContent=pct(m.mb);
+    const mle=document.getElementById('cfo-ml');
+    if(mle)mle.textContent=pct(m.ml);
+    const st=document.getElementById('cfo-status');
+    if(st)st.textContent=m.status;
+
     const tb=document.getElementById('cfo-pedidos');
-    if(tb)tb.innerHTML=ps.length?ps.map((p,i)=>{const v=venda(p),cc=cmv(p),b=v-cc,va=v*((c.com+c.frete+c.outros)/100),ii=v*(c.tax/100),l=b-va-ii-(fix/Math.max(ps.length,1));return '<tr><td>'+((p.numero||p.id||('Pedido '+(i+1))))+'</td><td>'+(p.cliente||'—')+'</td><td>'+money(v)+'</td><td>'+money(cc)+'</td><td>'+money(b)+'</td><td>'+pct(v?b/v*100:0)+'</td><td>'+money(l)+'</td><td>'+pct(v?l/v*100:0)+'</td></tr>';}).join(''):'<tr><td colspan="8" style="text-align:center;color:#9fb7c4;padding:24px;">Nenhum pedido faturado ou entregue neste mês.</td></tr>';
+    if(tb){
+      tb.innerHTML=m.ps.length
+        ? m.ps.map((p,i)=>{
+            const v=m.venda(p),cc=m.cmv(p),b=v-cc,l=b;
+            return '<tr><td>'+((p.numero||p.id||('Pedido '+(i+1))))+'</td><td>'+
+              (p.cliente||'—')+'</td><td>'+money(v)+'</td><td>'+money(cc)+
+              '</td><td>'+money(b)+'</td><td>'+pct(v?b/v*100:0)+'</td><td>'+
+              money(l)+'</td><td>'+pct(v?l/v*100:0)+'</td></tr>';
+          }).join('')
+        : '<tr><td colspan="8" style="text-align:center;color:#9fb7c4;padding:24px;">Nenhum pedido faturado ou entregue neste mês.</td></tr>';
+    }
+    renderCfoFinance();
   }
+
   function renderCfoFinance(){
     const ym=selectedMonth||ymOf(new Date());
-    const rec=(window.D.receber||[]).filter(r=>r.vencimento&&r.vencimento.slice(0,7)===ym);
-    const pag=(window.D.pagar||[]).filter(r=>r.vencimento&&r.vencimento.slice(0,7)===ym);
+    const D=window.D||{};
+    const rec=(D.receber||[]).filter(r=>r.vencimento&&r.vencimento.slice(0,7)===ym);
+    const pag=(D.pagar||[]).filter(r=>r.vencimento&&r.vencimento.slice(0,7)===ym);
     const tbR=document.getElementById('cfo-tabela-receber');
     const tbP=document.getElementById('cfo-tabela-pagar');
-    if(tbR) tbR.innerHTML=rec.length?rec.map(r=>'<tr><td>'+((r.cliente||'—'))+'</td><td>'+((window.fmtDt?window.fmtDt(r.vencimento):r.vencimento))+'</td><td>'+money(r.valor)+'</td><td>'+(r.recebido===true?'Recebido':(window.stFin?window.stFin(r.vencimento):'Pendente'))+'</td><td><div class="td-actions">'+(r.recebido!==true?'<button class="btn-edit" style="background:#185FA5;color:#fff;border-color:#185FA5;" onclick="marcarRecebido(\''+r.id+'\')">✓ Recebido</button>':'<button class="btn-edit" onclick="marcarRecebido(\''+r.id+'\')">Desfazer</button>')+'<button class="btn-edit" onclick="editReceber(\''+r.id+'\')">Editar</button><button class="btn-danger" onclick="delReceber(\''+r.id+'\')">✕</button></div></td></tr>').join(''):'<tr><td colspan="5" style="text-align:center;color:#89a8b7;padding:20px;">Nenhum título neste mês.</td></tr>';
-    if(tbP) tbP.innerHTML=pag.length?pag.map(r=>'<tr><td>'+((r.fornecedor||'—'))+'</td><td>'+((window.fmtDt?window.fmtDt(r.vencimento):r.vencimento))+'</td><td>'+money(r.valor)+'</td><td>'+(r.pago===true?'Pago':(window.stFin?window.stFin(r.vencimento):'Pendente'))+'</td><td><div class="td-actions">'+(r.pago!==true?'<button class="btn-edit" style="background:#185FA5;color:#fff;border-color:#185FA5;" onclick="marcarPago(\''+r.id+'\')">✓ Pago</button>':'<button class="btn-edit" onclick="marcarPago(\''+r.id+'\')">Desfazer</button>')+'<button class="btn-edit" onclick="editPagar(\''+r.id+'\')">Editar</button><button class="btn-danger" onclick="delPagar(\''+r.id+'\')">✕</button></div></td></tr>').join(''):'<tr><td colspan="5" style="text-align:center;color:#89a8b7;padding:20px;">Nenhuma conta neste mês.</td></tr>';
-    const tr=rec.reduce((a,r)=>a+(Number(r.valor)||0),0),tp=pag.reduce((a,r)=>a+(Number(r.valor)||0),0);
-    const er=document.getElementById('cfo-receber-total'),ep=document.getElementById('cfo-pagar-total');
+
+    if(tbR) tbR.innerHTML=rec.length
+      ? rec.map(r=>'<tr><td>'+((r.cliente||'—'))+'</td><td>'+
+          ((window.fmtDt?window.fmtDt(r.vencimento):r.vencimento))+'</td><td>'+money(r.valor)+
+          '</td><td>'+(r.recebido===true?'Recebido':(window.stFin?window.stFin(r.vencimento):'Pendente'))+
+          '</td><td><div class="td-actions">'+
+          (r.recebido!==true
+            ? '<button class="btn-edit" style="background:#185FA5;color:#fff;border-color:#185FA5;" onclick="marcarRecebido(\''+r.id+'\')">✓ Recebido</button>'
+            : '<button class="btn-edit" onclick="marcarRecebido(\''+r.id+'\')">Desfazer</button>')+
+          '<button class="btn-edit" onclick="editReceber(\''+r.id+'\')">Editar</button>'+
+          '<button class="btn-danger" onclick="delReceber(\''+r.id+'\')">✕</button></div></td></tr>'
+        ).join('')
+      : '<tr><td colspan="5" style="text-align:center;color:#89a8b7;padding:20px;">Nenhum título neste mês.</td></tr>';
+
+    if(tbP) tbP.innerHTML=pag.length
+      ? pag.map(r=>'<tr><td>'+((r.fornecedor||'—'))+'</td><td>'+
+          ((window.fmtDt?window.fmtDt(r.vencimento):r.vencimento))+'</td><td>'+money(r.valor)+
+          '</td><td>'+(r.pago===true?'Pago':(window.stFin?window.stFin(r.vencimento):'Pendente'))+
+          '</td><td><div class="td-actions">'+
+          (r.pago!==true
+            ? '<button class="btn-edit" style="background:#185FA5;color:#fff;border-color:#185FA5;" onclick="marcarPago(\''+r.id+'\')">✓ Pago</button>'
+            : '<button class="btn-edit" onclick="marcarPago(\''+r.id+'\')">Desfazer</button>')+
+          '<button class="btn-edit" onclick="editPagar(\''+r.id+'\')">Editar</button>'+
+          '<button class="btn-danger" onclick="delPagar(\''+r.id+'\')">✕</button></div></td></tr>'
+        ).join('')
+      : '<tr><td colspan="5" style="text-align:center;color:#89a8b7;padding:20px;">Nenhuma conta neste mês.</td></tr>';
+
+    const tr=rec.reduce((a,r)=>a+(Number(r.valor)||0),0);
+    const tp=pag.reduce((a,r)=>a+(Number(r.valor)||0),0);
+    const er=document.getElementById('cfo-receber-total');
+    const ep=document.getElementById('cfo-pagar-total');
     if(er)er.innerHTML='Total a receber: <b>'+money(tr)+'</b>';
     if(ep)ep.innerHTML='Total a pagar: <b>'+money(tp)+'</b>';
-    const c=document.getElementById('cfo-rxd-chart'); if(!c)return;
-    const mx=Math.max(tr,tp,1),W=620,H=210,base=165,bar=130,gap=90,x1=(W-(bar*2+gap))/2,x2=x1+bar+gap,h1=Math.max(4,tr/mx*115),h2=Math.max(4,tp/mx*115),fmt=v=>v>=1000?'R$ '+(v/1000).toFixed(1)+'k':money(v);
-    c.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:210px;display:block;max-width:760px;margin:auto" xmlns="http://www.w3.org/2000/svg"><line x1="30" y1="'+base+'" x2="590" y2="'+base+'" stroke="#315c73"/><rect x="'+x1+'" y="'+(base-h1)+'" width="'+bar+'" height="'+h1+'" rx="10" fill="#19b7d9"/><rect x="'+x2+'" y="'+(base-h2)+'" width="'+bar+'" height="'+h2+'" rx="10" fill="#d85a30"/><text x="'+(x1+bar/2)+'" y="'+(base-h1-10)+'" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">'+fmt(tr)+'</text><text x="'+(x2+bar/2)+'" y="'+(base-h2-10)+'" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">'+fmt(tp)+'</text><text x="'+(x1+bar/2)+'" y="190" text-anchor="middle" fill="#9fb8c5" font-size="12">Receitas</text><text x="'+(x2+bar/2)+'" y="190" text-anchor="middle" fill="#9fb8c5" font-size="12">Despesas</text></svg>';
-    const lg=document.getElementById('cfo-rxd-legenda');if(lg)lg.innerHTML='<span>🔵 Receitas · '+money(tr)+'</span><span>🟠 Despesas · '+money(tp)+'</span><span style="font-weight:800;color:'+(tr>=tp?'#35d2ec':'#ff8f70')+'">Saldo · '+money(tr-tp)+'</span>';
+
+    const c=document.getElementById('cfo-rxd-chart');
+    if(!c)return;
+    const mx=Math.max(tr,tp,1),W=620,H=210,base=165,bar=130,gap=90;
+    const x1=(W-(bar*2+gap))/2,x2=x1+bar+gap;
+    const h1=Math.max(4,tr/mx*115),h2=Math.max(4,tp/mx*115);
+    const fmt=v=>v>=1000?'R$ '+(v/1000).toFixed(1)+'k':money(v);
+    c.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:210px;display:block;max-width:760px;margin:auto" xmlns="http://www.w3.org/2000/svg">'+
+      '<line x1="30" y1="'+base+'" x2="590" y2="'+base+'" stroke="#315c73"/>'+
+      '<rect x="'+x1+'" y="'+(base-h1)+'" width="'+bar+'" height="'+h1+'" rx="10" fill="#19b7d9"/>'+
+      '<rect x="'+x2+'" y="'+(base-h2)+'" width="'+bar+'" height="'+h2+'" rx="10" fill="#d85a30"/>'+
+      '<text x="'+(x1+bar/2)+'" y="'+(base-h1-10)+'" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">'+fmt(tr)+'</text>'+
+      '<text x="'+(x2+bar/2)+'" y="'+(base-h2-10)+'" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">'+fmt(tp)+'</text>'+
+      '<text x="'+(x1+bar/2)+'" y="190" text-anchor="middle" fill="#9fb8c5" font-size="12">Receitas</text>'+
+      '<text x="'+(x2+bar/2)+'" y="190" text-anchor="middle" fill="#9fb8c5" font-size="12">Despesas</text></svg>';
+    const lg=document.getElementById('cfo-rxd-legenda');
+    if(lg)lg.innerHTML='<span>🔵 Receitas · '+money(tr)+'</span><span>🟠 Despesas · '+money(tp)+'</span><span style="font-weight:800;color:'+(tr>=tp?'#35d2ec':'#ff8f70')+'">Saldo · '+money(tr-tp)+'</span>';
   }
-  const _renderCFO=render;
-  render=function(){_renderCFO();renderCfoFinance();};
+
   window.renderCFO=render;
-  window.addEventListener('cfo-ready',render);
 })();
 </script>
 </body>
