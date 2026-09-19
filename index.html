@@ -97,11 +97,6 @@ tr:hover td { background: #fafaf8; }
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type=number] { -moz-appearance: textfield; appearance: textfield; }
-.stock-item { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid #f0f0ec; }
-.stock-item:last-child { border-bottom: none; }
-.stock-info { flex: 1; }
-.stock-name { font-size: 13px; font-weight: 500; }
-.stock-code { font-size: 11px; color: #aaa; }
 .alert-box { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; border-radius: 9px; font-size: 12px; margin-bottom: 9px; }
 .alert-warn { background: #FAEEDA; color: #854F0B; }
 .alert-danger { background: #FCEBEB; color: #A32D2D; }
@@ -428,6 +423,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center;">
           <button class="btn-primary" onclick="openModal('modal-pedido')"><i class="ti ti-plus"></i> Novo pedido</button>
           <button class="btn-ghost" onclick="exportCSV()"><i class="ti ti-download"></i> Exportar CSV</button>
+          <select class="form-input" id="vendas-mes" style="max-width:180px;height:36px;" onchange="atualizarVendasMes()" aria-label="Filtrar vendas por mês"></select>
           <input class="form-input" id="vendas-busca" placeholder="🔍 Buscar por cliente, status ou nº pedido..." style="max-width:300px;height:36px;margin-left:auto;" oninput="filtrarVendas(this.value)">
         </div>
         <div class="table-wrap">
@@ -457,7 +453,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
           <input class="form-input" placeholder="Buscar produto..." style="max-width:220px;height:36px;" oninput="filtrar('tabela-estoque',this.value)">
         </div>
         <div class="two-col">
-          <div class="card"><div class="section-title">Alertas de estoque</div><div id="est-alertas"></div></div>
           <div class="card"><div class="section-title">Resumo</div><div id="est-resumo"></div></div>
         </div>
         <div class="table-wrap">
@@ -470,7 +465,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
           <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:18px;">
             <div>
               <div class="section-title" style="margin-bottom:3px;">Compras e Fornecedores</div>
-              <div style="font-size:12px;color:#888;">Ordens de compra, fornecedores e reposição automática integrados ao estoque.</div>
+              <div style="font-size:12px;color:#888;">Ordens de compra e fornecedores integrados ao estoque.</div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
               <button class="btn-primary" onclick="openModal('modal-oc')"><i class="ti ti-plus"></i> Nova ordem de compra</button>
@@ -484,13 +479,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
               <table><thead><tr><th>Empresa</th><th class="col-mobile-hide">CNPJ</th><th class="col-mobile-hide">Contato</th><th class="col-mobile-hide">Telefone</th><th class="col-mobile-hide">Email</th><th class="col-mobile-hide">Produtos</th><th>Status</th><th></th></tr></thead>
               <tbody id="tabela-fornecedores"></tbody></table>
             </div>
-          </div>
-          <div class="card" style="margin-bottom:18px;">
-            <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-              <span>Sugestão de reposição automática</span>
-              <button class="btn-primary" style="font-size:12px;padding:5px 12px;display:none;" id="btn-comprar-todos" onclick="abrirOCTodos()"><i class="ti ti-shopping-cart"></i> Comprar todos</button>
-            </div>
-            <div id="cmp-sugestoes"></div>
           </div>
           <div class="table-wrap">
             <table><thead><tr><th>Nº OC</th><th>Fornecedor</th><th>Data</th><th>Itens</th><th>Total</th><th>Status</th><th></th></tr></thead>
@@ -1525,7 +1513,6 @@ function parseValorBR(v) {
 
 const totPed = p => Math.max(0, (p.itens||[]).reduce((s,i) => s + (parseFloat(i.qty)||0) * (parseFloat(i.preco)||0), 0) - (parseFloat(p.desconto)||0));
 const sit    = (e,m) => e <= 0 || e < m * 0.5 ? 'Crítico' : e < m ? 'Baixo' : 'OK';
-const elegivelAlertaEstoque = p => p.categoria !== 'Descartáveis';
 const stFin  = s => { const d=daysTo(s); return d<0?'Vencido':d<=3?'Pendente':'No prazo'; };
 
 // ── Geração de parcelas a partir da condição de pagamento do pedido ────────
@@ -2065,7 +2052,12 @@ window.atualizarPedido = async id => {
 
 function renderPedidos() {
   // Vendas e Pedidos reúne pedidos e orçamentos.
-  const rows = [...(D.pedidos || [])].sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  const selMes = document.getElementById('vendas-mes');
+  if (selMes && !selMes.options.length) popularSeletorMeses('vendas-mes', -6, 0);
+  const ym = selMes?.value || '';
+  const rows = [...(D.pedidos || [])]
+    .filter(p => !ym || (p.data || '').startsWith(ym))
+    .sort((a,b)=>(b.data||'').localeCompare(a.data||''));
   document.getElementById('tabela-pedidos').innerHTML = rows.length
     ? rows.map(p => {
         const nfBtn = p.nf_emitida
@@ -2144,9 +2136,17 @@ window.filtrarOrcamentos = (q) => {
       }).join('')
     : `<tr><td colspan="7"><div class="empty-state">Nenhum orçamento encontrado para "${q}".</div></td></tr>`;
 };
+window.atualizarVendasMes = () => {
+  const busca = document.getElementById('vendas-busca')?.value || '';
+  filtrarVendas(busca);
+};
+
 window.filtrarVendas = (q) => {
   const lo = q.toLowerCase().trim();
-  const rows = [...(D.pedidos || [])].sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  const ym = document.getElementById('vendas-mes')?.value || '';
+  const rows = [...(D.pedidos || [])]
+    .filter(p => !ym || (p.data || '').startsWith(ym))
+    .sort((a,b)=>(b.data||'').localeCompare(a.data||''));
   const filtradas = lo ? rows.filter(p =>
     (p.cliente||'').toLowerCase().includes(lo) ||
     (p.status||'').toLowerCase().includes(lo) ||
@@ -2318,19 +2318,11 @@ function linhaProduto(p) {
 }
 
 function renderEstoque() {
-  const alertas = D.produtos.filter(p => elegivelAlertaEstoque(p) && sit(p.estoque,p.minimo) !== 'OK');
-  document.getElementById('est-alertas').innerHTML = alertas.length
-    ? alertas.map(p => `<div class="stock-item">
-        <div class="stock-info"><div class="stock-name">${p.nome}</div><div class="stock-code">${p.cod} · ${p.categoria}</div></div>
-        <span style="font-weight:600;color:${sit(p.estoque,p.minimo)==='Crítico'?'#D85A30':'#BA7517'}">${p.estoque} un.</span>
-        ${badge(sit(p.estoque,p.minimo))}</div>`).join('')
-    : '<div class="empty-state" style="padding:16px;">Sem alertas de estoque!</div>';
-
   const vt = D.produtos.reduce((s,p) => s + p.estoque * p.custo, 0);
   document.getElementById('est-resumo').innerHTML = `
     <div class="stat-row"><span class="stat-key">Total de SKUs</span><span class="stat-val">${D.produtos.length}</span></div>
     <div class="stat-row"><span class="stat-key">Valor em estoque</span><span class="stat-val">${R$(vt)}</span></div>
-    <div class="stat-row"><span class="stat-key">Em alerta</span><span class="stat-val" style="color:#D85A30;">${alertas.length} itens</span></div>`;
+`;
 
   if (!window.agruparEstoquePorFornecedor) {
     document.getElementById('tabela-estoque').innerHTML = D.produtos.map(linhaProduto).join('')
@@ -2675,15 +2667,17 @@ window.atualizarPagar = async id => {
   closeModal('modal-pagar'); toast('✅ Conta atualizada!');
 };
 
-function popularSeletorMeses(elId) {
+function popularSeletorMeses(elId, mesesAnteriores = -2, mesesFuturos = 11) {
   const sel = document.getElementById(elId);
   if (!sel) return;
   sel.innerHTML = '';
   const now = new Date();
   const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                  'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  // i de -2 a 11: inclui os 2 meses anteriores, o mês atual (i=0) e os 11 seguintes
-  for (let i = -2; i < 12; i++) {
+  // Permite configurar a janela de meses por tela.
+  // Vendas: -6 a 0 (6 meses anteriores + mês atual).
+  // Financeiro: mantém o padrão existente de -2 a +11.
+  for (let i = mesesAnteriores; i <= mesesFuturos; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
     const ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
     const opt = document.createElement('option');
@@ -3171,59 +3165,6 @@ window.abrirOCProd = nome => {
   document.getElementById('modal-oc').classList.add('open');
 };
 
-// Abre a OC já com todos os produtos sugeridos na reposição automática
-window.abrirOCTodos = () => {
-  const sugTodos = D.produtos.filter(p => elegivelAlertaEstoque(p) && sit(p.estoque,p.minimo) !== 'OK');
-
-  window.ocItens = [];
-  document.getElementById('oc-itens').innerHTML = '';
-  document.getElementById('oc-obs').value  = '';
-  const fList = document.getElementById('forn-datalist');
-  if (fList) {
-    fList.innerHTML = D.fornecedores.filter(f=>f.status==='Ativo').map(f=>`<option value="${f.nome}">`).join('');
-  }
-
-  // Agrupar sugestões por fornecedor cadastrado no produto, para não misturar
-  // itens de fornecedores diferentes numa única OC (e num único e-mail).
-  const grupos = {};
-  sugTodos.forEach(p => {
-    const key = p.fornecedor || '(sem fornecedor)';
-    (grupos[key] = grupos[key] || []).push(p);
-  });
-  const chaves = Object.keys(grupos);
-  // Escolhe o grupo com mais itens para preencher automaticamente a OC
-  let fornEscolhido = chaves.sort((a,b) => grupos[b].length - grupos[a].length)[0] || '';
-  const sug = grupos[fornEscolhido] || [];
-
-  document.getElementById('oc-forn').value = fornEscolhido === '(sem fornecedor)' ? '' : fornEscolhido;
-
-  const restantes = sugTodos.length - sug.length;
-  if (fornEscolhido === '(sem fornecedor)') {
-    toast('⚠️ ' + sug.length + ' produto(s) sem fornecedor cadastrado. Selecione manualmente.');
-  } else if (restantes > 0) {
-    toast('📋 ' + sug.length + ' produto(s) de ' + fornEscolhido + ' adicionados. ' + restantes + ' produto(s) de outro(s) fornecedor(es) precisam de OC separada.');
-  }
-
-  sug.forEach((p, idx) => {
-    const estoque = parseFloat(p.estoque) || 0;
-    const minimo  = parseFloat(p.minimo)  || 0;
-    const qty     = Math.max(1, Math.ceil(minimo - estoque));
-    const custo   = p.custo || 0;
-    window.ocItens.push({ produto: p.nome, qty, custo });
-
-    const opts = D.produtos.map(x => '<option value="' + x.nome + '"' + (x.nome===p.nome?' selected':'') + '>' + x.nome + '</option>').join('');
-    const row = document.createElement('div');
-    row.className = 'pi-row'; row.id = 'oci-' + idx;
-    row.innerHTML =
-      '<select class="form-input" onchange="window.ocItens[' + idx + '].produto=this.value;autoPrecoOC(' + idx + ',this.value)"><option value="">Selecione...</option>' + opts + '</select>' +
-      '<input type="text" inputmode="decimal" class="form-input" style="max-width:75px;" value="' + qty + '" onchange="window.ocItens[' + idx + '].qty=+this.value">' +
-      '<input type="text" inputmode="decimal" class="form-input" style="max-width:100px;" placeholder="Custo unit." id="oci-preco-' + idx + '" value="' + custo + '" onchange="window.ocItens[' + idx + '].custo=parseBR(this.value)">' +
-      '<button class="btn-danger" onclick="document.getElementById(\'oci-' + idx + '\').remove();window.ocItens[' + idx + ']=null">✕</button>';
-    document.getElementById('oc-itens').appendChild(row);
-  });
-
-  document.getElementById('modal-oc').classList.add('open');
-};
 
 // ── Envio de OC chamado pelo popup (via window.opener) ────────────────────
 window.__enviarOCEmail = function(ocId, cb) {
@@ -3434,15 +3375,6 @@ window.verOC = id => {
 };
 
 function renderCompras() {
-  const sug = D.produtos.filter(p => elegivelAlertaEstoque(p) && sit(p.estoque,p.minimo) !== 'OK');
-  document.getElementById('cmp-sugestoes').innerHTML = sug.length
-    ? sug.map(p => `<div class="stock-item">
-        <div class="stock-info"><div class="stock-name">${p.nome}</div><div class="stock-code">Estoque: ${p.estoque} / Mín: ${p.minimo}</div></div>
-        <button class="btn-primary" style="font-size:12px;padding:5px 12px;" onclick="abrirOCProd('${p.nome}')">Comprar</button></div>`).join('')
-    : '<div class="empty-state" style="padding:16px;">Nenhuma reposição necessária.</div>';
-  const btnTodos = document.getElementById('btn-comprar-todos');
-  if (btnTodos) btnTodos.style.display = sug.length > 1 ? 'inline-flex' : 'none';
-
   document.getElementById('tabela-compras').innerHTML = [...D.ordens]
     .sort((a,b)=>(b.data||'').localeCompare(a.data||''))
     .map(o => {
