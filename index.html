@@ -244,6 +244,94 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 
 /* Ocultar qualquer resumo de alertas postergados no Dashboard */
 #dash-inativos-postergados, #dash-postergados, .dash-postergados, [data-postergados="true"] { display:none !important; }
+
+<style id="dash-profit-box-style">
+.dash-profit-box{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  align-items:stretch;
+  gap:0;
+  margin-bottom:22px;
+  padding:clamp(22px,3vw,36px);
+  background:linear-gradient(135deg,#071522 0%,#0b1d2d 52%,#102b3f 100%);
+  border:1px solid #23465e;
+  border-radius:18px;
+  color:#eef7fb;
+  box-sizing:border-box;
+  width:100%;
+}
+.dash-profit-item{
+  min-width:0;
+  padding:0 clamp(16px,3vw,38px);
+}
+.dash-profit-item:first-child{
+  padding-left:0;
+  padding-right:clamp(18px,3vw,38px);
+}
+.dash-profit-item:last-child{
+  padding-left:clamp(18px,3vw,38px);
+  padding-right:0;
+}
+.dash-profit-label{
+  font-size:clamp(13px,1.4vw,20px);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:#a9c0cf;
+  margin-bottom:12px;
+}
+.dash-profit-item:last-child .dash-profit-label{
+  text-transform:none;
+  letter-spacing:0;
+  color:#eef7fb;
+  font-weight:600;
+}
+.dash-profit-value{
+  font-size:clamp(30px,4vw,54px);
+  line-height:1.05;
+  font-weight:700;
+  color:#35c7e8;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.dash-profit-status{
+  margin-top:12px;
+  font-size:clamp(14px,1.5vw,20px);
+  color:#a9c0cf;
+}
+.dash-profit-divider{
+  display:none;
+}
+.dash-profit-item + .dash-profit-item{
+  border-left:1px solid #2b5269;
+}
+@media (max-width:700px){
+  .dash-profit-box{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    padding:18px 14px;
+  }
+  .dash-profit-item{
+    padding:0 10px;
+  }
+  .dash-profit-item:first-child{
+    padding-left:0;
+    padding-right:10px;
+  }
+  .dash-profit-item:last-child{
+    padding-left:10px;
+    padding-right:0;
+  }
+  .dash-profit-value{
+    font-size:clamp(24px,7vw,38px);
+  }
+  .dash-profit-label{
+    font-size:clamp(10px,2.8vw,13px);
+  }
+  .dash-profit-status{
+    font-size:13px;
+  }
+}
+</style>
 </style>
 </head>
 <body>
@@ -352,12 +440,20 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
           </div>
           <div id="dash-inativos-preview" style="font-size:12px;color:#888;">Carregando...</div>
         </div>
-        <div class="kpi-grid" id="dash-kpis">
-          <div class="kpi-card"><div class="kpi-label">Aguardando Firebase...</div><div class="kpi-value">—</div></div>
-          <div class="kpi-card"><div class="kpi-label">Aguardando Firebase...</div><div class="kpi-value">—</div></div>
-          <div class="kpi-card"><div class="kpi-label">Aguardando Firebase...</div><div class="kpi-value">—</div></div>
-          <div class="kpi-card"><div class="kpi-label">Aguardando Firebase...</div><div class="kpi-value">—</div></div>
+
+        <div class="card dash-profit-box" id="dash-profit-box">
+          <div class="dash-profit-item">
+            <div class="dash-profit-label">LUCRO LÍQUIDO ESTIMADO</div>
+            <div class="dash-profit-value" id="dash-lucro-liquido">R$ 0,00</div>
+          </div>
+          <div class="dash-profit-divider"></div>
+          <div class="dash-profit-item">
+            <div class="dash-profit-label">Margem líquida</div>
+            <div class="dash-profit-value" id="dash-margem-liquida">0,00%</div>
+            <div class="dash-profit-status" id="dash-margem-status"></div>
+          </div>
         </div>
+
         <div class="two-col">
           <div class="card" style="padding-bottom:12px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
@@ -3626,7 +3722,41 @@ function desenharRxD(containerId, legendaId, badgeId, receitas, despesas, ym) {
 }
 
 // ── Dashboard ──────────────────────────────────────────────────────────────
+
+function atualizarDashboardLucroMargem(){
+  try{
+    const pedidos = (D.pedidos || []).filter(p => p.status === 'Entregue' || p.status === 'Faturado');
+    const faturamento = pedidos.reduce((s,p)=>s+totPed(p),0);
+    let lucro = 0, margem = 0;
+
+    if (typeof margemCfg === 'function' && typeof calcMargemPedidoReal === 'function' && typeof custoFixoMensalReal === 'function') {
+      const c = margemCfg();
+      const ctx = {faturamento, fixoMensal:custoFixoMensalReal(c)};
+      const resultados = pedidos.map(p => calcMargemPedidoReal(p,c,ctx));
+      const receita = resultados.reduce((s,r)=>s+(r.receita||0),0);
+      const custo = resultados.reduce((s,r)=>s+(r.custoMerc||0),0);
+      const impostos = resultados.reduce((s,r)=>s+(r.imposto||0),0);
+      const fretes = resultados.reduce((s,r)=>s+(r.frete||0),0);
+      const taxas = resultados.reduce((s,r)=>s+(r.taxaFin||0),0);
+      const fixos = resultados.reduce((s,r)=>s+(r.fixoRateado||0),0);
+      lucro = receita - custo - impostos - fretes - taxas - fixos;
+      margem = receita ? (lucro / receita) * 100 : 0;
+    } else {
+      lucro = faturamento;
+      margem = faturamento ? 100 : 0;
+    }
+
+    const elLucro=document.getElementById('dash-lucro-liquido');
+    const elMargem=document.getElementById('dash-margem-liquida');
+    const elStatus=document.getElementById('dash-margem-status');
+    if(elLucro) elLucro.textContent = R$(lucro);
+    if(elMargem) elMargem.textContent = Number(margem).toFixed(2).replace('.',',') + '%';
+    if(elStatus) elStatus.textContent = margem >= 20 ? 'Boa' : (margem >= 10 ? 'Atenção' : 'Baixa');
+  }catch(e){ console.error('Erro ao atualizar lucro/margem do Dashboard:',e); }
+}
+
 function renderDashboard() {
+  atualizarDashboardLucroMargem();
   const ymAtualDash = new Date().toISOString().slice(0,7);
   const fat  = D.pedidos.filter(p => (p.status==='Entregue' || p.status==='Faturado') && (p.data||'').startsWith(ymAtualDash)).reduce((s,p)=>s+totPed(p),0);
   const mesDash = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][new Date().getMonth()];
