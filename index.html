@@ -245,92 +245,32 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 /* Ocultar qualquer resumo de alertas postergados no Dashboard */
 #dash-inativos-postergados, #dash-postergados, .dash-postergados, [data-postergados="true"] { display:none !important; }
 
-
-.dash-profit-box{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-  align-items:stretch;
-  gap:0;
-  margin-bottom:22px;
-  padding:clamp(22px,3vw,36px);
-  background:linear-gradient(135deg,#071522 0%,#0b1d2d 52%,#102b3f 100%);
-  border:1px solid #23465e;
-  border-radius:18px;
-  color:#eef7fb;
-  box-sizing:border-box;
+/* APPs — submenu do menu lateral */
+.apps-menu{width:100%;}
+.apps-toggle{position:relative;}
+.apps-chevron{margin-left:auto!important;font-size:15px!important;transition:transform .18s ease;}
+.apps-menu.open .apps-chevron{transform:rotate(180deg);}
+.apps-submenu{display:none;padding:2px 0 7px 0;}
+.apps-menu.open .apps-submenu{display:block;}
+.apps-link{
+  display:flex;
+  align-items:center;
+  gap:9px;
   width:100%;
+  padding:8px 18px 8px 45px;
+  color:#8aafd4;
+  text-decoration:none;
+  font-size:12px;
+  line-height:1.25;
+  transition:background .12s,color .12s;
 }
-.dash-profit-item{
-  min-width:0;
-  padding:0 clamp(16px,3vw,38px);
+.apps-link i{font-size:15px;flex:none;}
+.apps-link:hover{background:#112244;color:#fff;}
+@media(max-width:768px){
+  .apps-link{padding-left:45px;color:#8aafd4;}
+  .apps-link:hover{background:#112244;color:#fff;}
 }
-.dash-profit-item:first-child{
-  padding-left:0;
-  padding-right:clamp(18px,3vw,38px);
-}
-.dash-profit-item:last-child{
-  padding-left:clamp(18px,3vw,38px);
-  padding-right:0;
-}
-.dash-profit-label{
-  font-size:clamp(13px,1.4vw,20px);
-  letter-spacing:.08em;
-  text-transform:uppercase;
-  color:#a9c0cf;
-  margin-bottom:12px;
-}
-.dash-profit-item:last-child .dash-profit-label{
-  text-transform:none;
-  letter-spacing:0;
-  color:#eef7fb;
-  font-weight:600;
-}
-.dash-profit-value{
-  font-size:clamp(30px,4vw,54px);
-  line-height:1.05;
-  font-weight:700;
-  color:#35c7e8;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-.dash-profit-status{
-  margin-top:12px;
-  font-size:clamp(14px,1.5vw,20px);
-  color:#a9c0cf;
-}
-.dash-profit-divider{
-  display:none;
-}
-.dash-profit-item + .dash-profit-item{
-  border-left:1px solid #2b5269;
-}
-@media (max-width:700px){
-  .dash-profit-box{
-    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-    padding:18px 14px;
-  }
-  .dash-profit-item{
-    padding:0 10px;
-  }
-  .dash-profit-item:first-child{
-    padding-left:0;
-    padding-right:10px;
-  }
-  .dash-profit-item:last-child{
-    padding-left:10px;
-    padding-right:0;
-  }
-  .dash-profit-value{
-    font-size:clamp(24px,7vw,38px);
-  }
-  .dash-profit-label{
-    font-size:clamp(10px,2.8vw,13px);
-  }
-  .dash-profit-status{
-    font-size:13px;
-  }
-}
+
 </style>
 </head>
 <body>
@@ -369,6 +309,17 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <button class="nav-item" onclick="goTo('cfo',this)" id="nav-cfo"><i class="ti ti-chart-donut"></i>Financeiro</button>
 <button class="nav-item" onclick="goTo('relatorios',this)" id="nav-relatorios"><i class="ti ti-chart-bar"></i>Relatórios</button>
       <button class="nav-item" onclick="goTo('ajustes',this)" id="nav-ajustes"><i class="ti ti-settings"></i>Ajustes</button>
+      <div class="apps-menu">
+        <button class="nav-item apps-toggle" type="button" onclick="toggleAppsMenu(this)"><i class="ti ti-apps"></i>APPs<i class="ti ti-chevron-down apps-chevron"></i></button>
+        <div class="apps-submenu" id="apps-submenu-desktop">
+          <a class="apps-link" href="https://brunogreg83.github.io/erp/catalogo/" target="_blank" rel="noopener noreferrer"><i class="ti ti-book"></i>Catálogo AB Chemicals</a>
+          <a class="apps-link" href="https://brunogreg83.github.io/erp/catalogo/synthera" target="_blank" rel="noopener noreferrer"><i class="ti ti-book-2"></i>Catálogo Synthera</a>
+          <a class="apps-link" href="https://brunogreg83.github.io/erp/rdv/" target="_blank" rel="noopener noreferrer"><i class="ti ti-route"></i>RDV</a>
+          <a class="apps-link" href="https://brunogreg83.github.io/erp/cc/" target="_blank" rel="noopener noreferrer"><i class="ti ti-file-invoice"></i>Conta Corrente</a>
+          <a class="apps-link" href="https://brunogreg83.github.io/erp/qr/" target="_blank" rel="noopener noreferrer"><i class="ti ti-qrcode"></i>QR Code</a>
+          <a class="apps-link" href="https://brunogreg83.github.io/erp/calculadora/" target="_blank" rel="noopener noreferrer"><i class="ti ti-calculator"></i>Calculadora</a>
+        </div>
+      </div>
     </nav>
     <div class="sidebar-user">
       <div class="u-label">Nuvem · <span id="fb-label-side">conectando...</span></div>
@@ -401,6 +352,17 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <button class="nav-item" onclick="mobGoTo('cfo')" id="mob-nav-cfo"><i class="ti ti-chart-donut"></i>Financeiro</button>
 <button class="nav-item" onclick="mobGoTo('relatorios')" id="mob-nav-relatorios"><i class="ti ti-chart-bar"></i>Relatórios</button>
         <button class="nav-item" onclick="mobGoTo('ajustes')" id="mob-nav-ajustes"><i class="ti ti-settings"></i>Ajustes</button>
+        <div class="apps-menu">
+          <button class="nav-item apps-toggle" type="button" onclick="toggleAppsMenu(this)"><i class="ti ti-apps"></i>APPs<i class="ti ti-chevron-down apps-chevron"></i></button>
+          <div class="apps-submenu" id="apps-submenu-mobile">
+            <a class="apps-link" href="https://brunogreg83.github.io/erp/catalogo/" target="_blank" rel="noopener noreferrer"><i class="ti ti-book"></i>Catálogo AB Chemicals</a>
+            <a class="apps-link" href="https://brunogreg83.github.io/erp/catalogo/synthera" target="_blank" rel="noopener noreferrer"><i class="ti ti-book-2"></i>Catálogo Synthera</a>
+            <a class="apps-link" href="https://brunogreg83.github.io/erp/rdv/" target="_blank" rel="noopener noreferrer"><i class="ti ti-route"></i>RDV</a>
+            <a class="apps-link" href="https://brunogreg83.github.io/erp/cc/" target="_blank" rel="noopener noreferrer"><i class="ti ti-file-invoice"></i>Conta Corrente</a>
+            <a class="apps-link" href="https://brunogreg83.github.io/erp/qr/" target="_blank" rel="noopener noreferrer"><i class="ti ti-qrcode"></i>QR Code</a>
+            <a class="apps-link" href="https://brunogreg83.github.io/erp/calculadora/" target="_blank" rel="noopener noreferrer"><i class="ti ti-calculator"></i>Calculadora</a>
+          </div>
+        </div>
       </nav>
       <div style="padding:14px 18px;border-top:1px solid #1a3a6b;">
         <div style="font-size:11px;color:#6b8cba;">Usuário</div>
@@ -429,19 +391,34 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     <div class="content">
       <!-- DASHBOARD -->
       <div class="screen active" id="screen-dashboard">
-<div class="card dash-profit-box" id="dash-profit-box">
+        <div class="card" id="dash-clientes-sem-compra" style="margin-bottom:18px;cursor:pointer;" onclick="window.relatorio('inativos')">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;">
+            <div class="section-title" style="margin-bottom:0;">Clientes sem Compra <span style="font-weight:400;color:#aaa;font-size:12px;">(30 dias ou mais)</span></div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="font-size:24px;font-weight:700;color:#D85A30;" id="dash-inativos-count">—</div>
+              <i class="ti ti-chevron-right" style="color:#bbb;"></i>
+            </div>
+          </div>
+          <div id="dash-inativos-preview" style="font-size:12px;color:#888;">Carregando...</div>
+        </div>
+        <div class="kpi-grid" id="dash-kpis">
+          <div class="kpi-card"><div class="kpi-label">Aguardando Firebase...</div><div class="kpi-value">—</div></div>
+          <div class="kpi-card"><div class="kpi-label">Aguardando Firebase...</div><div class="kpi-value">—</div></div>
+          <div class="kpi-card"><div class="kpi-label">Aguardando Firebase...</div><div class="kpi-value">—</div></div>
+          <div class="kpi-card"><div class="kpi-label">Aguardando Firebase...</div><div class="kpi-value">—</div></div>
+        </div>
+
+        <div class="dash-profit-box" id="dash-profit-box">
           <div class="dash-profit-item">
             <div class="dash-profit-label">LUCRO LÍQUIDO ESTIMADO</div>
             <div class="dash-profit-value" id="dash-lucro-liquido">R$ 0,00</div>
           </div>
-          <div class="dash-profit-divider"></div>
-          <div class="dash-profit-item">
+          <div class="dash-profit-item dash-profit-margin">
             <div class="dash-profit-label">Margem líquida</div>
             <div class="dash-profit-value" id="dash-margem-liquida">0,00%</div>
             <div class="dash-profit-status" id="dash-margem-status"></div>
           </div>
         </div>
-
         <div class="two-col">
           <div class="card" style="padding-bottom:12px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
@@ -1196,6 +1173,13 @@ window.fazerLogout = function() {
   location.reload();
 };
 // ── Mobile nav ─────────────────────────────────────────────────────────────
+
+window.toggleAppsMenu = function(btn){
+  const menu = btn ? btn.closest('.apps-menu') : null;
+  if(!menu) return;
+  menu.classList.toggle('open');
+};
+
 window.toggleDrawer = function() {
   const drawer  = document.getElementById('mob-drawer');
   const overlay = document.getElementById('mob-overlay');
@@ -3710,52 +3694,41 @@ function desenharRxD(containerId, legendaId, badgeId, receitas, despesas, ym) {
 }
 
 // ── Dashboard ──────────────────────────────────────────────────────────────
-
-function atualizarDashboardLucroMargem(){
-  try{
-    // Dashboard: considerar exclusivamente pedidos faturados/entregues do mês vigente.
-    const agora = new Date();
-    const ymAtual = agora.getFullYear() + '-' + String(agora.getMonth()+1).padStart(2,'0');
-
-    const pedidos = (D.pedidos || []).filter(p => {
-      if (!(p.status === 'Entregue' || p.status === 'Faturado')) return false;
-      if (!p.data) return false;
-      return String(p.data).slice(0,7) === ymAtual;
-    });
-
-    const faturamento = pedidos.reduce((s,p)=>s+totPed(p),0);
-    let lucro = 0, margem = 0;
-
-    if (typeof margemCfg === 'function' && typeof calcMargemPedidoReal === 'function' && typeof custoFixoMensalReal === 'function') {
-      const c = margemCfg();
-      // O custo fixo utilizado é o custo mensal, aplicado somente sobre a receita
-      // dos pedidos do mês vigente.
-      const ctx = {faturamento, fixoMensal:custoFixoMensalReal(c)};
-      const resultados = pedidos.map(p => calcMargemPedidoReal(p,c,ctx));
-      const receita = resultados.reduce((s,r)=>s+(r.receita||0),0);
-      const custo = resultados.reduce((s,r)=>s+(r.custoMerc||0),0);
-      const impostos = resultados.reduce((s,r)=>s+(r.imposto||0),0);
-      const fretes = resultados.reduce((s,r)=>s+(r.frete||0),0);
-      const taxas = resultados.reduce((s,r)=>s+(r.taxaFin||0),0);
-      const fixos = resultados.reduce((s,r)=>s+(r.fixoRateado||0),0);
-      lucro = receita - custo - impostos - fretes - taxas - fixos;
-      margem = receita ? (lucro / receita) * 100 : 0;
-    } else {
-      lucro = faturamento;
-      margem = faturamento ? 100 : 0;
-    }
-
-    const elLucro=document.getElementById('dash-lucro-liquido');
-    const elMargem=document.getElementById('dash-margem-liquida');
-    const elStatus=document.getElementById('dash-margem-status');
-    if(elLucro) elLucro.textContent = R$(lucro);
-    if(elMargem) elMargem.textContent = Number(margem).toFixed(2).replace('.',',') + '%';
-    if(elStatus) elStatus.textContent = margem >= 20 ? 'Boa' : (margem >= 10 ? 'Atenção' : 'Baixa');
-  }catch(e){ console.error('Erro ao atualizar lucro/margem do Dashboard:',e); }
-}
-
 function renderDashboard() {
-  atualizarDashboardLucroMargem();
+  const ymAtualDash = new Date().toISOString().slice(0,7);
+  // Lucro/margem do Dashboard usam exatamente a mesma fórmula do Financeiro.
+  if (window.getCfoCurrentMetrics) {
+    const m = window.getCfoCurrentMetrics(ymAtualDash);
+    const le = document.getElementById('dash-lucro-liquido');
+    const me = document.getElementById('dash-margem-liquida');
+    const se = document.getElementById('dash-margem-status');
+    if (le) le.textContent = R$(m.lucro);
+    if (me) me.textContent = m.margem.toFixed(2).replace('.',',') + '%';
+    if (se) se.textContent = m.status;
+  }
+  const fat  = D.pedidos.filter(p => (p.status==='Entregue' || p.status==='Faturado') && (p.data||'').startsWith(ymAtualDash)).reduce((s,p)=>s+totPed(p),0);
+  const mesDash = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][new Date().getMonth()];
+  const ab   = D.pedidos.filter(p=>p.status!=='Entregue' && p.status!=='Faturado' && p.status!=='Orçamento').length;
+  const ag   = D.pedidos.filter(p=>p.status==='Separação').length;
+  const al   = D.produtos.filter(p=>elegivelAlertaEstoque(p) && sit(p.estoque,p.minimo)!=='OK');
+  const ativos = D.clientes.filter(c=>c.status==='Ativo').length;
+
+  document.getElementById('dash-kpis').innerHTML = `
+    <div class="kpi-card"><div class="kpi-label">Faturamento (${mesDash})</div><div class="kpi-value">${R$(fat)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Pedidos abertos</div><div class="kpi-value">${ab}</div><div class="kpi-delta">${ag} aguardam separação</div></div>
+    <div class="kpi-card"><div class="kpi-label">Clientes ativos</div><div class="kpi-value">${ativos}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Itens em alerta</div><div class="kpi-value">${al.length}</div><div class="kpi-delta">Estoque mínimo atingido</div></div>`;
+
+  const inativosDash = calcularClientesInativos(30);
+  document.getElementById('dash-inativos-count').textContent = inativosDash.length;
+  const dashPreview = document.getElementById('dash-inativos-preview');
+  dashPreview.innerHTML = inativosDash.length
+    ? inativosDash.slice(0,3).map(c => c.nome + ' <span style="color:#D85A30;">(' + (c.ultima ? c.dias + ' dias' : 'nunca comprou') + ')</span>').join(' &nbsp;•&nbsp; ') + (inativosDash.length > 3 ? ` &nbsp;e mais ${inativosDash.length - 3}...` : '')
+    : 'Nenhum cliente sem compra no período.';
+  // Este espaço é reservado exclusivamente para clientes sem compra.
+  // Nunca exibir aqui resumo de alertas postergados.
+  dashPreview.querySelectorAll('[data-postergados="true"], #dash-inativos-postergados, #dash-postergados, .dash-postergados').forEach(el => el.remove());
+  if (/alerta\(s\)?\s+postergado/i.test(dashPreview.textContent)) dashPreview.textContent = inativosDash.length ? inativosDash.slice(0,3).map(c => c.nome).join(' • ') : 'Nenhum cliente sem compra no período.';
 
 
 
@@ -5433,6 +5406,18 @@ function gerarAlertasInteligentes(){
 </script>
 <style>
 /* CFO — destaque visual */
+/* Dashboard — lucro líquido e margem: mesma fórmula do Financeiro, mês vigente */
+.dash-profit-box{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;background:linear-gradient(135deg,#071522 0%,#0b1d2d 52%,#102b3f 100%);border:1px solid #23465e;border-radius:18px;padding:30px 38px;margin:18px 0 22px;color:#eef7fb;box-shadow:0 14px 40px rgba(2,12,20,.18);box-sizing:border-box;}
+.dash-profit-item{min-width:0;padding:0 26px;}
+.dash-profit-item:first-child{padding-left:18px;}
+.dash-profit-item:last-child{padding-right:18px;border-left:1px solid #28536b;}
+.dash-profit-label{font-size:16px;letter-spacing:1.4px;text-transform:uppercase;color:#a9c3d2;font-weight:500;margin-bottom:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dash-profit-margin .dash-profit-label{text-transform:none;letter-spacing:0;color:#fff;font-size:18px;font-weight:700;}
+.dash-profit-value{font-size:42px;line-height:1.05;font-weight:700;color:#35d2ec;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dash-profit-status{font-size:18px;color:#9fb9c7;margin-top:16px;min-height:22px;}
+@media(max-width:700px){.dash-profit-box{grid-template-columns:minmax(0,1fr) minmax(0,1fr);padding:24px 12px;border-radius:14px;} .dash-profit-item{padding:0 12px;} .dash-profit-item:first-child{padding-left:8px;} .dash-profit-item:last-child{padding-right:8px;} .dash-profit-label{font-size:11px;letter-spacing:1px;margin-bottom:16px;} .dash-profit-margin .dash-profit-label{font-size:15px;} .dash-profit-value{font-size:30px;} .dash-profit-status{font-size:14px;margin-top:12px;}}
+@media(max-width:420px){.dash-profit-value{font-size:25px;}.dash-profit-box{padding-left:8px;padding-right:8px;}}
+
 #screen-cfo{background:linear-gradient(135deg,#071522 0%,#0b1d2d 52%,#102b3f 100%);border:1px solid #23465e;border-radius:18px;padding:22px;box-shadow:0 14px 40px rgba(2,12,20,.28);color:#eef7fb;}
 #screen-cfo .cfo-head{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:14px;}
 #screen-cfo .cfo-title{font-size:25px;font-weight:800;letter-spacing:-.3px;color:#fff;}
@@ -5513,6 +5498,24 @@ function gerarAlertasInteligentes(){
     if(el){el.innerHTML=arr.map(ym=>'<option value="'+ym+'">'+monthLabel(ym)+(ym===ymOf(now)?' • Atual':'')+'</option>').join('');el.value=arr.includes(selectedMonth)?selectedMonth:ymOf(now);}
     const lab=document.getElementById('cfo-period-label');if(lab)lab.textContent=monthLabel(selectedMonth);
   }
+  // Fonte única para o Dashboard: replica exatamente o cálculo do Financeiro.
+  window.getCfoCurrentMetrics=function(ym){
+    const D=window.D;if(!D)return {lucro:0,margem:0,status:'Margem baixa'};
+    const c=getCfg();
+    const month=ym||ymOf(new Date());
+    const ps=(D.pedidos||[]).filter(p=>(p.status==='Entregue'||p.status==='Faturado')&&(p.data||'').slice(0,7)===month);
+    const produtos=D.produtos||[];
+    const custo=i=>{const p=produtos.find(x=>x.nome===i.produto);return p?Number(p.custo)||0:0;};
+    const venda=p=>Math.max(0,(p.itens||[]).reduce((s,i)=>s+(Number(i.qty)||0)*(Number(i.preco)||0),0)-(Number(p.desconto)||0));
+    const cmv=p=>(p.itens||[]).reduce((s,i)=>s+(Number(i.qty)||0)*custo(i),0);
+    const fat=ps.reduce((s,p)=>s+venda(p),0),cv=ps.reduce((s,p)=>s+cmv(p),0),bruto=fat-cv;
+    const vari=fat*((c.com+c.frete+c.outros)/100),imp=fat*(c.tax/100);
+    const fix=(Number(fixed.aluguel)||0)+(Number(fixed.nfe)||0)+(Number(fixed.contador)||0)+(Number(fixed.combustivel)||0)+(Number(fixed.outros)||0);
+    const lucro=bruto-vari-imp-fix,margem=fat?lucro/fat*100:0;
+    const status=margem>=15?'Excelente':margem>=10?'Boa':margem>=5?'Atenção':margem>=0?'Margem baixa':'Prejuízo';
+    return {lucro,margem,status};
+  };
+
   window.cfoChangeMonth=function(v){selectedMonth=v||ymOf(new Date());render();};
   function getCfg(){try{return Object.assign({tax:0,com:0,frete:0,outros:0},JSON.parse(localStorage.getItem(cfgKey)||'{}'));}catch(e){return {tax:0,com:0,frete:0,outros:0};}}
   function setInputs(c){['tax','com','frete','outros'].forEach(k=>{const e=document.getElementById('cfo-'+k);if(e)e.value=c[k]||0;});}
