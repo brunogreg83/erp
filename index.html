@@ -49,6 +49,28 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 .btn-primary { background: #185FA5; color: #fff; border: none; border-radius: 8px; padding: 7px 16px; font-size: 13px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
 .btn-primary:hover { background: #0F4A7D; }
+.estoque-actions {
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-bottom:18px;
+}
+.estoque-action-buttons {
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.estoque-action-buttons .btn-primary,
+.estoque-action-buttons .btn-ghost {
+  min-height:38px;
+  white-space:nowrap;
+}
+.estoque-search {
+  width:100%;
+  max-width:300px;
+  height:38px;
+}
 .btn-ghost { background: none; border: 1px solid #ddd; border-radius: 8px; padding: 7px 12px; font-size: 13px; color: #555; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
 .btn-ghost:hover { background: #f5f5f3; }
 .btn-danger { background: none; border: 1px solid #f5c6c6; border-radius: 8px; padding: 4px 10px; font-size: 12px; color: #A32D2D; cursor: pointer; }
@@ -197,6 +219,17 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   /* Form inputs maiores no touch */
   .form-input { padding: 12px 14px; font-size: 16px; }
   .btn-primary, .btn-ghost { padding: 12px 18px; font-size: 14px; }
+  .estoque-action-buttons {
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+  .estoque-action-buttons .btn-primary,
+  .estoque-action-buttons .btn-ghost {
+    width:100%;
+    justify-content:center;
+  }
+  .estoque-search { max-width:none; }
   .pi-row { flex-wrap: wrap; gap: 6px; }
   .pi-row select { min-width: 100%; }
   .pi-row input  { flex: 1; min-width: 80px; }
@@ -422,8 +455,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <div class="screen" id="screen-vendas">
         <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center;">
           <button class="btn-primary" onclick="openModal('modal-pedido')"><i class="ti ti-plus"></i> Novo pedido</button>
-          <button class="btn-ghost" onclick="exportCSV()"><i class="ti ti-download"></i> Exportar CSV</button>
-          <select class="form-input" id="vendas-mes" style="max-width:180px;height:36px;" onchange="atualizarVendasMes()" aria-label="Filtrar vendas por mês"></select>
+          <select class="form-input" id="vendas-mes" style="max-width:180px;height:48px;line-height:1.2;padding:10px 14px;" onchange="atualizarVendasMes()" aria-label="Filtrar vendas por mês"></select>
           <input class="form-input" id="vendas-busca" placeholder="🔍 Buscar por cliente, status ou nº pedido..." style="max-width:300px;height:36px;margin-left:auto;" oninput="filtrarVendas(this.value)">
         </div>
         <div class="table-wrap">
@@ -446,11 +478,15 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 
       <!-- ESTOQUE -->
       <div class="screen" id="screen-estoque">
-        <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
-          <button class="btn-primary" onclick="openModal('modal-produto')"><i class="ti ti-plus"></i> Novo produto</button>
-          <button class="btn-ghost" onclick="openModal('modal-importar-nf')"><i class="ti ti-file-import"></i> Importar XML / NF-e</button>
-          <button class="btn-primary" id="btn-agrupar-forn" onclick="toggleAgruparPorFornecedor()"><i class="ti ti-building-store"></i> Agrupar por fornecedor</button>
-          <input class="form-input" placeholder="Buscar produto..." style="max-width:220px;height:36px;" oninput="filtrar('tabela-estoque',this.value)">
+        <div class="estoque-actions">
+          <div class="estoque-action-buttons">
+            <button class="btn-primary" onclick="openModal('modal-oc')"><i class="ti ti-plus"></i> Nova ordem de compra</button>
+            <button class="btn-ghost" onclick="openModal('modal-fornecedor')"><i class="ti ti-building-store"></i> Novo fornecedor</button>
+            <button class="btn-primary" onclick="openModal('modal-produto')"><i class="ti ti-plus"></i> Novo produto</button>
+            <button class="btn-ghost" onclick="openModal('modal-importar-nf')"><i class="ti ti-file-import"></i> Importar XML / NF-e</button>
+            <button class="btn-primary" id="btn-agrupar-forn" onclick="toggleAgruparPorFornecedor()"><i class="ti ti-building-store"></i> Agrupar por fornecedor</button>
+          </div>
+          <input class="form-input estoque-search" placeholder="Buscar produto..." oninput="filtrar('tabela-estoque',this.value)">
         </div>
         <div class="two-col">
           <div class="card"><div class="section-title">Resumo</div><div id="est-resumo"></div></div>
@@ -466,10 +502,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
             <div>
               <div class="section-title" style="margin-bottom:3px;">Compras e Fornecedores</div>
               <div style="font-size:12px;color:#888;">Ordens de compra e fornecedores integrados ao estoque.</div>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button class="btn-primary" onclick="openModal('modal-oc')"><i class="ti ti-plus"></i> Nova ordem de compra</button>
-              <button class="btn-ghost" onclick="openModal('modal-fornecedor')"><i class="ti ti-building-store"></i> Novo fornecedor</button>
             </div>
           </div>
           <div id="forn-duplicados-aviso"></div>
