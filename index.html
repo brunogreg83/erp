@@ -380,16 +380,20 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <!-- DASHBOARD -->
       <div class="screen active" id="screen-dashboard">
         <div class="dash-profit-box" id="dash-profit-box">
-          <div class="dash-profit-item dash-profit-revenue">
-            <div class="dash-profit-label">Faturamento do mês</div>
+          <div class="dash-profit-item dash-profit-receipts">
+            <div class="dash-profit-label">Recebimentos <span>(previstos)</span></div>
             <div class="dash-profit-value" id="dash-faturamento-mes">R$ 0,00</div>
           </div>
+          <div class="dash-profit-item dash-profit-payments">
+            <div class="dash-profit-label">Pagamentos <span>(previstos)</span></div>
+            <div class="dash-profit-value" id="dash-pagamentos-mes">R$ 0,00</div>
+          </div>
           <div class="dash-profit-item">
-            <div class="dash-profit-label">LUCRO LÍQUIDO ESTIMADO</div>
+            <div class="dash-profit-label">Lucro</div>
             <div class="dash-profit-value" id="dash-lucro-liquido">R$ 0,00</div>
           </div>
           <div class="dash-profit-item dash-profit-margin">
-            <div class="dash-profit-label">Margem líquida</div>
+            <div class="dash-profit-label">Margem</div>
             <div class="dash-profit-value" id="dash-margem-liquida">0,00%</div>
             <div class="dash-profit-status" id="dash-margem-status"></div>
           </div>
@@ -3479,18 +3483,25 @@ function desenharRxD(containerId, legendaId, badgeId, receitas, despesas, ym) {
 // ── Dashboard ──────────────────────────────────────────────────────────────
 function renderDashboard() {
   const ymAtualDash = new Date().toISOString().slice(0,7);
-  // Lucro/margem do Dashboard usam exatamente a mesma fórmula do Financeiro.
-  if (window.getCfoCurrentMetrics) {
-    const m = window.getCfoCurrentMetrics(ymAtualDash);
-    const fe = document.getElementById('dash-faturamento-mes');
-    const le = document.getElementById('dash-lucro-liquido');
-    const me = document.getElementById('dash-margem-liquida');
-    const se = document.getElementById('dash-margem-status');
-    if (fe) fe.textContent = R$(m.faturamento);
-    if (le) le.textContent = R$(m.lucro);
-    if (me) me.textContent = m.margem.toFixed(2).replace('.',',') + '%';
-    if (se) se.textContent = m.status;
-  }
+  // Dashboard: Recebimentos e Pagamentos são os valores PREVISTOS das contas do mês.
+  // Lucro = Recebimentos previstos - Pagamentos previstos.
+  // Margem = Lucro / Recebimentos previstos.
+  const recebimentosPrevistos = (D.receber || []).filter(r => r.vencimento && String(r.vencimento).slice(0,7) === ymAtualDash)
+    .reduce((s,r) => s + (parseFloat(r.valor) || 0), 0);
+  const pagamentosPrevistos = (D.pagar || []).filter(p => p.vencimento && String(p.vencimento).slice(0,7) === ymAtualDash)
+    .reduce((s,p) => s + (parseFloat(p.valor) || 0), 0);
+  const lucroPrevisto = recebimentosPrevistos - pagamentosPrevistos;
+  const margemPrevista = recebimentosPrevistos > 0 ? (lucroPrevisto / recebimentosPrevistos) * 100 : 0;
+  const fe = document.getElementById('dash-faturamento-mes');
+  const pe = document.getElementById('dash-pagamentos-mes');
+  const le = document.getElementById('dash-lucro-liquido');
+  const me = document.getElementById('dash-margem-liquida');
+  const se = document.getElementById('dash-margem-status');
+  if (fe) fe.textContent = R$(recebimentosPrevistos);
+  if (pe) pe.textContent = R$(pagamentosPrevistos);
+  if (le) le.textContent = R$(lucroPrevisto);
+  if (me) me.textContent = margemPrevista.toFixed(2).replace('.',',') + '%';
+  if (se) se.textContent = lucroPrevisto >= 0 ? 'Positivo' : 'Negativo';
   // ── Gráfico de faturamento — Canvas animado com comparativo ──────────────
   const porMes = {};
   D.pedidos.filter(p => p.status === 'Entregue' || p.status === 'Faturado').forEach(p => {
@@ -4915,16 +4926,18 @@ window._getSessao = () => { try { return JSON.parse(localStorage.getItem(SESSION
 /* Dashboard — lucro líquido e margem: mesma fórmula do Financeiro, mês vigente */
 .dash-profit-box{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto;gap:0;background:linear-gradient(135deg,#071522 0%,#0b1d2d 52%,#102b3f 100%);border:1px solid #23465e;border-radius:18px;padding:26px 38px 30px;margin:18px 0 22px;color:#eef7fb;box-shadow:0 14px 40px rgba(2,12,20,.18);box-sizing:border-box;}
 .dash-profit-item{min-width:0;padding:0 26px;}
-.dash-profit-revenue{grid-column:1 / -1;text-align:center;padding:0 18px 22px;border-bottom:1px solid #28536b;margin-bottom:22px;}
-.dash-profit-revenue .dash-profit-label{text-transform:none;letter-spacing:0;color:#fff;font-size:18px;font-weight:700;margin-bottom:10px;}
-.dash-profit-item:nth-child(2){padding-left:18px;}
-.dash-profit-item:last-child{padding-right:18px;border-left:1px solid #28536b;}
+.dash-profit-item:nth-child(odd){border-right:1px solid #28536b;}
+.dash-profit-item:nth-child(-n+2){padding-bottom:24px;border-bottom:1px solid #28536b;margin-bottom:22px;}
+.dash-profit-item:nth-child(even){padding-left:26px;}
+.dash-profit-item:nth-child(3){padding-top:0;}
+.dash-profit-item:nth-child(4){padding-top:0;}
 .dash-profit-label{font-size:16px;letter-spacing:1.4px;text-transform:uppercase;color:#a9c3d2;font-weight:500;margin-bottom:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.dash-profit-margin .dash-profit-label{text-transform:none;letter-spacing:0;color:#fff;font-size:18px;font-weight:700;}
+.dash-profit-label span{font-size:.78em;letter-spacing:.4px;text-transform:none;color:#9fb9c7;font-weight:500;}
+.dash-profit-receipts .dash-profit-label,.dash-profit-payments .dash-profit-label,.dash-profit-margin .dash-profit-label{ text-transform:none;letter-spacing:0;color:#fff;font-size:18px;font-weight:700;}
 .dash-profit-value{font-size:42px;line-height:1.05;font-weight:700;color:#35d2ec;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .dash-profit-status{font-size:18px;color:#9fb9c7;margin-top:16px;min-height:22px;}
-@media(max-width:700px){.dash-profit-box{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto;padding:22px 12px 24px;border-radius:14px;} .dash-profit-item{padding:0 12px;} .dash-profit-revenue{padding:0 8px 18px;margin-bottom:18px;} .dash-profit-revenue .dash-profit-label{font-size:15px;margin-bottom:8px;} .dash-profit-item:nth-child(2){padding-left:8px;} .dash-profit-item:last-child{padding-right:8px;} .dash-profit-label{font-size:11px;letter-spacing:1px;margin-bottom:16px;} .dash-profit-margin .dash-profit-label{font-size:15px;} .dash-profit-value{font-size:30px;} .dash-profit-status{font-size:14px;margin-top:12px;}}
-@media(max-width:420px){.dash-profit-value{font-size:25px;}.dash-profit-box{padding-left:8px;padding-right:8px;}.dash-profit-revenue .dash-profit-value{font-size:29px;}}
+@media(max-width:700px){.dash-profit-box{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto;padding:22px 12px 24px;border-radius:14px;} .dash-profit-item{padding:0 12px;} .dash-profit-item:nth-child(odd){border-right:1px solid #28536b;} .dash-profit-item:nth-child(-n+2){padding-bottom:18px;margin-bottom:18px;} .dash-profit-item:nth-child(even){padding-left:12px;} .dash-profit-label{font-size:11px;letter-spacing:1px;margin-bottom:16px;} .dash-profit-receipts .dash-profit-label,.dash-profit-payments .dash-profit-label,.dash-profit-margin .dash-profit-label{font-size:15px;} .dash-profit-value{font-size:30px;} .dash-profit-status{font-size:14px;margin-top:12px;}}
+@media(max-width:420px){.dash-profit-value{font-size:25px;}.dash-profit-box{padding-left:8px;padding-right:8px;}.dash-profit-receipts .dash-profit-value,.dash-profit-payments .dash-profit-value{font-size:24px;}}
 
 #screen-cfo{background:linear-gradient(135deg,#071522 0%,#0b1d2d 52%,#102b3f 100%);border:1px solid #23465e;border-radius:18px;padding:22px;box-shadow:0 14px 40px rgba(2,12,20,.28);color:#eef7fb;}
 #screen-cfo .cfo-head{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:14px;}
