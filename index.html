@@ -507,7 +507,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         <div class="two-col">
           <div class="report-card" onclick="relatorio('vendas')"><div class="rc-icon"><i class="ti ti-chart-bar"></i></div><div class="rc-title">Vendas por cliente</div><div class="rc-desc">Ranking, volume e ticket médio.</div><div class="rc-cta">Gerar →</div></div>
           <div class="report-card" onclick="relatorio('margem')"><div class="rc-icon"><i class="ti ti-percentage"></i></div><div class="rc-title">Margem por produto</div><div class="rc-desc">Custo, preço e margem bruta por SKU.</div><div class="rc-cta">Gerar →</div></div>
-          <div class="report-card" onclick="relatorio('margemReal')"><div class="rc-icon"><i class="ti ti-chart-donut"></i></div><div class="rc-title">Margem líquida real por pedido</div><div class="rc-desc">Cruza pedidos do ERP, custo médio, descontos e custos operacionais.</div><div class="rc-cta">Analisar →</div></div>
+
           <div class="report-card" onclick="relatorio('fluxo')"><div class="rc-icon"><i class="ti ti-cash"></i></div><div class="rc-title">Fluxo de caixa</div><div class="rc-desc">Entradas, saídas e saldo projetado.</div><div class="rc-cta">Gerar →</div></div>
           <div class="report-card" onclick="relatorio('giro')"><div class="rc-icon"><i class="ti ti-refresh"></i></div><div class="rc-title">Giro de estoque</div><div class="rc-desc">Produtos parados e curva ABC.</div><div class="rc-cta">Gerar →</div></div>
           <div class="report-card" onclick="relatorio('inadimplencia')"><div class="rc-icon"><i class="ti ti-alert-triangle" style="color:#EF9F27;"></i></div><div class="rc-title">Inadimplência</div><div class="rc-desc">Títulos em atraso e projeção.</div><div class="rc-cta">Gerar →</div></div>
@@ -527,20 +527,18 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
             <button class="cfo-refresh" onclick="renderCFO()"><i class="ti ti-refresh"></i> Atualizar</button>
           </div>
         </div>
-        <div class="cfo-period-banner"><i class="ti ti-calendar-stats"></i><span id="cfo-period-label">Mês atual</span><span class="cfo-period-dot">•</span><span>Pedidos faturados/entregues no período</span></div>
+        <div class="cfo-period-banner"><i class="ti ti-calendar-stats"></i><span id="cfo-period-label">Mês atual</span><span class="cfo-period-dot">•</span><span>Resultado financeiro do período</span></div>
+        <div class="section-title" style="margin:18px 0 10px;font-size:18px;">Resultado Operacional</div>
         <div class="kpi-grid">
-          <div class="kpi-card"><div class="kpi-label">Faturamento</div><div class="kpi-value" id="cfo-fat">R$ 0,00</div></div>
-          <div class="kpi-card"><div class="kpi-label">CMV</div><div class="kpi-value" id="cfo-cmv">R$ 0,00</div></div>
-          <div class="kpi-card"><div class="kpi-label">Lucro bruto</div><div class="kpi-value" id="cfo-bruto">R$ 0,00</div></div>
-          <div class="kpi-card"><div class="kpi-label">Margem bruta</div><div class="kpi-value" id="cfo-mb">0,00%</div></div>
+          <div class="kpi-card"><div class="kpi-label">Recebimentos previstos · Contas a receber mês</div><div class="kpi-value" id="cfo-rec-prev">R$ 0,00</div></div>
+          <div class="kpi-card"><div class="kpi-label">Recebimentos reais</div><div class="kpi-value" id="cfo-rec-real">R$ 0,00</div></div>
+          <div class="kpi-card"><div class="kpi-label">Pagamentos previstos · Contas a pagar mês</div><div class="kpi-value" id="cfo-pag-prev">R$ 0,00</div></div>
+          <div class="kpi-card"><div class="kpi-label">Pagamentos reais</div><div class="kpi-value" id="cfo-pag-real">R$ 0,00</div></div>
         </div>
         <div class="kpi-grid">
-          <div class="kpi-card"><div class="kpi-label">Impostos</div><div class="kpi-value" id="cfo-imp">R$ 0,00</div></div>
-          <div class="kpi-card"><div class="kpi-label">Custos variáveis</div><div class="kpi-value" id="cfo-var">R$ 0,00</div></div>
-          <div class="kpi-card"><div class="kpi-label">Lucro líquido estimado</div><div class="kpi-value" id="cfo-liq">R$ 0,00</div></div>
+          <div class="kpi-card"><div class="kpi-label">Resultado líquido</div><div class="kpi-value" id="cfo-liq">R$ 0,00</div></div>
+          <div class="kpi-card"><div class="kpi-label">Margem líquida</div><div class="kpi-value" id="cfo-ml">0,00%</div></div>
         </div>
-        <div class="card cfo-margin-card"><div class="section-title">Margem líquida</div><div id="cfo-ml" style="font-size:30px;font-weight:700;">0,00%</div><div id="cfo-status" style="margin-top:8px;color:#888;font-size:13px;"></div></div>
-        <div class="card"><div class="section-title">Margem por pedido</div><div class="table-wrap" style="margin:0;"><table><thead><tr><th>Pedido</th><th>Cliente</th><th>Venda</th><th>CMV</th><th>Lucro bruto</th><th>Margem</th><th>Líquido est.</th><th>Margem líquida</th></tr></thead><tbody id="cfo-pedidos"></tbody></table></div></div>
 
         <div class="cfo-finance-block">
           <div class="cfo-finance-title"><span>Financeiro integrado</span><small>Os lançamentos do ERP aparecem diretamente no CFO.</small></div>
@@ -3641,113 +3639,6 @@ function showRel(titulo, html) {
   openModal('modal-rel');
 }
 
-// ── Margem líquida real por pedido ─────────────────────────────────────────
-const MARGEM_CFG_KEY = 'abc_margem_real_cfg_v1';
-function margemCfg(){
-  try {
-    const saved = JSON.parse(localStorage.getItem(MARGEM_CFG_KEY)||'null');
-    return Object.assign({aluguel:470,nfe:49.90,contador:270,combustivel:0,funcionarios:0,outrosFixos:0,imposto:0,frete:0,taxaFinanceira:0}, saved||{});
-  } catch(e){ return {aluguel:470,nfe:49.90,contador:270,combustivel:0,funcionarios:0,outrosFixos:0,imposto:0,frete:0,taxaFinanceira:0}; }
-}
-function salvarMargemCfg(){
-  const ids=['aluguel','nfe','contador','combustivel','funcionarios','outrosFixos','imposto','frete','taxaFinanceira'];
-  const cfg={}; ids.forEach(id=>cfg[id]=parseBR(document.getElementById('mr-'+id)?.value||'0'));
-  localStorage.setItem(MARGEM_CFG_KEY,JSON.stringify(cfg));
-  toast('✓ Custos da margem real salvos.');
-  renderMargemReal();
-}
-function custoFixoMensalReal(c){ return ['aluguel','nfe','contador','combustivel','funcionarios','outrosFixos'].reduce((s,k)=>s+(Number(c[k])||0),0); }
-function statusMargemReal(m){
-  if(m<0) return ['Prejuízo','badge-red'];
-  if(m<10) return ['Crítica','badge-red'];
-  if(m<20) return ['Baixa','badge-amber'];
-  if(m<30) return ['Aceitável','badge-blue'];
-  return ['Boa','badge-green'];
-}
-function calcMargemPedidoReal(p,c,ctx){
-  const itens=p.itens||[];
-  const bruto=itens.reduce((s,i)=>s+(parseFloat(i.qty)||0)*(parseFloat(i.preco)||0),0);
-  const desconto=Math.max(0,parseFloat(p.desconto)||0);
-  const receita=Math.max(0,bruto-desconto);
-  const custoMerc=itens.reduce((s,i)=>{
-    const prod=D.produtos.find(x=>x.nome===i.produto);
-    return s+(parseFloat(i.qty)||0)*(parseFloat(prod?.custo)||0);
-  },0);
-  const imposto=receita*(Number(c.imposto)||0)/100;
-  const frete=Number(c.frete)||0;
-  const taxaFin=receita*(Number(c.taxaFinanceira)||0)/100;
-  const fixoRateado=ctx.faturamento>0 ? (Number(c.fixoMensal)||0)*(receita/ctx.faturamento) : 0;
-  const lucro=receita-custoMerc-imposto-frete-taxaFin-fixoRateado;
-  const margem=receita>0?lucro/receita*100:0;
-  return {bruto,desconto,receita,custoMerc,imposto,frete,taxaFin,fixoRateado,lucro,margem};
-}
-function renderMargemReal(){
-  const box=document.getElementById('rel-corpo'); if(!box) return;
-  const c=margemCfg();
-  const pedidos=D.pedidos.filter(p=>p.status==='Entregue'||p.status==='Faturado');
-  const faturamento=pedidos.reduce((s,p)=>s+totPed(p),0);
-  const ctx={faturamento,fixoMensal:custoFixoMensalReal(c)};
-  const resultados=pedidos.map(p=>({p,r:calcMargemPedidoReal(p,c,ctx)})).sort((a,b)=>a.r.margem-b.r.margem);
-  const receita=resultados.reduce((s,x)=>s+x.r.receita,0), custo=resultados.reduce((s,x)=>s+x.r.custoMerc,0), descontos=resultados.reduce((s,x)=>s+x.r.desconto,0);
-  const impostos=resultados.reduce((s,x)=>s+x.r.imposto,0), fretes=resultados.reduce((s,x)=>s+x.r.frete,0), taxas=resultados.reduce((s,x)=>s+x.r.taxaFin,0), fixos=resultados.reduce((s,x)=>s+x.r.fixoRateado,0);
-  const lucro=receita-custo-impostos-fretes-taxas-fixos, margem=receita?lucro/receita*100:0;
-  const cfgHtml=`<div class="card" style="padding:14px;margin-bottom:16px;background:#f9f9f7;">
-    <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Custos usados no cálculo da margem real</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
-      ${[['aluguel','Aluguel'],['nfe','NFe'],['contador','Contador'],['combustivel','Combustível'],['funcionarios','Funcionários'],['outrosFixos','Outros fixos']].map(([id,l])=>`<div><label class="form-label">${l}/mês</label><input class="form-input" id="mr-${id}" value="${Number(c[id]||0).toFixed(2)}" oninput="this.value=this.value.replace(/[^0-9,.-]/g,'')"></div>`).join('')}
-      <div><label class="form-label">Impostos (%)</label><input class="form-input" id="mr-imposto" value="${Number(c.imposto||0).toFixed(2)}"></div>
-      <div><label class="form-label">Frete por pedido (R$)</label><input class="form-input" id="mr-frete" value="${Number(c.frete||0).toFixed(2)}"></div>
-      <div><label class="form-label">Taxa financeira (%)</label><input class="form-input" id="mr-taxaFinanceira" value="${Number(c.taxaFinanceira||0).toFixed(2)}"></div>
-    </div>
-    <div class="actions" style="margin-top:10px;"><button class="btn-primary" onclick="salvarMargemCfg()"><i class="ti ti-check"></i> Salvar parâmetros</button></div>
-    <div style="font-size:11px;color:#888;margin-top:8px;">Os valores regionais/operacionais são parâmetros editáveis. O ERP fornece os pedidos e os custos cadastrados dos produtos; não são inventados custos ausentes.</div>
-  </div>`;
-  const kpis=`<div class="kpi-grid" style="margin-bottom:16px;">
-    <div class="kpi-card"><div class="kpi-label">Receita líquida dos pedidos</div><div class="kpi-value">${R$(receita)}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Custo das mercadorias</div><div class="kpi-value">${R$(custo)}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Lucro líquido estimado</div><div class="kpi-value" style="color:${lucro>=0?'#185FA5':'#D85A30'}">${R$(lucro)}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Margem líquida real</div><div class="kpi-value" style="color:${margem>=0?'#185FA5':'#D85A30'}">${margem.toFixed(2)}%</div></div>
-  </div>`;
-  const table=resultados.map(x=>{const p=x.p,r=x.r,[st,cl]=statusMargemReal(r.margem);return `<tr><td>#${String(p.id).slice(-6).toUpperCase()}</td><td>${fmtDt(p.data)}</td><td>${p.cliente||'—'}</td><td>${R$(r.receita)}</td><td>${R$(r.custoMerc)}</td><td>${R$(r.desconto)}</td><td><b style="color:${r.lucro>=0?'#185FA5':'#D85A30'}">${R$(r.lucro)}</b></td><td><b>${r.margem.toFixed(2)}%</b></td><td><span class="badge ${cl}">${st}</span></td></tr>`}).join('');
-  box.innerHTML=cfgHtml+kpis+`<div class="card" style="padding:14px;margin-bottom:14px;"><div class="stat-row"><span class="stat-key">Descontos concedidos</span><span class="stat-val">${R$(descontos)}</span></div><div class="stat-row"><span class="stat-key">Impostos considerados</span><span class="stat-val">${R$(impostos)}</span></div><div class="stat-row"><span class="stat-key">Fretes considerados</span><span class="stat-val">${R$(fretes)}</span></div><div class="stat-row"><span class="stat-key">Taxas financeiras</span><span class="stat-val">${R$(taxas)}</span></div><div class="stat-row"><span class="stat-key">Custos fixos rateados</span><span class="stat-val">${R$(fixos)}</span></div></div><div class="table-wrap"><table><thead><tr><th>Pedido</th><th>Data</th><th>Cliente</th><th>Receita</th><th>Custo merc.</th><th>Desconto</th><th>Lucro líquido</th><th>Margem líquida</th><th>Situação</th></tr></thead><tbody>${table||'<tr><td colspan="9"><div class="empty-state">Nenhum pedido faturado/entregue para analisar.</div></td></tr>'}</tbody></table></div>`;
-}
-window.renderMargemReal=renderMargemReal;
-window.relatorio = tipo => {
-  if (tipo==='vendas') {
-    const m={};
-    D.pedidos.forEach(p=>{ if(!m[p.cliente])m[p.cliente]={t:0,n:0}; m[p.cliente].t+=totPed(p); m[p.cliente].n++; });
-    const l=Object.entries(m).sort((a,b)=>b[1].t-a[1].t).map(([n,d],i)=>
-      `<tr><td>${i+1}º</td><td>${n}</td><td>${d.n}</td><td>${R$(d.t)}</td><td>${d.n?R$(d.t/d.n):'—'}</td></tr>`).join('');
-    showRel('Vendas por cliente',`<div class="table-wrap"><table><thead><tr><th>#</th><th>Cliente</th><th>Pedidos</th><th>Total</th><th>Ticket médio</th></tr></thead><tbody>${l||'<tr><td colspan="5"><div class="empty-state">Sem dados.</div></td></tr>'}</tbody></table></div>`);
-  }
-  if (tipo==='margem') {
-    const l=D.produtos.map(p=>{const mg=p.preco>0?Math.round((p.preco-p.custo)/p.preco*100):0;return `<tr><td>${p.nome}</td><td>${R$(p.custo)}</td><td>${R$(p.preco)}</td><td>${mg}%</td></tr>`;}).join('');
-    showRel('Margem por produto',`<div class="table-wrap"><table><thead><tr><th>Produto</th><th>Custo</th><th>Preço</th><th>Margem</th></tr></thead><tbody>${l||'<tr><td colspan="4"><div class="empty-state">Sem produtos.</div></td></tr>'}</tbody></table></div>`);
-  }
-  if (tipo==='margemReal') {
-    showRel('Margem líquida real por pedido', '');
-    renderMargemReal();
-  }
-  if (tipo==='fluxo') {
-    const tR=D.receber.reduce((s,r)=>s+(parseFloat(r.valor)||0),0), tP=D.pagar.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
-    showRel('Fluxo de caixa',`<div class="stat-row"><span class="stat-key">Total a receber</span><span class="stat-val" style="color:#185FA5">${R$(tR)}</span></div><div class="stat-row"><span class="stat-key">Total a pagar</span><span class="stat-val" style="color:#D85A30">${R$(tP)}</span></div><div class="stat-row"><span class="stat-key">Saldo projetado</span><span class="stat-val" style="font-size:16px;color:${tR-tP>=0?'#185FA5':'#D85A30'}">${R$(tR-tP)}</span></div>`);
-  }
-  if (tipo==='giro') {
-    const l=D.produtos.map(p=>{const v=D.pedidos.flatMap(pe=>pe.itens||[]).filter(i=>i.produto===p.nome).reduce((s,i)=>s+(parseFloat(i.qty)||0),0);return `<tr><td>${p.nome}</td><td>${p.estoque}</td><td>${v}</td><td>${p.estoque>0?(v/p.estoque).toFixed(1):'—'}</td></tr>`;}).join('');
-    showRel('Giro de estoque',`<div class="table-wrap"><table><thead><tr><th>Produto</th><th>Estoque</th><th>Vendido</th><th>Giro</th></tr></thead><tbody>${l}</tbody></table></div>`);
-  }
-  if (tipo==='inadimplencia') {
-    const v=D.receber.filter(r=>daysTo(r.vencimento)<0);
-    const tot=v.reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
-    const l=v.map(r=>`<tr><td>${r.cliente}</td><td>${fmtDt(r.vencimento)}</td><td>${R$(r.valor)}</td><td>${Math.abs(daysTo(r.vencimento))} dias</td></tr>`).join('');
-    showRel('Inadimplência', v.length
-      ? `<div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Vencimento</th><th>Valor</th><th>Atraso</th></tr></thead><tbody>${l}</tbody></table></div><div class="stat-row"><span class="stat-key">Total em atraso</span><span class="stat-val" style="color:#D85A30">${R$(tot)}</span></div>`
-      : '<div class="empty-state" style="padding:24px;">Nenhum título em atraso!</div>');
-  }
-};
-
-
-
 // ── Template de Pedido ────────────────────────────────────────────────────
 function buildPedidoHtml(p, cli, cod, tot, itensRows) {
   return '<!DOCTYPE html>\n' +
@@ -5146,41 +5037,27 @@ window._getSessao = () => { try { return JSON.parse(localStorage.getItem(SESSION
     if(lab)lab.textContent=monthLabel(selectedMonth);
   }
 
-  // Fonte única do cálculo de rentabilidade do CFO e do Dashboard.
-  // Custos fixos foram removidos do sistema; impostos e demais custos
-  // variáveis só entram quando houver uma fonte ativa para eles.
+  // Resultado Operacional: considera os recebimentos e pagamentos do mês selecionado.
+  // Previsto = todos os títulos com vencimento no mês.
+  // Real = somente títulos marcados como Recebido/Pago.
   function calcCfoMetrics(ym){
     const D=window.D||{};
     const month=ym||ymOf(new Date());
-    const ps=(D.pedidos||[]).filter(p=>
-      (p.status==='Entregue'||p.status==='Faturado') &&
-      (p.data||'').slice(0,7)===month
-    );
-    const produtos=D.produtos||[];
-    const custo=i=>{
-      const p=produtos.find(x=>x.nome===i.produto);
-      return p?Number(p.custo)||0:0;
-    };
-    const venda=p=>Math.max(0,
-      (p.itens||[]).reduce((s,i)=>s+(Number(i.qty)||0)*(Number(i.preco)||0),0)
-      -(Number(p.desconto)||0)
-    );
-    const cmv=p=>(p.itens||[]).reduce((s,i)=>s+(Number(i.qty)||0)*custo(i),0);
-    const fat=ps.reduce((s,p)=>s+venda(p),0);
-    const cv=ps.reduce((s,p)=>s+cmv(p),0);
-    const bruto=fat-cv;
-    const imp=0;
-    const vari=0;
-    const liq=bruto-vari-imp;
-    const mb=fat?bruto/fat*100:0;
-    const ml=fat?liq/fat*100:0;
-    const status=ml>=15?'Excelente':ml>=10?'Boa':ml>=5?'Atenção':ml>=0?'Margem baixa':'Prejuízo';
-    return {ps,venda,cmv,fat,cv,bruto,imp,vari,liq,mb,ml,status};
+    const rec=(D.receber||[]).filter(r=>r.vencimento&&r.vencimento.slice(0,7)===month);
+    const pag=(D.pagar||[]).filter(r=>r.vencimento&&r.vencimento.slice(0,7)===month);
+    const recPrev=rec.reduce((s,r)=>s+(Number(r.valor)||0),0);
+    const recReal=rec.filter(r=>r.recebido===true).reduce((s,r)=>s+(Number(r.valor)||0),0);
+    const pagPrev=pag.reduce((s,r)=>s+(Number(r.valor)||0),0);
+    const pagReal=pag.filter(r=>r.pago===true).reduce((s,r)=>s+(Number(r.valor)||0),0);
+    const liq=recReal-pagReal;
+    const ml=recReal?liq/recReal*100:0;
+    const status=liq>0?'Positivo':liq<0?'Negativo':'Equilibrado';
+    return {rec,pag,recPrev,recReal,pagPrev,pagReal,liq,ml,status};
   }
 
   window.getCfoCurrentMetrics=function(ym){
     const m=calcCfoMetrics(ym);
-    return {lucro:m.liq,margem:m.ml,status:m.status,faturamento:m.fat};
+    return {lucro:m.liq,margem:m.ml,status:m.status,faturamento:m.recReal};
   };
 
   window.cfoChangeMonth=function(v){
@@ -5193,32 +5070,17 @@ window._getSessao = () => { try { return JSON.parse(localStorage.getItem(SESSION
     monthOptions();
     const m=calcCfoMetrics(selectedMonth);
     const values=[
-      ['cfo-fat',m.fat],['cfo-cmv',m.cv],['cfo-bruto',m.bruto],
-      ['cfo-imp',m.imp],['cfo-var',m.vari],['cfo-liq',m.liq]
+      ['cfo-rec-prev',m.recPrev],['cfo-rec-real',m.recReal],
+      ['cfo-pag-prev',m.pagPrev],['cfo-pag-real',m.pagReal],
+      ['cfo-liq',m.liq]
     ];
     values.forEach(([id,v])=>{
       const e=document.getElementById(id);
       if(e)e.textContent=money(v);
     });
-    const mbe=document.getElementById('cfo-mb');
-    if(mbe)mbe.textContent=pct(m.mb);
     const mle=document.getElementById('cfo-ml');
     if(mle)mle.textContent=pct(m.ml);
-    const st=document.getElementById('cfo-status');
-    if(st)st.textContent=m.status;
 
-    const tb=document.getElementById('cfo-pedidos');
-    if(tb){
-      tb.innerHTML=m.ps.length
-        ? m.ps.map((p,i)=>{
-            const v=m.venda(p),cc=m.cmv(p),b=v-cc,l=b;
-            return '<tr><td>'+((p.numero||p.id||('Pedido '+(i+1))))+'</td><td>'+
-              (p.cliente||'—')+'</td><td>'+money(v)+'</td><td>'+money(cc)+
-              '</td><td>'+money(b)+'</td><td>'+pct(v?b/v*100:0)+'</td><td>'+
-              money(l)+'</td><td>'+pct(v?l/v*100:0)+'</td></tr>';
-          }).join('')
-        : '<tr><td colspan="8" style="text-align:center;color:#9fb7c4;padding:24px;">Nenhum pedido faturado ou entregue neste mês.</td></tr>';
-    }
     renderCfoFinance();
   }
 
@@ -5231,37 +5093,19 @@ window._getSessao = () => { try { return JSON.parse(localStorage.getItem(SESSION
     const tbP=document.getElementById('cfo-tabela-pagar');
 
     if(tbR) tbR.innerHTML=rec.length
-      ? rec.map(r=>'<tr><td>'+((r.cliente||'—'))+'</td><td>'+
-          ((window.fmtDt?window.fmtDt(r.vencimento):r.vencimento))+'</td><td>'+money(r.valor)+
-          '</td><td>'+(r.recebido===true?'Recebido':(window.stFin?window.stFin(r.vencimento):'Pendente'))+
-          '</td><td><div class="td-actions">'+
-          (r.recebido!==true
-            ? '<button class="btn-edit" style="background:#185FA5;color:#fff;border-color:#185FA5;" onclick="marcarRecebido(\''+r.id+'\')">✓ Recebido</button>'
-            : '<button class="btn-edit" onclick="marcarRecebido(\''+r.id+'\')">Desfazer</button>')+
-          '<button class="btn-edit" onclick="editReceber(\''+r.id+'\')">Editar</button>'+
-          '<button class="btn-danger" onclick="delReceber(\''+r.id+'\')">✕</button></div></td></tr>'
-        ).join('')
-      : '<tr><td colspan="5" style="text-align:center;color:#89a8b7;padding:20px;">Nenhum título neste mês.</td></tr>';
+      ? rec.map(r=>'<tr><td>'+((r.cliente||'—'))+'</td><td>'+          ((window.fmtDt?window.fmtDt(r.vencimento):r.vencimento))+'</td><td>'+money(r.valor)+          '</td><td>'+(r.recebido===true?'Recebido':(window.stFin?window.stFin(r.vencimento):'Pendente'))+          '</td><td><div class="td-actions">'+          (r.recebido!==true            ? '<button class="btn-edit" style="background:#185FA5;color:#fff;border-color:#185FA5;" onclick="marcarRecebido(\''+r.id+'\')">✓ Recebido</button>'            : '<button class="btn-edit" onclick="marcarRecebido(\''+r.id+'\')">Desfazer</button>')+          '<button class="btn-edit" onclick="editReceber(\''+r.id+'\')">Editar</button>'+          '<button class="btn-danger" onclick="delReceber(\''+r.id+'\')">✕</button></div></td></tr>'        ).join('')      : '<tr><td colspan="5" style="text-align:center;color:#89a8b7;padding:20px;">Nenhum título neste mês.</td></tr>';
 
     if(tbP) tbP.innerHTML=pag.length
-      ? pag.map(r=>'<tr><td>'+((r.fornecedor||'—'))+'</td><td>'+
-          ((window.fmtDt?window.fmtDt(r.vencimento):r.vencimento))+'</td><td>'+money(r.valor)+
-          '</td><td>'+(r.pago===true?'Pago':(window.stFin?window.stFin(r.vencimento):'Pendente'))+
-          '</td><td><div class="td-actions">'+
-          (r.pago!==true
-            ? '<button class="btn-edit" style="background:#185FA5;color:#fff;border-color:#185FA5;" onclick="marcarPago(\''+r.id+'\')">✓ Pago</button>'
-            : '<button class="btn-edit" onclick="marcarPago(\''+r.id+'\')">Desfazer</button>')+
-          '<button class="btn-edit" onclick="editPagar(\''+r.id+'\')">Editar</button>'+
-          '<button class="btn-danger" onclick="delPagar(\''+r.id+'\')">✕</button></div></td></tr>'
-        ).join('')
-      : '<tr><td colspan="5" style="text-align:center;color:#89a8b7;padding:20px;">Nenhuma conta neste mês.</td></tr>';
+      ? pag.map(r=>'<tr><td>'+((r.fornecedor||'—'))+'</td><td>'+          ((window.fmtDt?window.fmtDt(r.vencimento):r.vencimento))+'</td><td>'+money(r.valor)+          '</td><td>'+(r.pago===true?'Pago':(window.stFin?window.stFin(r.vencimento):'Pendente'))+          '</td><td><div class="td-actions">'+          (r.pago!==true            ? '<button class="btn-edit" style="background:#185FA5;color:#fff;border-color:#185FA5;" onclick="marcarPago(\''+r.id+'\')">✓ Pago</button>'            : '<button class="btn-edit" onclick="marcarPago(\''+r.id+'\')">Desfazer</button>')+          '<button class="btn-edit" onclick="editPagar(\''+r.id+'\')">Editar</button>'+          '<button class="btn-danger" onclick="delPagar(\''+r.id+'\')">✕</button></div></td></tr>'        ).join('')      : '<tr><td colspan="5" style="text-align:center;color:#89a8b7;padding:20px;">Nenhuma conta neste mês.</td></tr>';
 
     const tr=rec.reduce((a,r)=>a+(Number(r.valor)||0),0);
     const tp=pag.reduce((a,r)=>a+(Number(r.valor)||0),0);
+    const rr=rec.filter(r=>r.recebido===true).reduce((a,r)=>a+(Number(r.valor)||0),0);
+    const pp=pag.filter(r=>r.pago===true).reduce((a,r)=>a+(Number(r.valor)||0),0);
     const er=document.getElementById('cfo-receber-total');
     const ep=document.getElementById('cfo-pagar-total');
-    if(er)er.innerHTML='Total a receber: <b>'+money(tr)+'</b>';
-    if(ep)ep.innerHTML='Total a pagar: <b>'+money(tp)+'</b>';
+    if(er)er.innerHTML='Total a receber: <b>'+money(tr)+'</b> · Recebido: <b>'+money(rr)+'</b>';
+    if(ep)ep.innerHTML='Total a pagar: <b>'+money(tp)+'</b> · Pago: <b>'+money(pp)+'</b>';
 
     const c=document.getElementById('cfo-rxd-chart');
     if(!c)return;
@@ -5269,16 +5113,9 @@ window._getSessao = () => { try { return JSON.parse(localStorage.getItem(SESSION
     const x1=(W-(bar*2+gap))/2,x2=x1+bar+gap;
     const h1=Math.max(4,tr/mx*115),h2=Math.max(4,tp/mx*115);
     const fmt=v=>v>=1000?'R$ '+(v/1000).toFixed(1)+'k':money(v);
-    c.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:210px;display:block;max-width:760px;margin:auto" xmlns="http://www.w3.org/2000/svg">'+
-      '<line x1="30" y1="'+base+'" x2="590" y2="'+base+'" stroke="#315c73"/>'+
-      '<rect x="'+x1+'" y="'+(base-h1)+'" width="'+bar+'" height="'+h1+'" rx="10" fill="#19b7d9"/>'+
-      '<rect x="'+x2+'" y="'+(base-h2)+'" width="'+bar+'" height="'+h2+'" rx="10" fill="#d85a30"/>'+
-      '<text x="'+(x1+bar/2)+'" y="'+(base-h1-10)+'" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">'+fmt(tr)+'</text>'+
-      '<text x="'+(x2+bar/2)+'" y="'+(base-h2-10)+'" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">'+fmt(tp)+'</text>'+
-      '<text x="'+(x1+bar/2)+'" y="190" text-anchor="middle" fill="#9fb8c5" font-size="12">Receitas</text>'+
-      '<text x="'+(x2+bar/2)+'" y="190" text-anchor="middle" fill="#9fb8c5" font-size="12">Despesas</text></svg>';
+    c.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:210px;display:block;max-width:760px;margin:auto" xmlns="http://www.w3.org/2000/svg">'+      '<line x1="30" y1="'+base+'" x2="590" y2="'+base+'" stroke="#315c73"/>'+      '<rect x="'+x1+'" y="'+(base-h1)+'" width="'+bar+'" height="'+h1+'" rx="10" fill="#19b7d9"/>'+      '<rect x="'+x2+'" y="'+(base-h2)+'" width="'+bar+'" height="'+h2+'" rx="10" fill="#d85a30"/>'+      '<text x="'+(x1+bar/2)+'" y="'+(base-h1-10)+'" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">'+fmt(tr)+'</text>'+      '<text x="'+(x2+bar/2)+'" y="'+(base-h2-10)+'" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">'+fmt(tp)+'</text>'+      '<text x="'+(x1+bar/2)+'" y="190" text-anchor="middle" fill="#9fb8c5" font-size="12">Receitas</text>'+      '<text x="'+(x2+bar/2)+'" y="190" text-anchor="middle" fill="#9fb8c5" font-size="12">Despesas</text></svg>';
     const lg=document.getElementById('cfo-rxd-legenda');
-    if(lg)lg.innerHTML='<span>🔵 Receitas · '+money(tr)+'</span><span>🟠 Despesas · '+money(tp)+'</span><span style="font-weight:800;color:'+(tr>=tp?'#35d2ec':'#ff8f70')+'">Saldo · '+money(tr-tp)+'</span>';
+    if(lg)lg.innerHTML='<span>🔵 Receitas · '+money(tr)+'</span><span>🟠 Despesas · '+money(tp)+'</span><span style="font-weight:800;color:'+(tr>=tp?'#35d2ec':'#ff8f70')+'">Saldo · '+money(rr-pp)+'</span>';
   }
 
   window.renderCFO=render;
