@@ -70,12 +70,14 @@
     min-height:80px;
     justify-content:flex-start;
   }
-  .card-header .icon{
-    flex-shrink:0;width:auto;height:auto;
-    background:transparent;
-    display:flex;align-items:center;justify-content:center;
+  .card-header .brand{
+    flex-shrink:0;
+    font-family:'Montserrat',sans-serif;
+    font-size:.9rem;
+    font-weight:800;
+    letter-spacing:.02em;
+    white-space:nowrap;
   }
-  .card-header .icon img{ height: 60px; width: auto; }
   .card-header .title{ font-family:'Montserrat',sans-serif;font-weight:800;font-size:1rem;line-height:1.15;margin:0;text-align:center; }
   .card-header .subtitle{ font-size:.7rem;color:rgba(255,255,255,.85);margin-top:1px;margin-bottom:0;text-align:center; }
 
@@ -161,9 +163,7 @@
 
   <div class="card">
     <div class="card-header">
-      <div class="icon">
-        <img src="images/logo-emblema.png" alt="AB Chemicals">
-      </div>
+      <div class="brand">AB Chemicals</div>
       <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;flex:1;text-align:center;">
         <div class="title">Calculadora de Diluição</div>
         <div class="subtitle">Proporção correta para seus produtos</div>
