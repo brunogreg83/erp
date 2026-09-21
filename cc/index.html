@@ -1,1 +1,714 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conta Corrente | AB Chemicals × Dr. Portugal</title>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--ink:#142235;--muted:#667085;--line:#e5eaf1;--primary:#123c5a;--green:#15803d;--red:#b42318}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:linear-gradient(135deg,#0b1d2d,#155274);color:#fff;padding:24px 18px}
+header h1{margin:0 0 6px;font-size:24px}header p{margin:0;opacity:.85}
+main{width:min(100%,1100px);margin:auto;padding:clamp(10px,2.5vw,24px)}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(8px,1.5vw,16px);margin-bottom:clamp(10px,2vw,20px)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:clamp(10px,1.5vw,14px);padding:clamp(12px,2vw,20px);box-shadow:0 4px 14px #1020300b;min-width:0}
+.label{font-size:13px;color:var(--muted);margin-bottom:8px}.value{font-size:clamp(20px,3vw,28px);font-weight:700;overflow-wrap:anywhere}
+.green{color:var(--green)}.red{color:var(--red)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:clamp(10px,2vw,20px)}.grid>*{min-width:0}
+.panel + .panel{margin-top:clamp(10px,2vw,18px)}
+.panel{background:#fff;border:1px solid var(--line);border-radius:clamp(10px,1.5vw,14px);padding:clamp(12px,2vw,20px);min-width:0;width:100%}
+h2{font-size:18px;margin:0 0 16px}label{display:block;font-size:13px;font-weight:700;margin:12px 0 6px}
+input,select,textarea,button{width:100%;padding:11px;border:1px solid #d5dce5;border-radius:9px;font:inherit}
+textarea{min-height:75px;resize:vertical}button{border:0;background:var(--primary);color:#fff;font-weight:700;cursor:pointer;margin-top:15px}
+button.secondary{background:#eef3f7;color:var(--ink)}button.danger{background:#fff0ee;color:var(--red)}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:11px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}th{font-size:12px;color:var(--muted)}.actions{white-space:nowrap}.action-btn{width:auto!important;margin:0 4px 0 0!important;padding:7px 9px!important;min-height:auto!important;font-size:12px;border-radius:8px}.action-edit{background:#eef3f7!important;color:var(--ink)!important}.action-delete{background:#fff0ee!important;color:var(--red)!important}
+.status{display:inline-block;padding:4px 8px;border-radius:20px;background:#edf7ef;color:var(--green);font-size:11px}
+.empty{text-align:center;color:var(--muted);padding:30px}
+.notice{background:#f8fafc;border:1px solid var(--line);padding:12px;border-radius:9px;font-size:12px;color:var(--muted);margin-top:12px}
+ .final-status{width:100%;margin:clamp(10px,2vw,18px) 0 0}.final-status 
+.final-payment{width:100%;margin:clamp(10px,2vw,18px) 0 0}.final-payment button{width:100%;margin-top:0}
+.bottom-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(8px,1.5vw,14px);margin-top:clamp(10px,2vw,18px)}
+.bottom-controls .card{width:100%;min-width:0}
+.bottom-controls label{margin-top:0}
+.balance-card{width:100%;min-width:0;padding:clamp(12px,2vw,20px);margin-bottom:clamp(12px,1.5vw,16px)}
+.export-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(8px,1.5vw,14px)}
+.export-grid>div{min-width:0}
+@media(max-width:600px){.export-grid{grid-template-columns:minmax(0,1fr)}}
+.settlement{width:100%;margin:0;padding:0;background:transparent;border:0;min-width:0}
+.settlement-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(8px,1.5vw,14px)}
+.settlement-box{background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px}
+.settlement-title{font-size:13px;color:var(--muted);margin-bottom:7px}.settlement-value{font-size:24px;font-weight:700}
+.monthbar{display:flex;gap:10px;align-items:end;margin-bottom:15px}.monthbar>div{flex:1}
+.pill{display:inline-block;padding:5px 9px;border-radius:20px;background:#eaf7ee;color:var(--green);font-size:11px;font-weight:700}
+@media(max-width:900px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden}
+  .cards,.settlement-grid,.bottom-controls{grid-template-columns:minmax(0,1fr);width:100%}
+  .cards .card:first-child{grid-column:auto}
+  .monthbar{flex-direction:column;align-items:stretch;width:100%}
+  main{width:100%;max-width:100%;overflow:hidden}
+  .panel,.card,.settlement{width:100%;max-width:100%;min-width:0}
+  .panel{overflow:hidden}
+  input,select,textarea,button{width:100%;max-width:100%;min-width:0}
+  .tablewrap{width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:680px}
+  header{width:100%;max-width:100%;padding:clamp(16px,4vw,24px)}
+  header h1{font-size:clamp(19px,5vw,24px)}
+  button{min-height:46px}
+}
+@media(min-width:901px){
+  .monthbar{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,260px);gap:14px}
+}
 
+#authScreen{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#0b1d2d,#155274);display:flex;align-items:center;justify-content:center;padding:20px}
+.auth-card{width:min(100%,420px);background:#fff;border-radius:18px;padding:28px;box-shadow:0 20px 60px #0004}
+.auth-card h2{font-size:24px;margin:0 0 6px}.auth-card p{color:var(--muted);margin:0 0 20px}
+.auth-error{display:none;background:#fff0ee;color:var(--red);border:1px solid #ffd2cc;padding:10px;border-radius:9px;font-size:13px;margin-top:12px}
+.auth-loading{display:none;color:var(--muted);font-size:13px;margin-top:12px}
+#appShell{display:none}
+.userbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;font-size:12px}
+.userbar span{opacity:.85;overflow:hidden;text-overflow:ellipsis}
+.userbar button{width:auto;margin:0;padding:8px 12px;min-height:auto;background:#ffffff18;border:1px solid #ffffff44}
+
+.edit-modal{position:fixed;inset:0;z-index:10000;background:#0008;display:none;align-items:center;justify-content:center;padding:18px}
+.edit-modal.show{display:flex}
+.edit-modal-card{width:min(100%,520px);max-height:92vh;overflow:auto;background:#fff;border-radius:16px;padding:20px;box-shadow:0 20px 60px #0005}
+.edit-modal-card h2{margin:0 0 6px;font-size:21px}
+.edit-modal-card .edit-help{margin:0 0 14px;color:var(--muted);font-size:12px}
+.edit-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.edit-actions button{margin-top:0}
+@media(max-width:600px){.edit-modal{padding:10px}.edit-modal-card{padding:16px;border-radius:14px}.edit-actions{grid-template-columns:1fr}.edit-actions button{min-height:46px}}
+
+select:disabled{opacity:1;color:#20242a;background:#f4f6f8;cursor:not-allowed}
+.balance-card .label#receberLabel{font-weight:700}\n</style>
+</head>
+<body>
+
+<div id="authScreen">
+  <div class="auth-card">
+    <h2>Conta Corrente</h2>
+    <p>AB Chemicals × Dr. Portugal</p>
+    <form id="loginForm">
+      <label>E-mail</label>
+      <input id="loginEmail" type="email" autocomplete="username" placeholder="seu@email.com" required>
+      <label>Senha</label>
+      <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Sua senha" required>
+      <button type="submit">Entrar</button>
+      <button type="button" class="secondary" id="resetPasswordBtn">Esqueci minha senha</button>
+    </form>
+    <div id="authError" class="auth-error"></div>
+    <div id="authLoading" class="auth-loading">Conectando ao Firebase...</div>
+  </div>
+</div>
+<div id="editModal" class="edit-modal" aria-hidden="true">
+  <div class="edit-modal-card">
+    <h2>Editar lançamento</h2>
+    <p class="edit-help">Altere os dados necessários e salve a alteração.</p>
+    <input id="editId" type="hidden">
+    <label>Data</label>
+    <input id="editData" type="date">
+    <label>Quem está lançando?</label>
+    <select id="editParte"><option>AB Chemicals</option><option>Dr. Portugal</option></select>
+    <label>Tipo</label>
+    <select id="editTipo"><option value="credito">Crédito</option><option value="debito">Débito</option></select>
+    <label>Valor (R$)</label>
+    <input id="editValor" type="number" step="0.01" min="0.01" placeholder="0,00">
+    <label>Descrição</label>
+    <input id="editDescricao" placeholder="Descrição do lançamento">
+    <div class="edit-actions">
+      <button type="button" class="secondary" onclick="fecharEdicao()">Cancelar</button>
+      <button type="button" onclick="salvarEdicao()">Salvar alterações</button>
+    </div>
+  </div>
+</div>
+<div id="appShell">
+<header>
+<h1>Conta Corrente</h1>
+<p>AB Chemicals × Dr. Portugal</p><div class="userbar"><span id="loggedUser"></span><button id="logoutBtn" type="button">Sair</button></div>
+</header>
+<main>
+<section class="cards">
+<div class="card"><div class="label">Saldo — AB Chemicals</div><div id="saldoAB" class="value green">R$ 0,00</div></div>
+<div class="card"><div class="label">Saldo — Dr. Portugal</div><div id="saldoDP" class="value red">R$ 0,00</div></div>
+
+</section>
+<section class="settlement">
+  <div class="monthbar">
+    
+  </div>
+  <div class="settlement-grid">
+    <div class="card balance-card">
+      <div id="saldoPagarTitulo" class="label">Saldo a pagar</div>
+      <div id="saldoPagar" class="value green">R$ 0,00</div>
+    </div>
+
+  </div>
+  
+</section>
+<section class="panel launch-panel">
+<h2>Novo lançamento</h2>
+<label>Data</label><input id="data" type="date">
+<label>Quem está lançando?</label>
+<select id="parte" disabled><option value="AB Chemicals">AB Chemicals</option><option value="Dr. Portugal">Dr. Portugal</option></select>
+<label>Tipo</label>
+<select id="tipo"><option value="credito">Crédito</option><option value="debito">Débito</option></select>
+<label>Valor (R$)</label><input id="valor" type="number" step="0.01" min="0.01" placeholder="0,00">
+<label>Descrição</label><input id="descricao" placeholder="Ex.: Compra, pagamento, bonificação...">
+
+
+<button onclick="lancar()">Registrar lançamento</button>
+
+</section>
+<section class="panel">
+<h2>Extrato da conta corrente</h2>
+<div class="tablewrap">
+<table><thead><tr><th>Data</th><th>Parte</th><th>Descrição</th><th>Valor</th><th>Reflexo</th><th>Ações</th></tr></thead>
+<tbody id="extrato"></tbody></table>
+</div>
+
+</section>
+<section class="bottom-controls">
+  <div class="card">
+    <div class="label">Lançamentos do mês</div>
+    <div id="qtd" class="value">0</div>
+  </div>
+  <div class="card">
+    <div>
+      <label>Mês da conta corrente</label>
+      <input id="mes" type="month">
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Extrato TXT</h2>
+  <div class="export-grid">
+    <div>
+      <label>Data inicial</label>
+      <input id="extratoDataInicial" type="date">
+    </div>
+    <div>
+      <label>Data final</label>
+      <input id="extratoDataFinal" type="date">
+    </div>
+  </div>
+  <div class="notice">
+    O arquivo será gerado em formato TXT delimitado por ponto e vírgula (;), compatível com importação e leitura no Excel.
+  </div>
+  <button type="button" onclick="exportarExtratoTXT()">Exportar extrato TXT</button>
+</section>
+
+
+
+
+
+
+
+
+</div>
+
+
+
+
+<section class="final-status">
+      <div class="settlement-box">
+      <div class="settlement-title">Situação do mês</div>
+      <div id="situacao" class="settlement-value"><span class="pill">EM ABERTO</span></div>
+    </div>
+</section>
+<div class="final-payment">
+  <button onclick="registrarPagamento()">Registrar pagamento e zerar o mês</button>
+</div>
+</main>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword,
+  sendPasswordResetEmail, signOut
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import {
+  getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+/* CONFIGURAÇÃO DO SEU PROJETO FIREBASE
+   Substitua os valores abaixo pelo objeto firebaseConfig
+   fornecido pelo Firebase Console.
+*/
+const firebaseConfig = {
+  apiKey: "AIzaSyCbjcYmPP2pPDFHkDVwOGsy25GBeoV7E0I",
+  authDomain: "ccorrente-b78cc.firebaseapp.com",
+  projectId: "ccorrente-b78cc",
+  storageBucket: "ccorrente-b78cc.firebasestorage.app",
+  messagingSenderId: "663844675532",
+  appId: "1:663844675532:web:2c2c617e888a680e0c0769"
+};
+
+const firebaseConfigured = !Object.values(firebaseConfig).some(v => String(v).startsWith("COLE_AQUI"));
+
+const $ = id => document.getElementById(id);
+const hoje = new Date();
+$("data").value = hoje.toISOString().slice(0,10);
+$("mes").value = hoje.toISOString().slice(0,7);
+$("extratoDataInicial").value = hoje.toISOString().slice(0,8) + "01";
+$("extratoDataFinal").value = hoje.toISOString().slice(0,10);
+
+let auth, db, currentUser = null;
+let lancamentos = [];
+let unsubscribeLancamentos = null;
+
+function dinheiro(n){
+  return Number(n).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+}
+function mesAtual(){ return $("mes").value; }
+
+function showAuthError(msg){
+  $("authError").textContent = msg;
+  $("authError").style.display = "block";
+}
+function clearAuthError(){
+  $("authError").textContent = "";
+  $("authError").style.display = "none";
+}
+function firebaseErrorMessage(error){
+  const map = {
+    "auth/invalid-credential":"E-mail ou senha incorretos.",
+    "auth/invalid-email":"Informe um e-mail válido.",
+    "auth/user-not-found":"Usuário não encontrado.",
+    "auth/wrong-password":"Senha incorreta.",
+    "auth/too-many-requests":"Muitas tentativas. Tente novamente mais tarde.",
+    "auth/network-request-failed":"Falha de conexão. Verifique a internet.",
+    "auth/operation-not-allowed":"O login por e-mail e senha ainda não está habilitado no Firebase."
+  };
+  return map[error.code] || "Não foi possível concluir a operação. Verifique a configuração do Firebase.";
+}
+
+
+function definirParteDoUsuario(user){
+  if(!user) return;
+  const email=(user.email||"").trim().toLowerCase();
+  const parte = email === "abchemicalspr@gmail.com" ? "AB Chemicals" : "Dr. Portugal";
+  const campo = $("parte");
+  if(campo){
+    campo.value=parte;
+    campo.disabled=true;
+  }
+}
+
+function iniciarFirebase(){
+  if(!firebaseConfigured){
+    showAuthError("O Firebase ainda não foi configurado neste arquivo. É necessário inserir a configuração do seu projeto Firebase.");
+    return;
+  }
+
+  const app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+
+  onAuthStateChanged(auth, user => {
+    currentUser = user;
+    if(user){
+      $("authScreen").style.display="none";
+      $("appShell").style.display="block";
+      $("loggedUser").textContent = user.email || "Usuário autenticado";
+      definirParteDoUsuario(user);
+      ouvirLancamentos();
+    }else{
+      $("authScreen").style.display="flex";
+      $("appShell").style.display="none";
+      if(unsubscribeLancamentos){
+        unsubscribeLancamentos();
+        unsubscribeLancamentos=null;
+      }
+      lancamentos=[];
+    }
+  });
+}
+
+function ouvirLancamentos(){
+  if(unsubscribeLancamentos) unsubscribeLancamentos();
+
+  const ref = collection(db,"conta_corrente_lancamentos");
+  const q = query(ref, orderBy("data","desc"));
+
+  unsubscribeLancamentos = onSnapshot(q, snap => {
+    lancamentos = snap.docs.map(doc => ({id:doc.id,...doc.data()}));
+    render();
+  }, error => {
+    showAuthError("Não foi possível carregar os lançamentos do Firebase. Verifique as regras do Firestore.");
+  });
+}
+
+function saldoDoMes(mes){
+  let saldo=0;
+  lancamentos.forEach(x=>{
+    if(x.data.slice(0,7)!==mes) return;
+
+    if(x.tipo==="pagamento"){
+      saldo += x.parte==="AB Chemicals" ? x.valor : -x.valor;
+      return;
+    }
+
+    const sinal=x.tipo==="credito"?1:-1;
+    saldo += x.parte==="AB Chemicals" ? sinal*x.valor : -sinal*x.valor;
+  });
+  return saldo;
+}
+
+async function lancar(){
+  clearAuthError();
+  const valor=Number($("valor").value);
+  const descricao=$("descricao").value.trim();
+
+  if(!valor || valor<=0 || !descricao){
+    alert("Informe valor e descrição.");
+    return;
+  }
+  if(!currentUser){
+    alert("Faça login para registrar o lançamento.");
+    return;
+  }
+
+  try{
+    await addDoc(collection(db,"conta_corrente_lancamentos"),{
+      data:$("data").value,
+      parte:$("parte").value,
+      tipo:$("tipo").value,
+      valor:Number(valor.toFixed(2)),
+      descricao,
+      createdByUid:currentUser.uid,
+      createdByEmail:currentUser.email || "",
+      createdAt:serverTimestamp()
+    });
+
+    $("valor").value="";
+    $("descricao").value="";
+    alert("Lançamento registrado e contabilizado para as duas partes.");
+  }catch(error){
+    showAuthError("Não foi possível salvar o lançamento no Firebase.");
+  }
+}
+window.lancar = lancar;
+
+async function registrarPagamento(){
+  clearAuthError();
+  const mes=mesAtual();
+  const saldo=saldoDoMes(mes);
+
+  if(Math.abs(saldo)<0.005){
+    alert("O mês já está zerado.");
+    return;
+  }
+
+  const valor=Math.abs(Number(saldo.toFixed(2)));
+  const recebedor=saldo>0 ? "AB Chemicals" : "Dr. Portugal";
+  const pagador=saldo>0 ? "Dr. Portugal" : "AB Chemicals";
+  const ultimoDia=new Date(Number(mes.slice(0,4)),Number(mes.slice(5,7)),0).toISOString().slice(0,10);
+
+  if(!confirm(`${pagador} deverá pagar ${dinheiro(valor)} para ${recebedor}. Confirmar fechamento do mês?`)) return;
+
+  try{
+    await addDoc(collection(db,"conta_corrente_lancamentos"),{
+      data:ultimoDia,
+      parte:pagador,
+      tipo:"pagamento",
+      valor,
+      descricao:`Pagamento de fechamento do mês — ${recebedor}`,
+      createdByUid:currentUser.uid,
+      createdByEmail:currentUser.email || "",
+      createdAt:serverTimestamp()
+    });
+
+    alert(`Pagamento registrado: ${pagador} → ${recebedor}. O saldo do mês foi zerado.`);
+  }catch(error){
+    showAuthError("Não foi possível registrar o pagamento no Firebase.");
+  }
+}
+window.registrarPagamento = registrarPagamento;
+
+function editarLancamento(id){
+  const x=lancamentos.find(item=>item.id===id);
+  if(!x || x.tipo==="pagamento") return;
+  if(currentUser && x.createdByUid && x.createdByUid!==currentUser.uid){
+    alert("Você só pode editar lançamentos realizados por você.");
+    return;
+  }
+
+  $("editId").value=x.id;
+  $("editData").value=x.data || "";
+  $("editParte").value=x.parte || "AB Chemicals";
+  $("editTipo").value=x.tipo || "credito";
+  $("editValor").value=Number(x.valor || 0).toFixed(2);
+  $("editDescricao").value=x.descricao || "";
+  $("editModal").classList.add("show");
+  $("editModal").setAttribute("aria-hidden","false");
+}
+window.editarLancamento=editarLancamento;
+
+function fecharEdicao(){
+  $("editModal").classList.remove("show");
+  $("editModal").setAttribute("aria-hidden","true");
+}
+window.fecharEdicao=fecharEdicao;
+
+async function salvarEdicao(){
+  const id=$("editId").value;
+  const x=lancamentos.find(item=>item.id===id);
+  if(!x || !currentUser || x.tipo==="pagamento") return;
+  if(x.createdByUid && x.createdByUid!==currentUser.uid){
+    alert("Você só pode editar lançamentos realizados por você.");
+    fecharEdicao();
+    return;
+  }
+
+  const novaData=$("editData").value;
+  const novaParte=$("editParte").value;
+  const novoTipo=$("editTipo").value;
+  const novoValor=Number($("editValor").value);
+  const novaDescricao=$("editDescricao").value.trim();
+
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(novaData)){alert("Informe uma data válida.");return;}
+  if(novaParte!=="AB Chemicals" && novaParte!=="Dr. Portugal"){alert("Parte inválida.");return;}
+  if(novoTipo!=="credito" && novoTipo!=="debito"){alert("Tipo inválido.");return;}
+  if(!Number.isFinite(novoValor) || novoValor<=0){alert("Informe um valor maior que zero.");return;}
+  if(!novaDescricao){alert("Informe uma descrição.");return;}
+
+  if(!confirm("Confirmar alteração deste lançamento?")) return;
+
+  try{
+    await updateDoc(doc(db,"conta_corrente_lancamentos",id),{
+      data:novaData,
+      parte:novaParte,
+      tipo:novoTipo,
+      valor:Number(novoValor.toFixed(2)),
+      descricao:novaDescricao
+    });
+    fecharEdicao();
+    alert("Lançamento atualizado com sucesso.");
+  }catch(error){
+    showAuthError("Não foi possível editar o lançamento no Firebase.");
+  }
+}
+window.salvarEdicao=salvarEdicao;
+
+async function excluirLancamento(id){
+  const x=lancamentos.find(item=>item.id===id);
+  if(!x || x.tipo==="pagamento") return;
+  if(currentUser && x.createdByUid && x.createdByUid!==currentUser.uid){
+    alert("Você só pode excluir lançamentos realizados por você.");
+    return;
+  }
+  if(!confirm(`Excluir o lançamento de ${dinheiro(x.valor)} — ${x.descricao}?\n\nEssa ação não pode ser desfeita.`)) return;
+
+  try{
+    await deleteDoc(doc(db,"conta_corrente_lancamentos",id));
+    alert("Lançamento excluído com sucesso.");
+  }catch(error){
+    showAuthError("Não foi possível excluir o lançamento no Firebase.");
+  }
+}
+window.excluirLancamento=excluirLancamento;
+
+function render(){
+  const mes=mesAtual();
+  let ab=0,dp=0,qtd=0;
+
+  lancamentos.forEach(x=>{
+    if(x.data.slice(0,7)!==mes) return;
+
+    if(x.tipo==="pagamento"){
+      if(x.parte==="AB Chemicals"){ ab+=x.valor; dp-=x.valor; }
+      else { ab-=x.valor; dp+=x.valor; }
+      return;
+    }
+
+    qtd++;
+    const sinal=x.tipo==="credito"?1:-1;
+    if(x.parte==="AB Chemicals"){ ab+=sinal*x.valor; dp-=sinal*x.valor; }
+    else { dp+=sinal*x.valor; ab-=sinal*x.valor; }
+  });
+
+  const saldoAB=ab;
+  const saldoDP=dp;
+
+  $("saldoAB").textContent=dinheiro(saldoAB);
+  $("saldoDP").textContent=dinheiro(saldoDP);
+  $("saldoAB").className="value "+(saldoAB>=0?"green":"red");
+  $("saldoDP").className="value "+(saldoDP>=0?"green":"red");
+  $("qtd").textContent=qtd;
+
+  const recebedor=saldoAB>0.005 ? "AB Chemicals" : (saldoAB< -0.005 ? "Dr. Portugal" : "Nenhuma das partes");
+  $("saldoPagarTitulo").textContent=Math.abs(saldoAB)>0.005 ? `Saldo a receber — ${recebedor}` : "Saldo a receber";
+  $("saldoPagar").textContent=dinheiro(Math.max(0,Math.abs(saldoAB)));
+  $("saldoPagar").className="value "+(saldoAB>=0?"green":"red");
+
+  const fechado=Math.abs(saldoAB)<0.005 && lancamentos.some(x=>x.data.slice(0,7)===mes && x.tipo==="pagamento");
+  $("situacao").innerHTML=fechado?'<span class="pill">ZERADO / FECHADO</span>':'<span class="pill">EM ABERTO</span>';
+
+  const lista=lancamentos.filter(x=>x.data.slice(0,7)===mes);
+  $("extrato").innerHTML=lista.length ? lista.map(x=>{
+    if(x.tipo==="pagamento"){
+      const reflexo=x.parte==="AB Chemicals"?"Dr. Portugal":"AB Chemicals";
+      return `<tr>
+        <td>${new Date(x.data+"T12:00:00").toLocaleDateString("pt-BR")}</td>
+        <td>${x.parte}</td>
+        <td>${x.descricao}</td>
+        <td class="green">+ ${dinheiro(x.valor)}</td>
+        <td>${reflexo}: - ${dinheiro(x.valor)}</td>
+        <td class="actions">—</td>
+      </tr>`;
+    }
+
+    const sinal=x.tipo==="credito"?1:-1;
+    const reflexo=x.parte==="AB Chemicals"?"Dr. Portugal":"AB Chemicals";
+    return `<tr>
+      <td>${new Date(x.data+"T12:00:00").toLocaleDateString("pt-BR")}</td>
+      <td>${x.parte}</td>
+      <td>${x.descricao}</td>
+      <td class="${sinal>0?"green":"red"}">${sinal>0?"+":"-"} ${dinheiro(x.valor)}</td>
+      <td>${reflexo}: ${sinal>0?"-":"+"} ${dinheiro(x.valor)}</td>
+      <td class="actions">${(!x.createdByUid || (currentUser && x.createdByUid===currentUser.uid)) ? `
+        <button type="button" class="action-btn action-edit" onclick="editarLancamento('${x.id}')">Editar</button>
+        <button type="button" class="action-btn action-delete" onclick="excluirLancamento('${x.id}')">Excluir</button>` : '—'}
+      </td>
+    </tr>`;
+  }).join("") : '<tr><td colspan="6" class="empty">Nenhum lançamento neste mês.</td></tr>';
+}
+
+$("mes").addEventListener("change",render);
+
+
+function escaparTXT(valor){
+  return String(valor ?? "").replace(/[\r\n]+/g," ").replace(/;/g,",").trim();
+}
+
+function formatarDataTXT(data){
+  if(!data) return "";
+  const partes = data.split("-");
+  return partes.length===3 ? `${partes[2]}/${partes[1]}/${partes[0]}` : data;
+}
+
+function exportarExtratoTXT(){
+  clearAuthError();
+
+  const dataInicial = $("extratoDataInicial").value;
+  const dataFinal = $("extratoDataFinal").value;
+
+  if(!dataInicial || !dataFinal){
+    alert("Informe a data inicial e a data final.");
+    return;
+  }
+
+  if(dataInicial > dataFinal){
+    alert("A data inicial não pode ser maior que a data final.");
+    return;
+  }
+
+  const registros = lancamentos
+    .filter(x => x.data >= dataInicial && x.data <= dataFinal)
+    .sort((a,b) => (a.data || "").localeCompare(b.data || ""));
+
+  if(!registros.length){
+    alert("Não existem lançamentos no período selecionado.");
+    return;
+  }
+
+  const linhas = [];
+  linhas.push([
+    "Data",
+    "Parte",
+    "Tipo",
+    "Descrição",
+    "Valor",
+    "Movimento",
+    "Reflexo",
+    "Usuário que lançou"
+  ].join(";"));
+
+  registros.forEach(x => {
+    const pagamento = x.tipo === "pagamento";
+    const valor = Number(x.valor || 0);
+    let movimento = "";
+    let reflexo = "";
+
+    if(pagamento){
+      movimento = `+ ${valor.toFixed(2).replace(".",",")}`;
+      reflexo = `${x.parte === "AB Chemicals" ? "Dr. Portugal" : "AB Chemicals"}: - ${valor.toFixed(2).replace(".",",")}`;
+    }else{
+      const sinal = x.tipo === "credito" ? 1 : -1;
+      movimento = `${sinal > 0 ? "+" : "-"} ${valor.toFixed(2).replace(".",",")}`;
+      reflexo = `${x.parte === "AB Chemicals" ? "Dr. Portugal" : "AB Chemicals"}: ${sinal > 0 ? "-" : "+"} ${valor.toFixed(2).replace(".",",")}`;
+    }
+
+    const tipoTexto = pagamento ? "Pagamento" : (x.tipo === "credito" ? "Crédito" : "Débito");
+
+    linhas.push([
+      formatarDataTXT(x.data),
+      escaparTXT(x.parte),
+      tipoTexto,
+      escaparTXT(x.descricao),
+      valor.toFixed(2).replace(".",","),
+      movimento,
+      escaparTXT(reflexo),
+      escaparTXT(x.createdByEmail || "")
+    ].join(";"));
+  });
+
+  const conteudo = "\uFEFF" + linhas.join("\r\n");
+  const blob = new Blob([conteudo], {type:"text/plain;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  const nomeArquivo = `extrato_conta_corrente_${dataInicial}_a_${dataFinal}.txt`;
+  link.href = url;
+  link.download = nomeArquivo;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+
+  alert(`Extrato gerado com ${registros.length} lançamento(s).`);
+}
+window.exportarExtratoTXT = exportarExtratoTXT;
+
+$("loginForm").addEventListener("submit", async e=>{
+  e.preventDefault();
+  clearAuthError();
+
+  if(!firebaseConfigured){
+    showAuthError("Configure o Firebase no arquivo antes de fazer login.");
+    return;
+  }
+
+  $("authLoading").style.display="block";
+  try{
+    await signInWithEmailAndPassword(auth,$("loginEmail").value.trim(),$("loginPassword").value);
+    $("loginPassword").value="";
+  }catch(error){
+    showAuthError(firebaseErrorMessage(error));
+  }finally{
+    $("authLoading").style.display="none";
+  }
+});
+
+$("resetPasswordBtn").addEventListener("click", async ()=>{
+  clearAuthError();
+  if(!firebaseConfigured){showAuthError("Configure o Firebase no arquivo antes de usar esta função.");return;}
+  const email=$("loginEmail").value.trim();
+  if(!email){showAuthError("Digite seu e-mail primeiro.");return;}
+  try{
+    await sendPasswordResetEmail(auth,email);
+    alert("E-mail para redefinição de senha enviado.");
+  }catch(error){
+    showAuthError(firebaseErrorMessage(error));
+  }
+});
+
+$("logoutBtn").addEventListener("click", async ()=>{
+  if(auth) await signOut(auth);
+});
+
+iniciarFirebase();
+</script>
+</body>
+</html>
