@@ -36,14 +36,19 @@
     justify-content:center;
     min-height:100vh;
   }
-  .app{
-    width:100%;
-    max-width:460px;
+  .app{ 
+    width:100%; 
+    max-width:460px; 
     height:100vh;
     display:flex;
     flex-direction:column;
     padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
+
+  footer{
+    flex-shrink:0;
+  }
+
   .card{
     background:var(--white);
     border-radius:0;
@@ -65,17 +70,13 @@
     min-height:80px;
     justify-content:flex-start;
   }
-  .card-header .brand{
+  .card-header .brand{display:flex;flex-direction:column;align-items:center;gap:3px;
     flex-shrink:0;
     font-family:'Montserrat',sans-serif;
     font-size:.9rem;
     font-weight:800;
     letter-spacing:.02em;
     white-space:nowrap;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:3px;
   }
   .card-header .brand-phone{
     font-family:'Nunito',sans-serif;
@@ -84,9 +85,10 @@
     letter-spacing:0;
     opacity:.95;
   }
-  .card-header .title{font-family:'Montserrat',sans-serif;font-weight:800;font-size:1rem;line-height:1.15;margin:0;text-align:center;}
-  .card-header .subtitle{font-size:.7rem;color:rgba(255,255,255,.85);margin-top:1px;margin-bottom:0;text-align:center;}
-  .card-body{
+  .card-header .title{ font-family:'Montserrat',sans-serif;font-weight:800;font-size:1rem;line-height:1.15;margin:0;text-align:center; }
+  .card-header .subtitle{ font-size:.7rem;color:rgba(255,255,255,.85);margin-top:1px;margin-bottom:0;text-align:center; }
+
+  .card-body{ 
     padding:16px;
     display:flex;
     flex-direction:column;
@@ -94,49 +96,78 @@
     overflow-y:auto;
     flex:1;
   }
+
   .field-label{
     display:flex;align-items:center;gap:6px;
     font-weight:700;color:var(--text);margin-bottom:6px;font-size:1rem;
   }
-  .presets{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:6px;}
+
+  .presets{ display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:6px; }
   .presets button{
     padding:10px 0;border-radius:8px;font-size:.85rem;font-weight:700;
     border:none;cursor:pointer;transition:background .15s,color .15s;
     background:var(--off-white);color:var(--text-muted);
     font-family:'Nunito',sans-serif;
   }
-  .presets button.active{background:var(--blue);color:#fff;}
-  .card-body::-webkit-scrollbar{width:4px;}
-  .card-body::-webkit-scrollbar-track{background:transparent;}
-  .card-body::-webkit-scrollbar-thumb{background:rgba(26,79,160,0.2);border-radius:4px;}
-  .card-body::-webkit-scrollbar-thumb:hover{background:rgba(26,79,160,0.4);}
+  .presets button.active{ background:var(--blue);color:#fff; }
+
+  .card-body::-webkit-scrollbar {
+    width: 4px;
+  }
+  .card-body::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .card-body::-webkit-scrollbar-thumb {
+    background: rgba(26, 79, 160, 0.2);
+    border-radius: 4px;
+  }
+  .card-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(26, 79, 160, 0.4);
+  }
+
   .input-row{
     display:flex;align-items:center;justify-content:center;gap:6px;
     border:1.5px solid var(--gray);border-radius:10px;padding:10px 12px;
   }
-  .input-row span.prefix{font-weight:700;color:var(--text);font-size:1rem;line-height:1;}
-  .input-row span.suffix{color:var(--text-muted);font-size:.85rem;line-height:1;}
+  .input-row span.prefix{ font-weight:700;color:var(--text);font-size:1rem;line-height:1; }
+  .input-row span.suffix{ color:var(--text-muted);font-size:.85rem;line-height:1; }
   .input-row input{
     flex:1;border:none;outline:none;font-size:1.05rem;color:var(--text);
     background:transparent;min-width:0;font-family:'Nunito',sans-serif;font-weight:600;text-align:center;line-height:1;
   }
-  .divider{height:1px;background:var(--gray);margin:2px 0;}
-  .result-title{font-size:.7rem;font-weight:800;letter-spacing:1.2px;color:var(--text-muted);margin-bottom:6px;text-align:center;}
-  .result-grid{display:flex;flex-direction:column;gap:10px;}
-  .result-box{background:var(--blue-pale);border-radius:12px;padding:16px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-  .result-box .label{display:flex;align-items:center;justify-content:center;gap:4px;color:var(--blue);font-weight:700;font-size:.75rem;margin-bottom:4px;line-height:1;}
-  .result-box .value{font-family:'Montserrat',sans-serif;font-size:1.6rem;font-weight:800;color:var(--text);line-height:1;}
-  .result-box .unit{color:var(--text-muted);font-size:.75rem;line-height:1;}
-  .concentration-box{background:var(--off-white);border-radius:12px;padding:16px;display:flex;align-items:center;gap:10px;justify-content:center;}
-  .concentration-box .circle{flex-shrink:0;width:40px;height:40px;border-radius:50%;background:var(--blue-pale);display:flex;align-items:center;justify-content:center;}
-  .concentration-box > div{display:flex;flex-direction:column;align-items:center;justify-content:center;}
-  .concentration-box .label{font-size:.7rem;font-weight:800;letter-spacing:1px;color:var(--text-muted);line-height:1;}
-  .concentration-box .value{font-family:'Montserrat',sans-serif;font-size:1.4rem;font-weight:800;color:var(--text);line-height:1;}
-  .empty-state{text-align:center;color:var(--text-muted);font-size:.85rem;padding-top:2px;}
+
+  .divider{ height:1px;background:var(--gray);margin:2px 0; }
+
+  .result-title{ font-size:.7rem;font-weight:800;letter-spacing:1.2px;color:var(--text-muted);margin-bottom:6px;text-align:center; }
+  .result-grid{ display:flex;flex-direction:column;gap:10px; }
+  .result-box{ background:var(--blue-pale);border-radius:12px;padding:16px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center; }
+  .result-box .label{
+    display:flex;align-items:center;justify-content:center;gap:4px;
+    color:var(--blue);font-weight:700;font-size:.75rem;margin-bottom:4px;line-height:1;
+  }
+  .result-box .value{ font-family:'Montserrat',sans-serif;font-size:1.6rem;font-weight:800;color:var(--text);line-height:1; }
+  .result-box .unit{ color:var(--text-muted);font-size:.75rem;line-height:1; }
+
+  .concentration-box{
+    background:var(--off-white);border-radius:12px;padding:16px;
+    display:flex;align-items:center;gap:10px;justify-content:center;
+  }
+  .concentration-box .circle{
+    flex-shrink:0;width:40px;height:40px;border-radius:50%;background:var(--blue-pale);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .concentration-box > div{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  .concentration-box .label{ font-size:.7rem;font-weight:800;letter-spacing:1px;color:var(--text-muted);line-height:1; }
+  .concentration-box .value{ font-family:'Montserrat',sans-serif;font-size:1.4rem;font-weight:800;color:var(--text);line-height:1; }
+
+  .empty-state{ text-align:center;color:var(--text-muted);font-size:.85rem;padding-top:2px; }
 </style>
 </head>
 <body>
 <div class="app">
+
   <div class="card">
     <div class="card-header">
       <div class="brand">AB Chemicals
@@ -147,7 +178,9 @@
         <div class="subtitle">Proporção correta para seus produtos</div>
       </div>
     </div>
+
     <div class="card-body">
+
       <div>
         <div class="field-label">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1a4fa0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v5.5L4.5 18a2 2 0 001.7 3h11.6a2 2 0 001.7-3L14 8.5V3"/></svg>
@@ -159,6 +192,7 @@
           <input id="dc-ratio-input" type="text" inputmode="decimal" placeholder="Ex: 100">
         </div>
       </div>
+
       <div>
         <div class="field-label">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1a4fa0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16V8z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>
@@ -170,7 +204,9 @@
           <span class="suffix">litros</span>
         </div>
       </div>
+
       <div class="divider"></div>
+
       <div>
         <div class="result-title">RESULTADO</div>
         <div class="result-grid">
@@ -211,13 +247,16 @@
         </div>
         <div id="dc-empty-state" class="empty-state">Preencha a proporção e o volume para calcular a diluição.</div>
       </div>
+
     </div>
   </div>
 </div>
+
 <script>
 (function(){
   var RATIO_PRESETS = [50, 100, 200, 500];
   var VOLUME_PRESETS = [1, 2, 5, 10];
+
   var ratioInput = document.getElementById('dc-ratio-input');
   var volumeInput = document.getElementById('dc-volume-input');
   var ratioPresetsEl = document.getElementById('dc-ratio-presets');
@@ -239,16 +278,20 @@
       container.appendChild(btn);
     });
   }
+
   function fmt(n){
     return n.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
   }
+
   function parseNum(val){
     return parseFloat(String(val).replace(',', '.'));
   }
+
   function render(){
     var ratioNum = parseNum(ratioInput.value);
     var volumeNum = parseNum(volumeInput.value);
     var valid = ratioNum > 0 && volumeNum > 0;
+
     buildPresets(ratioPresetsEl, RATIO_PRESETS, ':', function(){ return ratioNum; }, function(v){
       ratioInput.value = String(v);
       render();
@@ -257,6 +300,7 @@
       volumeInput.value = String(v);
       render();
     });
+
     if (valid) {
       var totalML = volumeNum * 1000;
       var productML = totalML / ratioNum;
@@ -276,10 +320,13 @@
       emptyState.style.display = 'block';
     }
   }
+
   ratioInput.addEventListener('input', render);
   volumeInput.addEventListener('input', render);
+
   render();
 })();
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(() => {});
