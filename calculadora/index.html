@@ -8,57 +8,73 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1a4fa0">
 <meta name="apple-mobile-web-app-title" content="AB Chemicals">
-<title>Calculadora AB Chemicals</title>
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Calculadora de Diluição | AB Chemicals</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
 <style>
-  :root{--blue:#1a4fa0;--blue-light:#2b7fff;--blue-dark:#0e3070;--blue-pale:#eef4ff;--white:#ffffff;--off-white:#f7faff;--gray:#d1dce8;--text:#0e1a2e;--text-muted:#5a7190;}
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  html,body{height:100%;margin:0;padding:0;}
-  body{background:linear-gradient(180deg,#f7faff 0%,#eef4ff 100%);color:var(--text);font-family:'Nunito',sans-serif;display:flex;justify-content:center;min-height:100vh;}
-  .app{width:100%;max-width:460px;height:100vh;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
-  .card{background:var(--white);border-radius:0;box-shadow:0 20px 50px rgba(26,79,160,0.14);overflow:hidden;display:flex;flex-direction:column;flex:1;}
-  .card-header{background:linear-gradient(135deg,var(--blue),var(--blue-light));padding:12px 16px;color:#fff;display:flex;align-items:center;gap:14px;flex-shrink:0;border-radius:0;min-height:80px;justify-content:flex-start;}
-  .card-header .brand{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;font-family:'Montserrat',sans-serif;font-size:.9rem;font-weight:800;letter-spacing:.02em;white-space:nowrap;}
-  .card-header .brand-phone{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:4px;
-    color:#fff;
-    text-decoration:none;
-    cursor:pointer;
-    font-family:'Nunito',sans-serif;
-    font-size:.72rem;
-    font-weight:600;
-    letter-spacing:0;
-    opacity:.95;
-  }
-  .card-header .whatsapp-icon{
-    width:.72rem;
-    height:.72rem;
-    flex:0 0 .72rem;
-  }
-  .card-header .whatsapp-link:hover{opacity:1;text-decoration:none;}
-  function fmt(n){return n.toLocaleString('pt-BR',{maximumFractionDigits:1});}
-  function parseNum(val){return parseFloat(String(val).replace(',','.'));}
-  function render(){
-    var ratioNum=parseNum(ratioInput.value), volumeNum=parseNum(volumeInput.value), valid=ratioNum>0&&volumeNum>0;
-    buildPresets(ratioPresetsEl,RATIO_PRESETS,':',function(){return ratioNum;},function(v){ratioInput.value=String(v);render();});
-    buildPresets(volumePresetsEl,VOLUME_PRESETS,'L',function(){return volumeNum;},function(v){volumeInput.value=String(v);render();});
-    if(valid){
-      var totalML=volumeNum*1000, productML=totalML/ratioNum, waterML=totalML-productML, concentration=100/ratioNum, ppm=1000000/ratioNum;
-      resultProduct.textContent=fmt(productML);resultWater.textContent=fmt(waterML);resultConcentration.textContent=fmt(concentration)+'%';resultPpm.textContent=fmt(ppm);
-    }else{
-      resultProduct.textContent='0';resultWater.textContent='0';resultConcentration.textContent='0%';resultPpm.textContent='0';
-    }
-  }
-  ratioInput.addEventListener('input',render);volumeInput.addEventListener('input',render);render();
+body{overflow:hidden}
+.app{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.card-body{padding:18px 16px;overflow:auto;flex:1}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:.82rem;font-weight:800;margin-bottom:7px;color:var(--text-muted)}
+.input-wrap{display:flex;align-items:center;border:1px solid var(--gray);border-radius:12px;background:#fff;overflow:hidden}
+.input-wrap input{width:100%;border:0;outline:0;padding:13px;font:700 1rem 'Nunito';color:var(--text);background:transparent}
+.input-unit{padding:0 13px;font-weight:800;color:var(--text-muted)}
+.presets{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.preset{border:1px solid #c8d7eb;background:var(--blue-pale);color:var(--blue);border-radius:9px;padding:7px 11px;font:700 .78rem 'Nunito';cursor:pointer}
+.results{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+.result{background:var(--off-white);border:1px solid #dce7f5;border-radius:13px;padding:13px}
+.result-label{font-size:.72rem;color:var(--text-muted);font-weight:700}
+.result-value{font:800 1.15rem 'Montserrat';margin-top:4px;color:var(--blue-dark)}
+.card-header .brand-phone{display:flex;align-items:center;justify-content:center;gap:4px;color:#fff;text-decoration:none;cursor:pointer;font-family:'Nunito',sans-serif;font-size:.72rem;font-weight:600;opacity:.95}
+.whatsapp-icon{width:.72rem;height:.72rem;flex:0 0 .72rem}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="card">
+<header class="card-header">
+<div class="brand">
+<div>AB Chemicals</div>
+<a class="brand-phone" href="https://wa.me/5543988712001" target="_blank" rel="noopener noreferrer" aria-label="Conversar pelo WhatsApp">
+<svg class="whatsapp-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.52 3.48A11.84 11.84 0 0 0 12.08 0C5.54 0 .22 5.32.22 11.86c0 2.09.55 4.13 1.59 5.93L.12 24l6.35-1.67a11.84 11.84 0 0 0 5.61 1.42h.01c6.54 0 11.86-5.32 11.86-11.86 0-3.17-1.23-6.15-3.43-8.41ZM12.09 21.7h-.01a9.85 9.85 0 0 1-5.02-1.37l-.36-.21-3.77.99 1.01-3.67-.23-.38a9.84 9.84 0 0 1-1.51-5.2c0-5.42 4.42-9.83 9.85-9.83 2.63 0 5.1 1.02 6.96 2.89a9.8 9.8 0 0 1 2.88 6.96c0 5.42-4.42 9.83-9.8 9.83Zm5.4-7.37c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.95 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.47-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.14-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.49s1.07 2.89 1.22 3.09c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.09 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35Z"/></svg>
+<span>(43) 98871-2001</span>
+</a>
+</div>
+</header>
+<main class="card-body">
+<div class="field"><label for="ratioInput">Proporção</label><div class="input-wrap"><input id="ratioInput" type="number" inputmode="decimal" value="100" min="1"><span class="input-unit">: 1</span></div><div id="ratioPresets" class="presets"></div></div>
+<div class="field"><label for="volumeInput">Volume final</label><div class="input-wrap"><input id="volumeInput" type="number" inputmode="decimal" value="5" min="0.1" step="0.1"><span class="input-unit">L</span></div><div id="volumePresets" class="presets"></div></div>
+<section class="results">
+<div class="result"><div class="result-label">Produto</div><div class="result-value" id="resultProduct">0</div><div class="result-label">mL</div></div>
+<div class="result"><div class="result-label">Água</div><div class="result-value" id="resultWater">0</div><div class="result-label">mL</div></div>
+<div class="result"><div class="result-label">Concentração</div><div class="result-value" id="resultConcentration">0%</div></div>
+<div class="result"><div class="result-label">PPM</div><div class="result-value" id="resultPpm">0</div></div>
+</section>
+</main>
+</div>
+</div>
+<script>
+(function(){
+const RATIO_PRESETS=[50,100,200,500], VOLUME_PRESETS=[1,2,5,10];
+const ratioInput=document.getElementById('ratioInput'),volumeInput=document.getElementById('volumeInput');
+const ratioPresetsEl=document.getElementById('ratioPresets'),volumePresetsEl=document.getElementById('volumePresets');
+const resultProduct=document.getElementById('resultProduct'),resultWater=document.getElementById('resultWater'),resultConcentration=document.getElementById('resultConcentration'),resultPpm=document.getElementById('resultPpm');
+function fmt(n){return n.toLocaleString('pt-BR',{maximumFractionDigits:1});}
+function parseNum(v){return parseFloat(String(v).replace(',','.'));}
+function buildPresets(el,values,unit,getValue,setValue){
+el.innerHTML='';
+values.forEach(v=>{const b=document.createElement('button');b.type='button';b.className='preset';b.textContent=v+unit;b.addEventListener('click',()=>setValue(v));el.appendChild(b);});
+}
+function render(){
+const ratio=parseNum(ratioInput.value), volume=parseNum(volumeInput.value);
+buildPresets(ratioPresetsEl,RATIO_PRESETS,':',()=>ratio,v=>{ratioInput.value=v;render();});
+buildPresets(volumePresetsEl,VOLUME_PRESETS,' L',()=>volume,v=>{volumeInput.value=v;render();});
+if(ratio>0&&volume>0){const total=volume*1000,product=total/ratio;resultProduct.textContent=fmt(product);resultWater.textContent=fmt(total-product);resultConcentration.textContent=fmt(100/ratio)+'%';resultPpm.textContent=fmt(1000000/ratio);}
+}
+ratioInput.addEventListener('input',render);volumeInput.addEventListener('input',render);render();
 })();
-if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}
 </script>
 </body>
 </html>
