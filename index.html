@@ -71,6 +71,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .kpi-value { font-size: 23px; font-weight: 600; }
 .kpi-delta { font-size: 11px; margin-top: 5px; color: #D85A30; }
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 22px; }
+.dashboard-charts-row { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:22px; align-items:stretch; }
+.dashboard-chart-card { min-width:0; padding:16px; margin:0; }
+.dashboard-chart-card #bar-chart, .dashboard-chart-card #rxd-chart { min-height:220px; }
+@media (max-width: 1050px) and (min-width: 769px) {
+  .dashboard-charts-row { gap:12px; }
+  .dashboard-chart-card { padding:14px; }
+}
 .three-col { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 22px; }
 .card { background: #fff; border: 1px solid #e8e7e0; border-radius: 12px; padding: 18px; max-width: 100%; overflow-x: hidden; }
 #bar-chart, #rxd-chart, #fin-rxd-chart { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -152,6 +159,8 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   /* Grids viram 1 coluna */
   .kpi-grid   { grid-template-columns: 1fr; gap: 10px; }
   .two-col    { grid-template-columns: 1fr; gap: 12px; }
+  .dashboard-charts-row { grid-template-columns: 1fr; gap: 12px; }
+  .dashboard-chart-card #bar-chart, .dashboard-chart-card #rxd-chart { min-height:200px; }
   .three-col  { grid-template-columns: 1fr; gap: 10px; }
 
   /* KPI menor */
@@ -398,11 +407,12 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
             <div class="dash-profit-status" id="dash-margem-status"></div>
           </div>
         </div>
-        <div class="two-col">
-          <div class="card" style="padding-bottom:12px;">
+        <!-- Gráficos lado a lado -->
+        <div class="dashboard-charts-row">
+          <div class="card dashboard-chart-card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
               <div class="section-title" style="margin-bottom:0;">Faturamento mensal (R$)</div>
-              <select id="chart-periodo" onchange="renderDashboard()" style="border:1px solid #e8e7e0;border-radius:8px;padding:4px 10px;font-size:12px;color:#555;background:#fff;cursor:pointer;outline:none;">
+              <select id="chart-periodo" onchange="renderDashboard()" style="border:1px solid #e8e7e0;border-radius:8px;padding:4px 8px;font-size:11px;color:#555;background:#fff;cursor:pointer;outline:none;">
                 <option value="1">1 mês</option>
                 <option value="3">3 meses</option>
                 <option value="6" selected>6 meses</option>
@@ -410,18 +420,18 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
               </select>
             </div>
             <div id="bar-chart" style="width:100%;"></div>
-            <div id="chart-legenda" style="display:flex;gap:16px;margin-top:10px;justify-content:center;font-size:11px;color:#888;flex-wrap:wrap;"></div>
+            <div id="chart-legenda" style="display:flex;gap:12px;margin-top:8px;justify-content:center;font-size:10px;color:#888;flex-wrap:wrap;"></div>
           </div>
-        </div>
 
-        <!-- Gráfico Receitas x Despesas -->
-        <div class="card" style="margin-bottom:22px;padding-bottom:14px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-            <div class="section-title" style="margin-bottom:0;">Receitas × Despesas</div>
-            <div id="dash-saldo-badge" style="font-size:13px;font-weight:600;"></div>
+          <!-- Gráfico Receitas x Despesas -->
+          <div class="card dashboard-chart-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+              <div class="section-title" style="margin-bottom:0;">Receitas × Despesas</div>
+              <div id="dash-saldo-badge" style="font-size:12px;font-weight:600;"></div>
+            </div>
+            <div id="rxd-chart" style="width:100%;"></div>
+            <div id="rxd-legenda" style="display:flex;gap:14px;margin-top:8px;justify-content:center;font-size:10px;color:#888;flex-wrap:wrap;"></div>
           </div>
-          <div id="rxd-chart" style="width:100%;"></div>
-          <div id="rxd-legenda" style="display:flex;gap:20px;margin-top:10px;justify-content:center;font-size:11px;color:#888;flex-wrap:wrap;"></div>
         </div>
 
       </div>
