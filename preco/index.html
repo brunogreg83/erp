@@ -144,11 +144,8 @@ async function importERPProducts(){
     const kSale=key(["Preço de venda","Preco de venda","Preço","Preco","Preço atual","Preco atual"]);
     if(!kName) throw new Error("Não encontrei a coluna Produto na planilha.");
 
-    const {data:existing,error:loadErr}=await supabaseClient
-      .from("products").select("id,code");
-    if(loadErr) throw loadErr;
-
-    const byCode=new Map((existing||[]).filter(p=>p.code).map(p=>[String(p.code).trim(),p]));
+    const existing=await sb('/rest/v1/products?select=id,code');
+    const byCode=new Map((existing||[]).filter(p=>p.code!==null && p.code!==undefined && String(p.code).trim()!=="").map(p=>[String(p.code).trim(),p]));
     let created=0,updated=0,skipped=0;
 
     for(const row of data){
@@ -170,13 +167,12 @@ async function importERPProducts(){
 
       let result;
       if(code && byCode.has(code)){
-        result=await supabaseClient.from("products").update(payload).eq("id",byCode.get(code).id);
-        if(result.error) throw result.error;
+        await sb('/rest/v1/products?id=eq.'+encodeURIComponent(byCode.get(code).id),{method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify(payload)});
         updated++;
       }else{
-        result=await supabaseClient.from("products").insert(payload).select("id").single();
-        if(result.error) throw result.error;
-        if(code) byCode.set(code,{id:result.data.id,code});
+        const inserted=await sb('/rest/v1/products',{method:'POST',headers:{'Prefer':'return=representation'},body:JSON.stringify(payload)});
+        const newProduct=Array.isArray(inserted)?inserted[0]:inserted;
+        if(code && newProduct?.id) byCode.set(code,{id:newProduct.id,code});
         created++;
       }
     }
