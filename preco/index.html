@@ -40,9 +40,10 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 <div class="metric">Venda total<b id="totalSale">R$ 0,00</b></div>
 <div class="metric">Margem<b id="totalMargin">—</b></div>
 <div class="metric">Margem padrão<b>100%</b></div>
+<div class="metric">Precificação do pedido<b id="totalStatus"><span class="badge yellow">⚪ SEM PEDIDO</span></b></div>
 </div>
 <div style="overflow:auto;margin-top:16px">
-<table><thead><tr><th>Produto</th><th>Qtd.</th><th>Preço</th><th>Total</th><th>Margem</th><th></th></tr></thead><tbody id="items"></tbody></table>
+<table><thead><tr><th>Produto</th><th>Qtd.</th><th>Preço</th><th>Total</th><th>Precificação</th><th>Margem</th><th></th></tr></thead><tbody id="items"></tbody></table>
 </div>
 </section>
 
@@ -54,11 +55,12 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 <div><label>Código</label><input id="pCode" placeholder="Código ERP (opcional)"></div>
 <div><label>Preço de tabela</label><input id="pTable" type="number" min="0" step="0.01" placeholder="Ex.: 125,38"></div>
 <div><label>Custo</label><input id="pCost" type="number" min="0" step="0.01" placeholder="Ex.: 62,69"></div>
+<div><label>Preço mínimo aceitável</label><input id="pMin" type="number" min="0" step="0.01" placeholder="Informado manualmente"></div>
 <div><label>Margem (%)</label><input id="pMargin" type="number" min="0" step="0.01" value="100"></div>
 <div><label>&nbsp;</label><button class="primary" onclick="saveProduct()">Salvar produto</button></div>
 </div>
 <p id="saveMsg" class="muted"></p>
-<div style="overflow:auto;margin-top:18px"><table><thead><tr><th>Código</th><th>Produto</th><th>Custo</th><th>Margem</th><th>Sugerido</th><th>Atual</th><th></th></tr></thead><tbody id="productsAdmin"></tbody></table></div>
+<div style="overflow:auto;margin-top:18px"><table><thead><tr><th>Código</th><th>Produto</th><th>Custo</th><th>Margem</th><th>Sugerido</th><th>Mínimo</th><th>Atual</th><th></th></tr></thead><tbody id="productsAdmin"></tbody></table></div>
 </section>
 </main>
 
@@ -84,8 +86,15 @@ async function loadProducts(){
   const {data,error}=await supabase.from("products").select("id,code,name,cost,margin_percent,suggested_price,current_price,active").eq("active",true).order("name");
   if(error) throw error;
   products=data||[];
+  if(products.length){
+    const ids=products.map(p=>p.id);
+    const {data:pricing,error:pe}=await supabase.from("product_pricing").select("product_id,min_price").in("product_id",ids);
+    if(pe) console.warn("Não foi possível carregar preços mínimos:",pe.message);
+    const pm=new Map((pricing||[]).map(x=>[String(x.product_id),num(x.min_price)]));
+    products.forEach(p=>p.min_price=pm.get(String(p.id))||0);
+  }
   const el=document.getElementById("product");
-  el.innerHTML=products.length?products.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join(""):"<option value=\"\">Nenhum produto cadastrado</option>";
+  el.innerHTML=products.length?products.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join(""):"<option value="">Nenhum produto cadastrado</option>";
   if(products.length) document.getElementById("price").value=products[0].current_price??products[0].suggested_price??"";
 }
 
@@ -101,30 +110,44 @@ function addItem(){
   if(!p) return;
   const q=Math.max(1,num(document.getElementById("qty").value));
   const pr=num(document.getElementById("price").value);
-  items.push({productId:p.id,name:p.name,cost:num(p.cost),qty:q,price:pr});
+  items.push({productId:p.id,name:p.name,cost:num(p.cost),suggested:num(p.suggested_price),min:num(p.min_price),qty:q,price:pr});
   render();
 }
 window.addItem=addItem;
 window.removeItem=i=>{items.splice(i,1);render()};
 
+function priceStatus(price,suggested,min){
+  const p=num(price), s=num(suggested), m=num(min);
+  if(m>0 && p<m) return ["red","🔴 VERMELHO"];
+  if(s>0 && p<s) return ["yellow","🟡 AMARELO"];
+  return ["green","🟢 VERDE"];
+}
+
 function render(){
   const tbody=document.getElementById("items"); tbody.innerHTML="";
-  let total=0,costTotal=0;
+  let total=0,costTotal=0,suggestedTotal=0,minTotal=0;
   items.forEach((x,i)=>{
-    const t=x.qty*x.price,c=x.qty*x.cost; total+=t;costTotal+=c;
+    const t=x.qty*x.price,c=x.qty*x.cost; total+=t;costTotal+=c;suggestedTotal+=x.qty*x.suggested;minTotal+=x.qty*x.min;
     const margin=c?((x.price-x.cost)/x.cost)*100:0;
-    tbody.insertAdjacentHTML("beforeend",`<tr><td>${escapeHtml(x.name)}</td><td>${x.qty}</td><td>${money(x.price)}</td><td>${money(t)}</td><td>${margin.toFixed(1)}%</td><td><button class="danger" onclick="removeItem(${i})">X</button></td></tr>`);
+    const st=priceStatus(x.price,x.suggested,x.min);
+    tbody.insertAdjacentHTML("beforeend",`<tr><td>${escapeHtml(x.name)}</td><td>${x.qty}</td><td>${money(x.price)}</td><td>${money(t)}</td><td><span class="badge ${st[0]}">${st[1]}</span></td><td>${margin.toFixed(1)}%</td><td><button class="danger" onclick="removeItem(${i})">X</button></td></tr>`);
   });
   document.getElementById("totalSale").textContent=money(total);
   document.getElementById("totalMargin").textContent=costTotal?money(total-costTotal)+" ("+(((total-costTotal)/costTotal)*100).toFixed(1)+"%)":"—";
+  const overall=items.length?priceStatus(total,suggestedTotal,minTotal):["yellow","⚪ SEM PEDIDO"];
+  document.getElementById("totalStatus").innerHTML=`<span class="badge ${overall[0]}">${overall[1]}</span>`;
 }
 
 async function loadAdmin(){
   const tbody=document.getElementById("productsAdmin");
-  tbody.innerHTML="<tr><td colspan=7>Carregando...</td></tr>";
+  tbody.innerHTML="<tr><td colspan=8>Carregando...</td></tr>";
   const {data,error}=await supabase.from("products").select("id,code,name,cost,margin_percent,suggested_price,current_price,active").order("name");
-  if(error){tbody.innerHTML=`<tr><td colspan=7 class="error">Erro ao consultar produtos: ${escapeHtml(error.message)}</td></tr>`;return;}
-  tbody.innerHTML=(data||[]).map(p=>`<tr><td>${escapeHtml(p.code||"")}</td><td>${escapeHtml(p.name)}</td><td>${money(p.cost)}</td><td>${Number(p.margin_percent??100).toFixed(2)}%</td><td>${money(p.suggested_price)}</td><td>${money(p.current_price)}</td><td><button class="danger" onclick="delProduct('${p.id}')">Excluir</button></td></tr>`).join("")||"<tr><td colspan=7>Nenhum produto cadastrado.</td></tr>";
+  if(error){tbody.innerHTML=`<tr><td colspan=8 class="error">Erro ao consultar produtos: ${escapeHtml(error.message)}</td></tr>`;return;}
+  const ids=(data||[]).map(p=>p.id);
+  let pricing=[];
+  if(ids.length){const r=await supabase.from("product_pricing").select("product_id,min_price").in("product_id",ids); if(!r.error) pricing=r.data||[]; else console.warn(r.error.message);}
+  const pm=new Map(pricing.map(x=>[String(x.product_id),num(x.min_price)]));
+  tbody.innerHTML=(data||[]).map(p=>`<tr><td>${escapeHtml(p.code||"")}</td><td>${escapeHtml(p.name)}</td><td>${money(p.cost)}</td><td>${Number(p.margin_percent??100).toFixed(2)}%</td><td>${money(p.suggested_price)}</td><td>${money(pm.get(String(p.id))||0)}</td><td>${money(p.current_price)}</td><td><button class="danger" onclick="delProduct('${p.id}')">Excluir</button></td></tr>`).join("")||"<tr><td colspan=8>Nenhum produto cadastrado.</td></tr>";
 }
 window.loadAdmin=loadAdmin;
 
@@ -134,6 +157,7 @@ async function saveProduct(){
   const code=document.getElementById("pCode").value.trim()||null;
   const cost=num(document.getElementById("pCost").value);
   const table=num(document.getElementById("pTable").value);
+  const minPrice=num(document.getElementById("pMin").value);
   const margin=num(document.getElementById("pMargin").value)||100;
   if(!name){msg.className="error";msg.textContent="Informe o nome do produto.";return;}
   if(cost<=0){msg.className="error";msg.textContent="Informe um custo maior que zero.";return;}
@@ -141,10 +165,14 @@ async function saveProduct(){
   const current=table>0?Number(table.toFixed(2)):suggested;
   msg.className="muted";msg.textContent="Salvando...";
   const payload={name,code,cost,margin_percent:margin,suggested_price:suggested,current_price:current,active:true};
-  const {error}=await supabase.from("products").insert(payload);
+  const {data:created,error}=await supabase.from("products").insert(payload).select("id").single();
   if(error){msg.className="error";msg.textContent="Não foi possível salvar: "+error.message;return;}
+  if(minPrice>0){
+    const {error:pe}=await supabase.from("product_pricing").upsert({product_id:created.id,min_price:minPrice},{onConflict:"product_id"});
+    if(pe){msg.className="error";msg.textContent="Produto salvo, mas não foi possível salvar o preço mínimo: "+pe.message;await loadAdmin();await loadProducts();return;}
+  }
   msg.className="ok";msg.textContent=`Produto salvo. Margem ${margin.toFixed(2)}% e preço sugerido ${money(suggested)}.`;
-  document.getElementById("pName").value="";document.getElementById("pCode").value="";document.getElementById("pTable").value="";document.getElementById("pCost").value="";document.getElementById("pMargin").value="100";
+  document.getElementById("pName").value="";document.getElementById("pCode").value="";document.getElementById("pTable").value="";document.getElementById("pCost").value="";document.getElementById("pMin").value="";document.getElementById("pMargin").value="100";
   await loadAdmin();await loadProducts();
 }
 window.saveProduct=saveProduct;
