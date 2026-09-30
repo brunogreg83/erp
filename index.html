@@ -469,7 +469,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
           <button class="btn-ghost" onclick="openModal('modal-fornecedor')"><i class="ti ti-building-store"></i> Novo fornecedor</button>
           <button class="btn-primary" onclick="openModal('modal-produto')"><i class="ti ti-plus"></i> Novo produto</button>
           <button class="btn-ghost" onclick="openModal('modal-importar-nf')"><i class="ti ti-file-import"></i> Importar XML / NF-e</button>
-          <button class="btn-ghost" onclick="openModal('modal-importar-produtos')"><i class="ti ti-file-spreadsheet"></i> Importar produtos</button>
+          <button class="btn-ghost" onclick="openModal('modal-exportar-produtos')"><i class="ti ti-file-export"></i> Exportar produtos</button>
         </div>
         <div class="estoque-busca-topo">
           <input class="form-input" placeholder="Buscar produto..." oninput="filtrar('tabela-estoque',this.value)">
@@ -826,24 +826,29 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   </div>
 </div>
 
-<!-- Modal Importar Produtos -->
-<div class="modal-overlay" id="modal-importar-produtos">
-  <div class="modal" style="width:720px;">
-    <div class="modal-header"><span class="modal-header-title">Importar produtos</span><span class="modal-drag-hint"><i class="ti ti-arrows-move"></i> mover</span></div>
+<!-- Modal Exportar Produtos -->
+<div class="modal-overlay" id="modal-exportar-produtos">
+  <div class="modal" style="width:620px;">
+    <div class="modal-header"><span class="modal-header-title">Exportar produtos</span><span class="modal-drag-hint"><i class="ti ti-arrows-move"></i> mover</span></div>
     <div class="modal-body">
-      <div style="background:#E6F1FB;border-radius:8px;padding:12px 14px;font-size:12px;color:#185FA5;margin-bottom:16px;line-height:1.55;">
-        <i class="ti ti-info-circle"></i> Importe produtos em <b>Excel (.xlsx/.xls)</b>, <b>CSV</b> ou <b>TXT</b>. A primeira linha deve conter os nomes das colunas. O sistema tenta identificar automaticamente código, produto, categoria, fornecedor, estoque, mínimo, custo, preço e observações.
+      <div style="background:#E6F1FB;border-radius:8px;padding:12px 14px;font-size:12px;color:#185FA5;margin-bottom:18px;line-height:1.55;">
+        <i class="ti ti-info-circle"></i> Exporte os produtos cadastrados para utilizar os dados em <b>outro sistema</b>. O arquivo conterá código, produto, categoria, fornecedor, estoque, estoque mínimo, custo, preço de venda e observações.
       </div>
       <div class="form-group">
-        <label class="form-label">Arquivo</label>
-        <input type="file" id="prod-import-file" accept=".xlsx,.xls,.csv,.txt,.tsv" class="form-input" style="padding:6px;" onchange="previewImportProdutos(this)">
+        <label class="form-label">Formato do arquivo</label>
+        <select class="form-input" id="prod-export-formato">
+          <option value="xlsx">Excel (.xlsx)</option>
+          <option value="csv">CSV (.csv)</option>
+          <option value="txt">TXT (.txt)</option>
+        </select>
       </div>
-      <div id="prod-import-status" style="font-size:12px;color:#888;margin-bottom:10px;min-height:18px;"></div>
-      <div id="prod-import-preview" style="max-height:330px;overflow:auto;"></div>
+      <div style="font-size:12px;color:#888;margin-top:4px;">
+        Produtos cadastrados: <b id="prod-export-qtd">0</b>
+      </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-ghost" onclick="closeModal('modal-importar-produtos')">Cancelar</button>
-      <button class="btn-primary" id="btn-confirmar-import-produtos" onclick="confirmarImportacaoProdutos()" style="display:none;"><i class="ti ti-upload"></i> Importar produtos</button>
+      <button class="btn-ghost" onclick="closeModal('modal-exportar-produtos')">Cancelar</button>
+      <button class="btn-primary" onclick="exportarProdutos()"><i class="ti ti-file-export"></i> Exportar produtos</button>
     </div>
   </div>
 </div>
@@ -1716,6 +1721,7 @@ window.filtrar = (id, q) => {
 
 // ── Modais ─────────────────────────────────────────────────────────────────
 window.openModal = id => {
+  if (id === 'modal-exportar-produtos') { const q = document.getElementById('prod-export-qtd'); if (q) q.textContent = Array.isArray(D.produtos) ? D.produtos.length : 0; }
   if (id === 'modal-pedido')  prepPedido();
   if (id === 'modal-receber') { document.getElementById('rec-venc').value = today(); sel('rec-cli', D.clientes.map(c=>c.nome)); }
   if (id === 'modal-pagar') {
@@ -4797,6 +4803,44 @@ window.confirmarImportacao = async () => {
 };
 
 // ── Importação em massa de produtos (Excel / CSV / TXT) ─────────────────────
+window.exportarProdutos = () => {
+  const lista = Array.isArray(D.produtos) ? D.produtos : [];
+  if (!lista.length) { toast('Nenhum produto cadastrado para exportar.'); return; }
+  const formato = document.getElementById('prod-export-formato')?.value || 'xlsx';
+  const cabecalhos = ['Código','Produto','Categoria','Fornecedor','Estoque','Estoque mínimo','Custo','Preço de venda','Observações'];
+  const rows = lista.map(p => [
+    p.cod || '', p.nome || '', p.categoria || '', p.fornecedor || '',
+    p.estoque ?? 0, p.minimo ?? 0, p.custo ?? 0, p.preco ?? 0, p.obs || ''
+  ]);
+  const nomeBase = 'produtos_ab_chemicals_' + new Date().toISOString().slice(0,10);
+  try {
+    if (formato === 'xlsx') {
+      if (!window.XLSX) throw new Error('Biblioteca Excel não carregada. Atualize a página e tente novamente.');
+      const ws = XLSX.utils.aoa_to_sheet([cabecalhos, ...rows]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Produtos');
+      XLSX.writeFile(wb, nomeBase + '.xlsx');
+    } else if (formato === 'csv') {
+      const esc = v => { const x = String(v ?? ''); return /[;"\n]/.test(x) ? '"' + x.replace(/"/g,'""') + '"' : x; };
+      const conteudo = '\uFEFF' + [cabecalhos, ...rows].map(r => r.map(esc).join(';')).join('\r\n');
+      const blob = new Blob([conteudo], {type:'text/csv;charset=utf-8;'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nomeBase + '.csv'; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    } else {
+      const esc = v => String(v ?? '').replace(/\t/g,' ').replace(/\r?\n/g,' ');
+      const conteudo = '\uFEFF' + [cabecalhos, ...rows].map(r => r.map(esc).join('\t')).join('\r\n');
+      const blob = new Blob([conteudo], {type:'text/plain;charset=utf-8;'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nomeBase + '.txt'; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+    closeModal('modal-exportar-produtos');
+    toast(`✅ ${lista.length} produto(s) exportado(s) em ${formato.toUpperCase()}.`);
+  } catch (e) {
+    console.error('[exportar produtos]', e);
+    toast('❌ Erro ao exportar: ' + (e.message || e));
+  }
+};
+
 let produtosImportados = [];
 
 function normalizarCabecalhoProduto(v) {
