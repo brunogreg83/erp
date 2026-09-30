@@ -18,6 +18,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}.metric{background:#f7f9fb;border-radius:10px;padding:13px}.metric b{display:block;font-size:18px;margin-top:5px}
 .hidden{display:none!important}.muted{color:#6d7780;font-size:13px}.right{text-align:right}.ok{color:#087a35;font-weight:700}.error{color:#b00020;font-weight:700}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 <header><h1>AB Chemicals — Controle de Preços</h1><small>Vendas e Back-office</small></header>
@@ -50,6 +51,16 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 <section id="admin" class="card hidden">
 <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2>Produtos</h2><button class="secondary" type="button" onclick="show('sales')">Voltar</button></div>
 <p class="muted">Cadastro direto no Supabase. A margem padrão é de <strong>100%</strong>. O preço sugerido é calculado automaticamente como custo × 2. Não existe preço mínimo automático.</p>
+    <div class="card" style="margin-top:14px;background:#f7fbff;border:1px solid #cfe8f6">
+      <h3 style="margin-top:0">Importar produtos do AB | ERP</h3>
+      <p class="muted">Selecione o Excel exportado do ERP. Produtos existentes pelo mesmo código serão atualizados; produtos sem código serão adicionados.</p>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <input id="erpFile" type="file" accept=".xlsx,.xls,.csv">
+        <button id="btnImportERP" class="primary" type="button">Importar produtos do ERP</button>
+      </div>
+      <p id="importMsg" class="muted"></p>
+    </div>
+
 <div class="grid">
 <div><label>Produto</label><input id="pName" placeholder="Nome do produto"></div>
 <div><label>Código</label><input id="pCode" placeholder="Código ERP (opcional)"></div>
@@ -79,132 +90,110 @@ document.getElementById("btnAdmin").addEventListener("click",()=>show("admin"));
 </script>
 
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-
 const SUPABASE_URL = "https://divokbonqrmpindszoqv.supabase.co";
 const SUPABASE_KEY = "sb_publishable_sCTeIxcTB-oUswA-QVP0Wg_LrlGgjhY";
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
 let products=[], items=[];
 const money=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const num=v=>Number(String(v??0).replace(",","."))||0;
-
+async function sb(path, options={}){
+ const r=await fetch(SUPABASE_URL+path,{...options,headers:{"apikey":SUPABASE_KEY,"Authorization":"Bearer "+SUPABASE_KEY,"Content-Type":"application/json",...(options.headers||{})}});
+ const text=await r.text(); let data; try{data=text?JSON.parse(text):null}catch{data=text}
+ if(!r.ok) throw new Error(data?.message||data?.hint||data?.error_description||text||("HTTP "+r.status));
+ return data;
+}
 async function loadProducts(){
-  const {data,error}=await supabaseClient.from("products").select("id,code,name,cost,margin_percent,suggested_price,current_price,active").eq("active",true).order("name");
-  if(error) throw error;
-  products=data||[];
-  if(products.length){
-    const ids=products.map(p=>p.id);
-    const {data:pricing,error:pe}=await supabaseClient.from("product_pricing").select("product_id,min_price").in("product_id",ids);
-    if(pe) console.warn("Não foi possível carregar preços mínimos:",pe.message);
-    const pm=new Map((pricing||[]).map(x=>[String(x.product_id),num(x.min_price)]));
-    products.forEach(p=>p.min_price=pm.get(String(p.id))||0);
-  }
-  const el=document.getElementById("product");
-  el.innerHTML=products.length?products.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join(""):"<option value="">Nenhum produto cadastrado</option>";
-  if(products.length) document.getElementById("price").value=products[0].current_price??products[0].suggested_price??"";
+ const q=await sb('/rest/v1/products?select=id,code,name,cost,margin_percent,suggested_price,current_price,active&active=eq.true&order=name.asc');
+ products=q||[];
+ if(products.length){ const ids=products.map(p=>p.id); const pricing=await sb('/rest/v1/product_pricing?select=product_id,min_price&product_id=in.('+ids.join(',')+')'); const pm=new Map((pricing||[]).map(x=>[String(x.product_id),num(x.min_price)])); products.forEach(p=>p.min_price=pm.get(String(p.id))||0);}
+ const el=document.getElementById('product'); el.innerHTML=products.length?products.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join(''):'<option value="">Nenhum produto cadastrado</option>'; if(products.length) document.getElementById('price').value=products[0].current_price??products[0].suggested_price??'';
 }
-
-document.getElementById("product").addEventListener("change",()=>{
-  const p=products.find(x=>String(x.id)===String(document.getElementById("product").value));
-  document.getElementById("price").value=p?.current_price??p?.suggested_price??"";
-});
-
-function escapeHtml(v){return String(v??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));}
-
-function addItem(){
-  const p=products.find(x=>String(x.id)===String(document.getElementById("product").value));
-  if(!p) return;
-  const q=Math.max(1,num(document.getElementById("qty").value));
-  const pr=num(document.getElementById("price").value);
-  items.push({productId:p.id,name:p.name,cost:num(p.cost),suggested:num(p.suggested_price),min:num(p.min_price),qty:q,price:pr});
-  render();
-}
-window.addItem=addItem;
-window.removeItem=i=>{items.splice(i,1);render()};
-
-function priceStatus(price,suggested,min){
-  const p=num(price), s=num(suggested), m=num(min);
-  if(m>0 && p<m) return ["red","🔴 VERMELHO"];
-  if(s>0 && p<s) return ["yellow","🟡 AMARELO"];
-  return ["green","🟢 VERDE"];
-}
-
-function render(){
-  const tbody=document.getElementById("items"); tbody.innerHTML="";
-  let total=0,costTotal=0,suggestedTotal=0,minTotal=0;
-  items.forEach((x,i)=>{
-    const t=x.qty*x.price,c=x.qty*x.cost; total+=t;costTotal+=c;suggestedTotal+=x.qty*x.suggested;minTotal+=x.qty*x.min;
-    const margin=c?((x.price-x.cost)/x.cost)*100:0;
-    const st=priceStatus(x.price,x.suggested,x.min);
-    tbody.insertAdjacentHTML("beforeend",`<tr><td>${escapeHtml(x.name)}</td><td>${x.qty}</td><td>${money(x.price)}</td><td>${money(t)}</td><td><span class="badge ${st[0]}">${st[1]}</span></td><td>${margin.toFixed(1)}%</td><td><button class="danger" onclick="removeItem(${i})">X</button></td></tr>`);
-  });
-  document.getElementById("totalSale").textContent=money(total);
-  document.getElementById("totalMargin").textContent=costTotal?money(total-costTotal)+" ("+(((total-costTotal)/costTotal)*100).toFixed(1)+"%)":"—";
-  const overall=items.length?priceStatus(total,suggestedTotal,minTotal):["yellow","⚪ SEM PEDIDO"];
-  document.getElementById("totalStatus").innerHTML=`<span class="badge ${overall[0]}">${overall[1]}</span>`;
-}
-
-async function loadAdmin(){
-  const tbody=document.getElementById("productsAdmin");
-  tbody.innerHTML="<tr><td colspan=8>Carregando...</td></tr>";
-  const {data,error}=await supabaseClient.from("products").select("id,code,name,cost,margin_percent,suggested_price,current_price,active").order("name");
-  if(error){tbody.innerHTML=`<tr><td colspan=8 class="error">Erro ao consultar produtos: ${escapeHtml(error.message)}</td></tr>`;return;}
-  const ids=(data||[]).map(p=>p.id);
-  let pricing=[];
-  if(ids.length){const r=await supabaseClient.from("product_pricing").select("product_id,min_price").in("product_id",ids); if(!r.error) pricing=r.data||[]; else console.warn(r.error.message);}
-  const pm=new Map(pricing.map(x=>[String(x.product_id),num(x.min_price)]));
-  tbody.innerHTML=(data||[]).map(p=>`<tr><td>${escapeHtml(p.code||"")}</td><td>${escapeHtml(p.name)}</td><td>${money(p.cost)}</td><td>${Number(p.margin_percent??100).toFixed(2)}%</td><td>${money(p.suggested_price)}</td><td>${money(pm.get(String(p.id))||0)}</td><td>${money(p.current_price)}</td><td><button class="danger" onclick="delProduct('${p.id}')">Excluir</button></td></tr>`).join("")||"<tr><td colspan=8>Nenhum produto cadastrado.</td></tr>";
-}
+document.getElementById('product').addEventListener('change',()=>{const p=products.find(x=>String(x.id)===String(document.getElementById('product').value));document.getElementById('price').value=p?.current_price??p?.suggested_price??''});
+function escapeHtml(v){return String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]))}
+function addItem(){const p=products.find(x=>String(x.id)===String(document.getElementById('product').value));if(!p)return;const q=Math.max(1,num(document.getElementById('qty').value)),pr=num(document.getElementById('price').value);items.push({productId:p.id,name:p.name,cost:num(p.cost),suggested:num(p.suggested_price),min:num(p.min_price),qty:q,price:pr});render()}
+window.addItem=addItem;window.removeItem=i=>{items.splice(i,1);render()};
+function priceStatus(price,suggested,min){const p=num(price),s=num(suggested),m=num(min);if(m>0&&p<m)return ['red','🔴 VERMELHO'];if(s>0&&p<s)return ['yellow','🟡 AMARELO'];return ['green','🟢 VERDE']}
+function render(){const tbody=document.getElementById('items');tbody.innerHTML='';let total=0,costTotal=0,suggestedTotal=0,minTotal=0;items.forEach((x,i)=>{const t=x.qty*x.price,c=x.qty*x.cost;total+=t;costTotal+=c;suggestedTotal+=x.qty*x.suggested;minTotal+=x.qty*x.min;const margin=c?((x.price-x.cost)/c)*100:0,st=priceStatus(x.price,x.suggested,x.min);tbody.insertAdjacentHTML('beforeend',`<tr><td>${escapeHtml(x.name)}</td><td>${x.qty}</td><td>${money(x.price)}</td><td>${money(t)}</td><td><span class="badge ${st[0]}">${st[1]}</span></td><td>${margin.toFixed(1)}%</td><td><button class="danger" onclick="removeItem(${i})">X</button></td></tr>`)});document.getElementById('totalSale').textContent=money(total);document.getElementById('totalMargin').textContent=costTotal?money(total-costTotal)+' ('+(((total-costTotal)/costTotal)*100).toFixed(1)+'%)':'—';const overall=items.length?priceStatus(total,suggestedTotal,minTotal):['yellow','⚪ SEM PEDIDO'];document.getElementById('totalStatus').innerHTML=`<span class="badge ${overall[0]}">${overall[1]}</span>`}
+async function loadAdmin(){const tbody=document.getElementById('productsAdmin');tbody.innerHTML='<tr><td colspan=8>Carregando...</td></tr>';try{const data=await sb('/rest/v1/products?select=id,code,name,cost,margin_percent,suggested_price,current_price,active&order=name.asc');const ids=(data||[]).map(p=>p.id);let pricing=[];if(ids.length)pricing=await sb('/rest/v1/product_pricing?select=product_id,min_price&product_id=in.('+ids.join(',')+')');const pm=new Map((pricing||[]).map(x=>[String(x.product_id),num(x.min_price)]));tbody.innerHTML=(data||[]).map(p=>`<tr><td>${escapeHtml(p.code||'')}</td><td>${escapeHtml(p.name)}</td><td>${money(p.cost)}</td><td>${Number(p.margin_percent??100).toFixed(2)}%</td><td>${money(p.suggested_price)}</td><td>${money(pm.get(String(p.id))||0)}</td><td>${money(p.current_price)}</td><td><button class="danger" onclick="delProduct('${p.id}')">Excluir</button></td></tr>`).join('')||'<tr><td colspan=8>Nenhum produto cadastrado.</td></tr>'}catch(e){tbody.innerHTML=`<tr><td colspan=8 class="error">Erro ao consultar produtos: ${escapeHtml(e.message)}</td></tr>`}}
 window.loadAdmin=loadAdmin;
+async function saveProduct(){const msg=document.getElementById('saveMsg');try{const name=document.getElementById('pName').value.trim(),code=document.getElementById('pCode').value.trim()||null,cost=num(document.getElementById('pCost').value),table=num(document.getElementById('pTable').value),minPrice=num(document.getElementById('pMin').value),margin=num(document.getElementById('pMargin').value)||100;if(!name){msg.className='error';msg.textContent='Informe o nome do produto.';return}if(cost<=0){msg.className='error';msg.textContent='Informe um custo maior que zero.';return}const suggested=Number((cost*(1+margin/100)).toFixed(2)),current=table>0?Number(table.toFixed(2)):suggested;msg.className='muted';msg.textContent='Salvando...';const created=await sb('/rest/v1/products',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({name,code,cost,margin_percent:margin,suggested_price:suggested,current_price:current,active:true})});const id=Array.isArray(created)?created[0]?.id:created?.id;if(!id)throw new Error('Produto foi enviado, mas o Supabase não retornou o ID.');if(minPrice>0)await sb('/rest/v1/product_pricing',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({product_id:id,min_price:minPrice})});msg.className='ok';msg.textContent=`Produto salvo. Margem ${margin.toFixed(2)}% e preço sugerido ${money(suggested)}.`;['pName','pCode','pTable','pCost','pMin'].forEach(id=>document.getElementById(id).value='');document.getElementById('pMargin').value='100';await loadAdmin();await loadProducts()}catch(e){console.error(e);msg.className='error';msg.textContent='Erro no cadastro: '+(e?.message||e)}}
+window.saveProduct=saveProduct;document.getElementById('btnSaveProduct').addEventListener('click',saveProduct);
+async function delProduct(id){if(!confirm('Excluir este produto?'))return;try{await sb('/rest/v1/products?id=eq.'+encodeURIComponent(id),{method:'DELETE'});await loadAdmin();await loadProducts()}catch(e){alert('Não foi possível excluir: '+e.message)}}window.delProduct=delProduct;
+loadProducts().catch(e=>{console.error(e);document.getElementById('product').innerHTML='<option>Erro ao carregar produtos</option>'});
 
-async function saveProduct(){
-  const msg=document.getElementById("saveMsg");
-  try {
-  const name=document.getElementById("pName").value.trim();
-  const code=document.getElementById("pCode").value.trim()||null;
-  const cost=num(document.getElementById("pCost").value);
-  const table=num(document.getElementById("pTable").value);
-  const minPrice=num(document.getElementById("pMin").value);
-  const margin=num(document.getElementById("pMargin").value)||100;
-  if(!name){msg.className="error";msg.textContent="Informe o nome do produto.";return;}
-  if(cost<=0){msg.className="error";msg.textContent="Informe um custo maior que zero.";return;}
-  const suggested=Number((cost*(1+margin/100)).toFixed(2));
-  const current=table>0?Number(table.toFixed(2)):suggested;
-  msg.className="muted";msg.textContent="Salvando...";
-  const payload={name,code,cost,margin_percent:margin,suggested_price:suggested,current_price:current,active:true};
-  const {data:created,error}=await supabaseClient.from("products").insert(payload).select("id").single();
-  if(error){msg.className="error";msg.textContent="Não foi possível salvar: "+error.message;return;}
-  if(minPrice>0){
-    const {error:pe}=await supabaseClient.from("product_pricing").insert({product_id:created.id,min_price:minPrice});
-    if(pe){msg.className="error";msg.textContent="Produto criado, mas o preço mínimo não foi salvo: "+pe.message;await loadAdmin();await loadProducts();return;}
-  }
-  msg.className="ok";msg.textContent=`Produto salvo. Margem ${margin.toFixed(2)}% e preço sugerido ${money(suggested)}.`;
-  document.getElementById("pName").value="";document.getElementById("pCode").value="";document.getElementById("pTable").value="";document.getElementById("pCost").value="";document.getElementById("pMin").value="";document.getElementById("pMargin").value="100";
-  await loadAdmin();await loadProducts();
-  } catch(e) {
+async function importERPProducts(){
+  const fileInput=document.getElementById("erpFile");
+  const msg=document.getElementById("importMsg");
+  const file=fileInput?.files?.[0];
+  if(!file){msg.className="error";msg.textContent="Selecione o arquivo Excel do ERP.";return;}
+  if(typeof XLSX==="undefined"){msg.className="error";msg.textContent="Biblioteca Excel não carregada. Atualize a página e tente novamente.";return;}
+  msg.className="muted";msg.textContent="Lendo arquivo...";
+  try{
+    const buffer=await file.arrayBuffer();
+    const wb=XLSX.read(buffer,{type:"array"});
+    const ws=wb.Sheets[wb.SheetNames.includes("Produtos")?"Produtos":wb.SheetNames[0]];
+    const data=XLSX.utils.sheet_to_json(ws,{defval:""});
+    if(!data.length) throw new Error("A planilha não contém produtos.");
+
+    const keys=Object.keys(data[0]);
+    const key=(names)=>keys.find(k=>names.some(n=>String(k).trim().toLowerCase()===n.toLowerCase()))
+               ||keys.find(k=>names.some(n=>String(k).trim().toLowerCase().includes(n.toLowerCase())));
+    const kCode=key(["Código","Codigo","Código ERP","Codigo ERP"]);
+    const kName=key(["Produto","Nome","Nome do produto"]);
+    const kCost=key(["Custo","Custo unitário","Custo Unitario"]);
+    const kSale=key(["Preço de venda","Preco de venda","Preço","Preco","Preço atual","Preco atual"]);
+    if(!kName) throw new Error("Não encontrei a coluna Produto na planilha.");
+
+    const {data:existing,error:loadErr}=await supabaseClient
+      .from("products").select("id,code");
+    if(loadErr) throw loadErr;
+
+    const byCode=new Map((existing||[]).filter(p=>p.code).map(p=>[String(p.code).trim(),p]));
+    let created=0,updated=0,skipped=0;
+
+    for(const row of data){
+      const name=String(row[kName]??"").trim();
+      if(!name){skipped++;continue;}
+      const code=kCode && row[kCode]!=="" ? String(row[kCode]).trim() : null;
+      const cost=num(row[kCost]);
+      const sale=num(row[kSale]);
+      const margin=100;
+      const suggested=Number((cost*(1+margin/100)).toFixed(2));
+      const current=sale>0?sale:suggested;
+      const payload={
+        name, code, cost,
+        margin_percent:margin,
+        suggested_price:suggested,
+        current_price:current,
+        active:true
+      };
+
+      let result;
+      if(code && byCode.has(code)){
+        result=await supabaseClient.from("products").update(payload).eq("id",byCode.get(code).id);
+        if(result.error) throw result.error;
+        updated++;
+      }else{
+        result=await supabaseClient.from("products").insert(payload).select("id").single();
+        if(result.error) throw result.error;
+        if(code) byCode.set(code,{id:result.data.id,code});
+        created++;
+      }
+    }
+
+    msg.className="ok";
+    msg.textContent=`Importação concluída: ${created} novos, ${updated} atualizados e ${skipped} ignorados.`;
+    await loadAdmin();
+    await loadProducts();
+  }catch(e){
     console.error(e);
     msg.className="error";
-    msg.textContent="Erro no cadastro: "+(e?.message || e);
+    msg.textContent="Erro na importação: "+(e?.message||e);
   }
 }
-window.saveProduct=saveProduct;
-const saveBtn=document.getElementById("btnSaveProduct");
-if(saveBtn) saveBtn.addEventListener("click", saveProduct);
-
-async function delProduct(id){
-  if(!confirm("Excluir este produto?")) return;
-  const {error}=await supabaseClient.from("products").delete().eq("id",id);
-  if(error){alert("Não foi possível excluir: "+error.message);return;}
-  await loadAdmin();await loadProducts();
-}
-window.delProduct=delProduct;
-
-loadProducts().catch(e=>{
-  console.error(e);
-  document.getElementById("product").innerHTML="<option>Erro ao carregar produtos</option>";
-});
+window.importERPProducts=importERPProducts;
+const importBtn=document.getElementById("btnImportERP");
+if(importBtn) importBtn.addEventListener("click",importERPProducts);
 </script>
 </body>
 </html>
