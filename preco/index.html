@@ -57,7 +57,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 <div><label>Custo</label><input id="pCost" type="number" min="0" step="0.01" placeholder="Ex.: 62,69"></div>
 <div><label>Preço mínimo aceitável</label><input id="pMin" type="number" min="0" step="0.01" placeholder="Informado manualmente"></div>
 <div><label>Margem (%)</label><input id="pMargin" type="number" min="0" step="0.01" value="100"></div>
-<div><label>&nbsp;</label><button class="primary" onclick="saveProduct()">Salvar produto</button></div>
+<div><label>&nbsp;</label><button id="btnSaveProduct" class="primary" type="button">Salvar produto</button></div>
 </div>
 <p id="saveMsg" class="muted"></p>
 <div style="overflow:auto;margin-top:18px"><table><thead><tr><th>Código</th><th>Produto</th><th>Custo</th><th>Margem</th><th>Sugerido</th><th>Mínimo</th><th>Atual</th><th></th></tr></thead><tbody id="productsAdmin"></tbody></table></div>
@@ -78,35 +78,25 @@ document.getElementById("btnSales").addEventListener("click",()=>show("sales"));
 document.getElementById("btnAdmin").addEventListener("click",()=>show("admin"));
 </script>
 
-<script>
-function show(id){
-  const sales=document.getElementById("sales");
-  const admin=document.getElementById("admin");
-  if(!sales || !admin) return;
-  sales.classList.toggle("hidden", id !== "sales");
-  admin.classList.toggle("hidden", id !== "admin");
-}
-window.show=show;
-</script>
 
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
 
 const SUPABASE_URL = "https://divokbonqrmpindszoqv.supabase.co";
 const SUPABASE_KEY = "sb_publishable_sCTeIxcTB-oUswA-QVP0Wg_LrlGgjhY";
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let products=[], items=[];
 const money=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const num=v=>Number(String(v??0).replace(",","."))||0;
 
 async function loadProducts(){
-  const {data,error}=await supabase.from("products").select("id,code,name,cost,margin_percent,suggested_price,current_price,active").eq("active",true).order("name");
+  const {data,error}=await supabaseClient.from("products").select("id,code,name,cost,margin_percent,suggested_price,current_price,active").eq("active",true).order("name");
   if(error) throw error;
   products=data||[];
   if(products.length){
     const ids=products.map(p=>p.id);
-    const {data:pricing,error:pe}=await supabase.from("product_pricing").select("product_id,min_price").in("product_id",ids);
+    const {data:pricing,error:pe}=await supabaseClient.from("product_pricing").select("product_id,min_price").in("product_id",ids);
     if(pe) console.warn("Não foi possível carregar preços mínimos:",pe.message);
     const pm=new Map((pricing||[]).map(x=>[String(x.product_id),num(x.min_price)]));
     products.forEach(p=>p.min_price=pm.get(String(p.id))||0);
@@ -159,11 +149,11 @@ function render(){
 async function loadAdmin(){
   const tbody=document.getElementById("productsAdmin");
   tbody.innerHTML="<tr><td colspan=8>Carregando...</td></tr>";
-  const {data,error}=await supabase.from("products").select("id,code,name,cost,margin_percent,suggested_price,current_price,active").order("name");
+  const {data,error}=await supabaseClient.from("products").select("id,code,name,cost,margin_percent,suggested_price,current_price,active").order("name");
   if(error){tbody.innerHTML=`<tr><td colspan=8 class="error">Erro ao consultar produtos: ${escapeHtml(error.message)}</td></tr>`;return;}
   const ids=(data||[]).map(p=>p.id);
   let pricing=[];
-  if(ids.length){const r=await supabase.from("product_pricing").select("product_id,min_price").in("product_id",ids); if(!r.error) pricing=r.data||[]; else console.warn(r.error.message);}
+  if(ids.length){const r=await supabaseClient.from("product_pricing").select("product_id,min_price").in("product_id",ids); if(!r.error) pricing=r.data||[]; else console.warn(r.error.message);}
   const pm=new Map(pricing.map(x=>[String(x.product_id),num(x.min_price)]));
   tbody.innerHTML=(data||[]).map(p=>`<tr><td>${escapeHtml(p.code||"")}</td><td>${escapeHtml(p.name)}</td><td>${money(p.cost)}</td><td>${Number(p.margin_percent??100).toFixed(2)}%</td><td>${money(p.suggested_price)}</td><td>${money(pm.get(String(p.id))||0)}</td><td>${money(p.current_price)}</td><td><button class="danger" onclick="delProduct('${p.id}')">Excluir</button></td></tr>`).join("")||"<tr><td colspan=8>Nenhum produto cadastrado.</td></tr>";
 }
@@ -184,10 +174,10 @@ async function saveProduct(){
   const current=table>0?Number(table.toFixed(2)):suggested;
   msg.className="muted";msg.textContent="Salvando...";
   const payload={name,code,cost,margin_percent:margin,suggested_price:suggested,current_price:current,active:true};
-  const {data:created,error}=await supabase.from("products").insert(payload).select("id").single();
+  const {data:created,error}=await supabaseClient.from("products").insert(payload).select("id").single();
   if(error){msg.className="error";msg.textContent="Não foi possível salvar: "+error.message;return;}
   if(minPrice>0){
-    const {error:pe}=await supabase.from("product_pricing").insert({product_id:created.id,min_price:minPrice});
+    const {error:pe}=await supabaseClient.from("product_pricing").insert({product_id:created.id,min_price:minPrice});
     if(pe){msg.className="error";msg.textContent="Produto criado, mas o preço mínimo não foi salvo: "+pe.message;await loadAdmin();await loadProducts();return;}
   }
   msg.className="ok";msg.textContent=`Produto salvo. Margem ${margin.toFixed(2)}% e preço sugerido ${money(suggested)}.`;
@@ -200,10 +190,12 @@ async function saveProduct(){
   }
 }
 window.saveProduct=saveProduct;
+const saveBtn=document.getElementById("btnSaveProduct");
+if(saveBtn) saveBtn.addEventListener("click", saveProduct);
 
 async function delProduct(id){
   if(!confirm("Excluir este produto?")) return;
-  const {error}=await supabase.from("products").delete().eq("id",id);
+  const {error}=await supabaseClient.from("products").delete().eq("id",id);
   if(error){alert("Não foi possível excluir: "+error.message);return;}
   await loadAdmin();await loadProducts();
 }
