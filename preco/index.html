@@ -171,6 +171,7 @@ window.loadAdmin=loadAdmin;
 
 async function saveProduct(){
   const msg=document.getElementById("saveMsg");
+  try {
   const name=document.getElementById("pName").value.trim();
   const code=document.getElementById("pCode").value.trim()||null;
   const cost=num(document.getElementById("pCost").value);
@@ -186,12 +187,17 @@ async function saveProduct(){
   const {data:created,error}=await supabase.from("products").insert(payload).select("id").single();
   if(error){msg.className="error";msg.textContent="Não foi possível salvar: "+error.message;return;}
   if(minPrice>0){
-    const {error:pe}=await supabase.from("product_pricing").upsert({product_id:created.id,min_price:minPrice},{onConflict:"product_id"});
-    if(pe){msg.className="error";msg.textContent="Produto salvo, mas não foi possível salvar o preço mínimo: "+pe.message;await loadAdmin();await loadProducts();return;}
+    const {error:pe}=await supabase.from("product_pricing").insert({product_id:created.id,min_price:minPrice});
+    if(pe){msg.className="error";msg.textContent="Produto criado, mas o preço mínimo não foi salvo: "+pe.message;await loadAdmin();await loadProducts();return;}
   }
   msg.className="ok";msg.textContent=`Produto salvo. Margem ${margin.toFixed(2)}% e preço sugerido ${money(suggested)}.`;
   document.getElementById("pName").value="";document.getElementById("pCode").value="";document.getElementById("pTable").value="";document.getElementById("pCost").value="";document.getElementById("pMin").value="";document.getElementById("pMargin").value="100";
   await loadAdmin();await loadProducts();
+  } catch(e) {
+    console.error(e);
+    msg.className="error";
+    msg.textContent="Erro no cadastro: "+(e?.message || e);
+  }
 }
 window.saveProduct=saveProduct;
 
