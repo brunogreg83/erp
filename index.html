@@ -6,6 +6,7 @@
 <title>AB Chemicals – ERP Cloud</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script>emailjs.init('e2QZvVniF5T6aJuRA');</script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -468,6 +469,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
           <button class="btn-ghost" onclick="openModal('modal-fornecedor')"><i class="ti ti-building-store"></i> Novo fornecedor</button>
           <button class="btn-primary" onclick="openModal('modal-produto')"><i class="ti ti-plus"></i> Novo produto</button>
           <button class="btn-ghost" onclick="openModal('modal-importar-nf')"><i class="ti ti-file-import"></i> Importar XML / NF-e</button>
+          <button class="btn-ghost" onclick="openModal('modal-importar-produtos')"><i class="ti ti-file-spreadsheet"></i> Importar produtos</button>
         </div>
         <div class="estoque-busca-topo">
           <input class="form-input" placeholder="Buscar produto..." oninput="filtrar('tabela-estoque',this.value)">
@@ -820,6 +822,28 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <button class="btn-ghost" onclick="closeModal('modal-importar-nf')">Cancelar</button>
       <button class="btn-ghost" id="btn-analisar-nf" onclick="analisarNF()" style="display:none;"><i class="ti ti-cpu"></i> Analisar com IA</button>
       <button class="btn-primary" id="btn-confirmar-nf" onclick="confirmarImportacao()" style="display:none;">Confirmar importação</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Importar Produtos -->
+<div class="modal-overlay" id="modal-importar-produtos">
+  <div class="modal" style="width:720px;">
+    <div class="modal-header"><span class="modal-header-title">Importar produtos</span><span class="modal-drag-hint"><i class="ti ti-arrows-move"></i> mover</span></div>
+    <div class="modal-body">
+      <div style="background:#E6F1FB;border-radius:8px;padding:12px 14px;font-size:12px;color:#185FA5;margin-bottom:16px;line-height:1.55;">
+        <i class="ti ti-info-circle"></i> Importe produtos em <b>Excel (.xlsx/.xls)</b>, <b>CSV</b> ou <b>TXT</b>. A primeira linha deve conter os nomes das colunas. O sistema tenta identificar automaticamente código, produto, categoria, fornecedor, estoque, mínimo, custo, preço e observações.
+      </div>
+      <div class="form-group">
+        <label class="form-label">Arquivo</label>
+        <input type="file" id="prod-import-file" accept=".xlsx,.xls,.csv,.txt,.tsv" class="form-input" style="padding:6px;" onchange="previewImportProdutos(this)">
+      </div>
+      <div id="prod-import-status" style="font-size:12px;color:#888;margin-bottom:10px;min-height:18px;"></div>
+      <div id="prod-import-preview" style="max-height:330px;overflow:auto;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-importar-produtos')">Cancelar</button>
+      <button class="btn-primary" id="btn-confirmar-import-produtos" onclick="confirmarImportacaoProdutos()" style="display:none;"><i class="ti ti-upload"></i> Importar produtos</button>
     </div>
   </div>
 </div>
@@ -4770,6 +4794,170 @@ window.confirmarImportacao = async () => {
   btn.textContent = 'Confirmar importação'; btn.disabled = false;
   const _msgPagar = _totalNF > 0 ? ' · conta a pagar lançada' : '';
   toast(`✅ ${cadastrados} cadastrado(s), ${atualizados} com entrada no estoque, ${ignorados} ignorado(s)${_msgPagar}.`);
+};
+
+// ── Importação em massa de produtos (Excel / CSV / TXT) ─────────────────────
+let produtosImportados = [];
+
+function normalizarCabecalhoProduto(v) {
+  return String(v ?? '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().trim().replace(/[^a-z0-9]+/g, ' ');
+}
+
+function valorNumericoImport(v) {
+  if (v === null || v === undefined || v === '') return 0;
+  if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+  let s = String(v).trim().replace(/R\$\s?/gi,'').replace(/\s/g,'');
+  if (s.includes(',') && s.includes('.')) {
+    // Formato brasileiro: 1.234,56
+    s = s.replace(/\./g,'').replace(',','.');
+  } else if (s.includes(',')) {
+    s = s.replace(',','.');
+  }
+  s = s.replace(/[^0-9+\-.]/g,'');
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function mapearColunasProdutos(headers) {
+  const aliases = {
+    cod:['codigo','cod','sku','codigo produto','cod produto','referencia','ref'],
+    nome:['nome','produto','descricao','descricao produto','nome produto','produto nome','description'],
+    categoria:['categoria','grupo','familia','tipo','categoria produto'],
+    fornecedor:['fornecedor','fabricante','marca','supplier'],
+    estoque:['estoque','estoque atual','saldo','quantidade','qtd','quantidade estoque'],
+    minimo:['minimo','min','estoque minimo','estoque mínimo','estoque de seguranca','estoque seguranca'],
+    custo:['custo','custo unitario','custo unitário','preco custo','preco de custo','valor custo'],
+    preco:['preco','preço','preco venda','preço venda','preco de venda','preço de venda','valor venda'],
+    obs:['observacao','observação','observacoes','observações','obs','notas']
+  };
+  const norm = headers.map(normalizarCabecalhoProduto);
+  const result = {};
+  for (const [campo, lista] of Object.entries(aliases)) {
+    const idx = norm.findIndex(h => lista.some(a => normalizarCabecalhoProduto(a) === h));
+    if (idx >= 0) result[campo] = idx;
+  }
+  return result;
+}
+
+function linhasArquivoDelimitado(texto) {
+  const linhas = texto.replace(/^\uFEFF/,'').split(/\r?\n/).filter(l => l.trim() !== '');
+  if (!linhas.length) return [];
+  const primeira = linhas[0];
+  const candidatos = [';','\t',',','|'];
+  let delim = candidatos[0];
+  let maior = -1;
+  for (const d of candidatos) {
+    const n = primeira.split(d).length - 1;
+    if (n > maior) { maior = n; delim = d; }
+  }
+  function parseLinha(l) {
+    const out=[]; let cur=''; let asp=false;
+    for(let i=0;i<l.length;i++){
+      const ch=l[i];
+      if(ch==='"'){
+        if(asp && l[i+1]==='"'){cur+='"';i++;}
+        else asp=!asp;
+      } else if(ch===delim && !asp){out.push(cur.trim());cur='';}
+      else cur+=ch;
+    }
+    out.push(cur.trim()); return out;
+  }
+  return linhas.map(parseLinha);
+}
+
+function transformarLinhasProdutos(rows) {
+  if (!rows || rows.length < 2) return [];
+  const headers = rows[0].map(x => String(x ?? '').trim());
+  const idx = mapearColunasProdutos(headers);
+  if (idx.nome === undefined) throw new Error('Não encontrei a coluna de produto/nome. Use uma coluna chamada "Produto" ou "Nome".');
+  return rows.slice(1).map((r, pos) => {
+    const get = k => idx[k] !== undefined ? String(r[idx[k]] ?? '').trim() : '';
+    const nome = get('nome');
+    if (!nome) return null;
+    return {
+      _linha: pos + 2,
+      cod: get('cod') || ('IMP-' + Date.now().toString().slice(-6) + '-' + (pos+1)),
+      nome,
+      categoria: get('categoria') || 'Outros',
+      fornecedor: get('fornecedor'),
+      estoque: valorNumericoImport(get('estoque')),
+      minimo: idx.minimo !== undefined ? valorNumericoImport(get('minimo')) : 10,
+      custo: valorNumericoImport(get('custo')),
+      preco: valorNumericoImport(get('preco')),
+      obs: get('obs')
+    };
+  }).filter(Boolean);
+}
+
+window.previewImportProdutos = async input => {
+  const file = input.files?.[0];
+  const status = document.getElementById('prod-import-status');
+  const preview = document.getElementById('prod-import-preview');
+  const btn = document.getElementById('btn-confirmar-import-produtos');
+  produtosImportados = [];
+  btn.style.display = 'none';
+  preview.innerHTML = '';
+  if (!file) return;
+  try {
+    status.textContent = '⏳ Lendo arquivo...';
+    const ext = file.name.split('.').pop().toLowerCase();
+    let rows;
+    if (ext === 'xlsx' || ext === 'xls') {
+      if (!window.XLSX) throw new Error('Biblioteca Excel não carregada. Atualize a página e tente novamente.');
+      const data = await file.arrayBuffer();
+      const wb = XLSX.read(data, { type:'array', cellDates:false });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+    } else {
+      rows = linhasArquivoDelimitado(await file.text());
+    }
+    produtosImportados = transformarLinhasProdutos(rows);
+    if (!produtosImportados.length) throw new Error('Nenhum produto válido encontrado no arquivo.');
+    const duplicados = produtosImportados.filter(p => D.produtos.some(x =>
+      (p.cod && x.cod && String(p.cod).trim().toLowerCase() === String(x.cod).trim().toLowerCase()) ||
+      String(p.nome).trim().toLowerCase() === String(x.nome||'').trim().toLowerCase()
+    )).length;
+    status.innerHTML = `<span style="color:#185FA5;font-weight:500;">✅ ${produtosImportados.length} produto(s) identificado(s).</span>` +
+      (duplicados ? ` <span style="color:#854F0B;">${duplicados} já possuem possível correspondência no cadastro.</span>` : '');
+    const mostra = produtosImportados.slice(0, 80);
+    preview.innerHTML = `<div class="table-wrap" style="margin:0;"><table style="min-width:760px;"><thead><tr><th>Linha</th><th>Código</th><th>Produto</th><th>Categoria</th><th>Fornecedor</th><th>Estoque</th><th>Mín.</th><th>Custo</th><th>Preço</th></tr></thead><tbody>` +
+      mostra.map(p => `<tr><td>${p._linha}</td><td>${p.cod}</td><td>${p.nome}</td><td>${p.categoria}</td><td>${p.fornecedor||'—'}</td><td>${p.estoque}</td><td>${p.minimo}</td><td>${R$(p.custo)}</td><td>${R$(p.preco)}</td></tr>`).join('') +
+      `</tbody></table></div>` + (produtosImportados.length > 80 ? `<div style="font-size:11px;color:#888;margin-top:8px;">Mostrando 80 de ${produtosImportados.length} produtos.</div>` : '');
+    btn.style.display = 'inline-flex';
+  } catch (e) {
+    console.error('[importar produtos]', e);
+    status.innerHTML = `<span style="color:#A32D2D;">❌ ${String(e.message || e)}</span>`;
+  }
+};
+
+window.confirmarImportacaoProdutos = async () => {
+  if (!produtosImportados.length) { toast('Nenhum produto para importar.'); return; }
+  const btn = document.getElementById('btn-confirmar-import-produtos');
+  btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader"></i> Importando...';
+  let inseridos=0, ignorados=0, erros=0;
+  try {
+    for (const p of produtosImportados) {
+      // Não duplica por código ou nome. Produtos existentes permanecem inalterados.
+      const existe = D.produtos.some(x =>
+        (p.cod && x.cod && String(p.cod).trim().toLowerCase() === String(x.cod).trim().toLowerCase()) ||
+        String(p.nome).trim().toLowerCase() === String(x.nome||'').trim().toLowerCase()
+      );
+      if (existe) { ignorados++; continue; }
+      const payload = {...p}; delete payload._linha;
+      const ref = await add('produtos', payload);
+      if (ref) inseridos++; else erros++;
+    }
+    closeModal('modal-importar-produtos');
+    document.getElementById('prod-import-file').value='';
+    document.getElementById('prod-import-preview').innerHTML='';
+    document.getElementById('prod-import-status').textContent='';
+    produtosImportados=[];
+    toast(`✅ ${inseridos} produto(s) importado(s) · ${ignorados} duplicado(s) ignorado(s)${erros ? ' · '+erros+' erro(s)' : ''}.`);
+  } finally {
+    btn.disabled=false; btn.innerHTML='<i class="ti ti-upload"></i> Importar produtos';
+  }
 };
 
 // ── Chave Anthropic ──────────────────────────────────────────────────────────
