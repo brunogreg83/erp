@@ -131,52 +131,53 @@ async function saveOrderDraft(){
     const margin=costTotal?((profit/costTotal)*100):0;
 
     msg.className='muted';
-    msg.textContent='Salvando no Supabase...';
+    msg.textContent='Salvando pedido no Supabase...';
+
+    const payload={
+      customer_name:customer,
+      total:Number(total.toFixed(2)),
+      cost_total:Number(costTotal.toFixed(2)),
+      profit:Number(profit.toFixed(2)),
+      margin_percent:Number(margin.toFixed(2)),
+      status:'Orçamento'
+    };
 
     let order;
     if(currentOrderId){
       const updated=await sb('/rest/v1/orders?id=eq.'+encodeURIComponent(currentOrderId),{
         method:'PATCH',
         headers:{Prefer:'return=representation'},
-        body:JSON.stringify({
-          customer_name:customer,
-          total:total,
-          cost_total:costTotal,
-          profit:profit,
-          margin_percent:margin,
-          status:'Orçamento'
-        })
+        body:JSON.stringify(payload)
       });
       order=Array.isArray(updated)?updated[0]:updated;
-      await sb('/rest/v1/order_items?order_id=eq.'+encodeURIComponent(currentOrderId),{method:'DELETE'});
+      await sb('/rest/v1/order_items?order_id=eq.'+encodeURIComponent(currentOrderId),{
+        method:'DELETE',
+        headers:{Prefer:'return=minimal'}
+      });
     }else{
       const created=await sb('/rest/v1/orders',{
         method:'POST',
         headers:{Prefer:'return=representation'},
-        body:JSON.stringify({
-          customer_name:customer,
-          total:total,
-          cost_total:costTotal,
-          profit:profit,
-          margin_percent:margin,
-          status:'Orçamento'
-        })
+        body:JSON.stringify(payload)
       });
       order=Array.isArray(created)?created[0]:created;
-      currentOrderId=order?.id;
     }
 
-    if(!order?.id) throw new Error('O Supabase não retornou o ID do pedido.');
+    if(!order || !order.id){
+      throw new Error('Pedido criado sem ID. Verifique a tabela orders e a política SELECT no Supabase.');
+    }
+
+    currentOrderId=order.id;
 
     const rows=items.map(x=>({
       order_id:order.id,
-      product_id:x.productId,
-      product_name:x.name,
-      quantity:num(x.qty),
-      cost:num(x.cost),
-      sale_price:num(x.price),
-      total:num(x.qty)*num(x.price),
-      margin_percent:num(x.cost)?(((num(x.price)-num(x.cost))/num(x.cost))*100):0
+      product_id:x.productId==null?null:String(x.productId),
+      product_name:String(x.name||''),
+      quantity:Number(num(x.qty)),
+      cost:Number(num(x.cost).toFixed(2)),
+      sale_price:Number(num(x.price).toFixed(2)),
+      total:Number((num(x.qty)*num(x.price)).toFixed(2)),
+      margin_percent:Number((num(x.cost)?(((num(x.price)-num(x.cost))/num(x.cost))*100):0).toFixed(2))
     }));
 
     await sb('/rest/v1/order_items',{
@@ -186,11 +187,11 @@ async function saveOrderDraft(){
     });
 
     msg.className='ok';
-    msg.textContent='Pedido salvo no Supabase.';
+    msg.textContent='Pedido salvo no Supabase. ID: '+order.id;
   }catch(e){
     console.error(e);
     msg.className='error';
-    msg.textContent='Erro ao salvar pedido: '+(e?.message||e);
+    msg.textContent='Erro ao salvar: '+(e?.message||String(e));
   }
 }
 
@@ -259,8 +260,12 @@ async function saveProduct(){const msg=document.getElementById('saveMsg');try{co
 window.saveProduct=saveProduct;document.getElementById('btnSaveProduct').addEventListener('click',saveProduct);
 async function delProduct(id){if(!confirm('Excluir este produto?'))return;try{await sb('/rest/v1/products?id=eq.'+encodeURIComponent(id),{method:'DELETE'});await loadAdmin();await loadProducts()}catch(e){alert('Não foi possível excluir: '+e.message)}}window.delProduct=delProduct;
 
-document.getElementById('btnSaveOrder').addEventListener('click',saveOrderDraft);
-document.getElementById('btnClearOrder').addEventListener('click',clearOrderDraft);
+document.addEventListener('DOMContentLoaded',()=>{
+  const saveBtn=document.getElementById('btnSaveOrder');
+  const clearBtn=document.getElementById('btnClearOrder');
+  if(saveBtn) saveBtn.addEventListener('click',saveOrderDraft);
+  if(clearBtn) clearBtn.addEventListener('click',clearOrderDraft);
+});
 
 loadProducts().catch(e=>{console.error(e);document.getElementById('product').innerHTML='<option>Erro ao carregar produtos</option>'});
 
