@@ -118,7 +118,7 @@ let currentOrderId=null;
 async function saveOrderDraft(){
   const msg=document.getElementById('orderSaveMsg');
   try{
-    if(!items.length){
+    if(!items || !items.length){
       msg.className='error';
       msg.textContent='Adicione pelo menos um item ao pedido.';
       return;
@@ -131,63 +131,38 @@ async function saveOrderDraft(){
     const margin=costTotal?((profit/costTotal)*100):0;
 
     msg.className='muted';
-    msg.textContent='Salvando pedido no Supabase...';
+    msg.textContent='Salvando pedido...';
 
     const payload={
-      customer_name:customer,
-      total:Number(total.toFixed(2)),
-      cost_total:Number(costTotal.toFixed(2)),
-      profit:Number(profit.toFixed(2)),
-      margin_percent:Number(margin.toFixed(2)),
-      status:'Orçamento'
+      p_customer_name:customer,
+      p_total:Number(total.toFixed(2)),
+      p_cost_total:Number(costTotal.toFixed(2)),
+      p_profit:Number(profit.toFixed(2)),
+      p_margin_percent:Number(margin.toFixed(2)),
+      p_status:'Orçamento',
+      p_items:items.map(x=>({
+        product_id:x.productId==null?null:String(x.productId),
+        product_name:String(x.name||''),
+        quantity:Number(num(x.qty)),
+        cost:Number(num(x.cost).toFixed(2)),
+        sale_price:Number(num(x.price).toFixed(2)),
+        total:Number((num(x.qty)*num(x.price)).toFixed(2)),
+        margin_percent:Number((num(x.cost)?(((num(x.price)-num(x.cost))/num(x.cost))*100):0).toFixed(2))
+      }))
     };
 
-    let order;
-    if(currentOrderId){
-      const updated=await sb('/rest/v1/ab_orders?id=eq.'+encodeURIComponent(currentOrderId),{
-        method:'PATCH',
-        headers:{Prefer:'return=representation'},
-        body:JSON.stringify(payload)
-      });
-      order=Array.isArray(updated)?updated[0]:updated;
-      await sb('/rest/v1/ab_order_items?order_id=eq.'+encodeURIComponent(currentOrderId),{
-        method:'DELETE',
-        headers:{Prefer:'return=minimal'}
-      });
-    }else{
-      const created=await sb('/rest/v1/ab_orders',{
-        method:'POST',
-        headers:{Prefer:'return=representation'},
-        body:JSON.stringify(payload)
-      });
-      order=Array.isArray(created)?created[0]:created;
-    }
-
-    if(!order || !order.id){
-      throw new Error('Pedido criado sem ID. Verifique a tabela orders e a política SELECT no Supabase.');
-    }
-
-    currentOrderId=order.id;
-
-    const rows=items.map(x=>({
-      order_id:order.id,
-      product_id:x.productId==null?null:String(x.productId),
-      product_name:String(x.name||''),
-      quantity:Number(num(x.qty)),
-      cost:Number(num(x.cost).toFixed(2)),
-      sale_price:Number(num(x.price).toFixed(2)),
-      total:Number((num(x.qty)*num(x.price)).toFixed(2)),
-      margin_percent:Number((num(x.cost)?(((num(x.price)-num(x.cost))/num(x.cost))*100):0).toFixed(2))
-    }));
-
-    await sb('/rest/v1/ab_order_items',{
+    const result=await sb('/rest/v1/rpc/ab_save_order',{
       method:'POST',
-      headers:{Prefer:'return=minimal'},
-      body:JSON.stringify(rows)
+      headers:{Prefer:'return=representation'},
+      body:JSON.stringify(payload)
     });
 
+    const saved=Array.isArray(result)?result[0]:result;
+    if(!saved || !saved.id) throw new Error('O Supabase não retornou o ID do pedido.');
+
+    currentOrderId=saved.id;
     msg.className='ok';
-    msg.textContent='PEDIDO SALVO NO SUPABASE — ID: '+order.id;
+    msg.textContent='PEDIDO SALVO NO SUPABASE — ID: '+saved.id;
   }catch(e){
     console.error(e);
     msg.className='error';
