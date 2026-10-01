@@ -3742,7 +3742,6 @@ function buildPedidoHtml(p, cli, cod, tot, itensRows) {
 
 '<div class="no-print">\n' +
 '  <button onclick="window.print()" style="background:#185FA5;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;">\uD83D\uDDB8 Imprimir / Salvar PDF</button>\n' +
-'  <button id="btn-email" onclick="enviarEmail()" style="background:#185FA5;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;">\u2709\uFE0F Enviar por Email</button>\n' +
 '  <button onclick="window.close()" style="background:none;border:1px solid #ddd;border-radius:8px;padding:9px 14px;font-size:13px;cursor:pointer;">Fechar</button>\n' +
 '</div>\n' +
 
@@ -3820,89 +3819,9 @@ function buildPedidoHtml(p, cli, cod, tot, itensRows) {
 '  <span>Pedido ' + cod + '</span>\n' +
 '</div>\n' +
 
-'<script>\n' +
-'  var _pedidoId = "' + p.id + '";\n' +
-'  function enviarEmail() {\n' +
-'    var btn = document.getElementById("btn-email");\n' +
-'    btn.textContent = "\u23F3 Enviando...";\n' +
-'    btn.disabled = true;\n' +
-'    try {\n' +
-'      window.opener.__enviarPedidoEmail(_pedidoId, function(ok, msg) {\n' +
-'        if (ok) {\n' +
-'          btn.textContent = "\u2705 Email enviado!";\n' +
-'          btn.style.background = "#185FA5";\n' +
-'        } else {\n' +
-'          btn.textContent = "\u274C Erro: " + msg;\n' +
-'          btn.style.background = "#D85A30";\n' +
-'        }\n' +
-'        btn.disabled = false;\n' +
-'        setTimeout(function(){ btn.textContent = "\u2709\uFE0F Enviar por Email"; btn.style.background = "#185FA5"; }, 3500);\n' +
-'      });\n' +
-'    } catch(e) {\n' +
-'      btn.textContent = "\u274C Erro ao comunicar com ERP";\n' +
-'      btn.style.background = "#D85A30"; btn.disabled = false;\n' +
-'      console.error(e);\n' +
-'    }\n' +
-'  }\n' +
-'<\/script>\n' +
+
 '</body></html>';
 }
-
-// ── Envio de Pedido de Venda chamado pelo popup (via window.opener) ────────
-window.__enviarPedidoEmail = function(pedidoId, cb) {
-  const p = D.pedidos.find(x => x.id === pedidoId);
-  if (!p) { cb(false, 'Pedido não encontrado'); return; }
-
-  const nomePed = (p.cliente || '').trim().toLowerCase();
-  const cli = D.clientes.find(c => c.nome === p.cliente)
-           || D.clientes.find(c => c.nome.trim().toLowerCase() === nomePed)
-           || D.clientes.find(c => c.nome.trim().toLowerCase().includes(nomePed) || nomePed.includes(c.nome.trim().toLowerCase()))
-           || {};
-
-  if (!cli.email) { cb(false, 'Cliente sem email cadastrado'); return; }
-
-  const cod      = '#' + p.id.slice(-6).toUpperCase();
-  const tot      = totPed(p);
-  const itensRows = (p.itens||[]).map((it,i) =>
-    '<tr><td>' + (i+1) + '</td><td>' + it.produto + '</td>' +
-    '<td style="text-align:center;">' + it.qty + '</td>' +
-    '<td style="text-align:right;">R$ ' + Number(parseFloat(it.preco)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td>' +
-    '<td style="text-align:right;">R$ ' + Number((parseFloat(it.qty)||0)*(parseFloat(it.preco)||0)).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>'
-  ).join('');
-
-  // Reutiliza o mesmo HTML rico do popup — remove os botões no-print e a logo
-  // em base64 (o EmailJS tem limite de 50KB para o total de variáveis, e a
-  // imagem sozinha já passa disso). Trocamos por um cabeçalho em texto.
-  const htmlCompleto = buildPedidoHtml(p, cli, cod, tot, itensRows)
-    .replace(/<div class="no-print">[\s\S]*?<\/div>\n/, '')
-    .replace(/<img src="data:image\/[^"]*"[^>]*>/, '<div style="font-size:22px;font-weight:700;color:#185FA5;">AB Chemicals</div>');
-
-  function doSend() {
-    emailjs.send('service_pedidos', 'template_xk8fggd', {
-      doc_titulo:   'Pedido de Venda',
-      pedido_cod:   cod,
-      cliente_nome: cli.nome || p.cliente,
-      para_email:   cli.email,
-      html_pedido:  htmlCompleto
-    }).then(() => {
-      toast('✅ Pedido enviado para ' + cli.email);
-      cb(true, '');
-    }).catch(err => {
-      console.error('EmailJS pedido:', err);
-      cb(false, err.text || err.message || 'Falha no envio');
-    });
-  }
-
-  if (typeof emailjs !== 'undefined') {
-    doSend();
-  } else {
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
-    s.onload = () => { emailjs.init('e2QZvVniF5T6aJuRA'); doSend(); };
-    s.onerror = () => cb(false, 'Falha ao carregar EmailJS');
-    document.head.appendChild(s);
-  }
-};
 
 window.verPedido = id => {
   const p = D.pedidos.find(x => x.id === id);
