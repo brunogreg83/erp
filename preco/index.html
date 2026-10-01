@@ -53,7 +53,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 <p class="muted">Cadastro direto no Supabase. A margem padrão é de <strong>100%</strong>. O preço sugerido é calculado automaticamente como custo × 2. Não existe preço mínimo automático.</p>
     <div class="card" style="margin-top:14px;background:#f7fbff;border:1px solid #cfe8f6">
       <h3 style="margin-top:0">Importar produtos do AB | ERP</h3>
-      <p class="muted">Selecione o Excel exportado do ERP. Os produtos da planilha serão importados sem código.</p>
+      <p class="muted">Selecione o Excel exportado do ERP. Produtos existentes pelo mesmo código serão atualizados; produtos sem código serão adicionados.</p>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <input id="erpFile" type="file" accept=".xlsx,.xls,.csv">
         <button id="btnImportERP" class="primary" type="button">Importar produtos do ERP</button>
@@ -103,7 +103,7 @@ async function sb(path, options={}){
  return data;
 }
 async function loadProducts(){
- const q=await sb('/rest/v1/products?select=id,name,cost,margin_percent,suggested_price,current_price,active&active=eq.true&order=name.asc');
+ const q=await sb('/rest/v1/products?select=id,code,name,cost,margin_percent,suggested_price,current_price,active&active=eq.true&order=name.asc');
  products=q||[];
  if(products.length){ const ids=products.map(p=>p.id); const pricing=await sb('/rest/v1/product_pricing?select=product_id,min_price&product_id=in.('+ids.join(',')+')'); const pm=new Map((pricing||[]).map(x=>[String(x.product_id),num(x.min_price)])); products.forEach(p=>p.min_price=pm.get(String(p.id))||0);}
  const el=document.getElementById('product'); el.innerHTML=products.length?products.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join(''):'<option value="">Nenhum produto cadastrado</option>'; if(products.length) document.getElementById('price').value=products[0].current_price??products[0].suggested_price??'';
@@ -116,7 +116,7 @@ function priceStatus(price,suggested,min){const p=num(price),s=num(suggested),m=
 function render(){const tbody=document.getElementById('items');tbody.innerHTML='';let total=0,costTotal=0,suggestedTotal=0,minTotal=0;items.forEach((x,i)=>{const t=x.qty*x.price,c=x.qty*x.cost;total+=t;costTotal+=c;suggestedTotal+=x.qty*x.suggested;minTotal+=x.qty*x.min;const margin=c?((x.price-x.cost)/c)*100:0,st=priceStatus(x.price,x.suggested,x.min);tbody.insertAdjacentHTML('beforeend',`<tr><td>${escapeHtml(x.name)}</td><td>${x.qty}</td><td>${money(x.price)}</td><td>${money(t)}</td><td><span class="badge ${st[0]}">${st[1]}</span></td><td>${margin.toFixed(1)}%</td><td><button class="danger" onclick="removeItem(${i})">X</button></td></tr>`)});document.getElementById('totalSale').textContent=money(total);document.getElementById('totalMargin').textContent=costTotal?money(total-costTotal)+' ('+(((total-costTotal)/costTotal)*100).toFixed(1)+'%)':'—';const overall=items.length?priceStatus(total,suggestedTotal,minTotal):['yellow','⚪ SEM PEDIDO'];document.getElementById('totalStatus').innerHTML=`<span class="badge ${overall[0]}">${overall[1]}</span>`}
 let editingProductId=null;
 
-async function editProduct(id){try{const p=await sb('/rest/v1/products?id=eq.'+encodeURIComponent(id)+'&select=id,name,cost,margin_percent,suggested_price,current_price&limit=1'); if(!p.length) throw new Error('Produto não encontrado.'); const x=p[0]; const pr=await sb('/rest/v1/product_pricing?select=min_price&product_id=eq.'+encodeURIComponent(id)+'&limit=1'); document.getElementById('pName').value=x.name||'';document.getElementById('pSale').value=x.current_price??'';document.getElementById('pCost').value=x.cost??'';document.getElementById('pMin').value=pr?.[0]?.min_price??'';document.getElementById('pMargin').value=100; editingProductId=id; document.getElementById('btnSaveProduct').textContent='Atualizar produto'; document.getElementById('saveMsg').className='muted';document.getElementById('saveMsg').textContent='Editando produto. Altere os dados e clique em Atualizar produto.'; window.scrollTo({top:document.getElementById('admin').offsetTop-20,behavior:'smooth'});}catch(e){document.getElementById('saveMsg').className='error';document.getElementById('saveMsg').textContent='Erro ao carregar produto: '+e.message}}
+async function editProduct(id){try{const p=await sb('/rest/v1/products?id=eq.'+encodeURIComponent(id)+'&select=id,code,name,cost,margin_percent,suggested_price,current_price&limit=1'); if(!p.length) throw new Error('Produto não encontrado.'); const x=p[0]; const pr=await sb('/rest/v1/product_pricing?select=min_price&product_id=eq.'+encodeURIComponent(id)+'&limit=1'); document.getElementById('pName').value=x.name||'';document.getElementById('pSale').value=x.current_price??'';document.getElementById('pCost').value=x.cost??'';document.getElementById('pMin').value=pr?.[0]?.min_price??'';document.getElementById('pMargin').value=x.margin_percent??100; editingProductId=id; document.getElementById('btnSaveProduct').textContent='Atualizar produto'; document.getElementById('saveMsg').className='muted';document.getElementById('saveMsg').textContent='Editando produto. Altere os dados e clique em Atualizar produto.'; window.scrollTo({top:document.getElementById('admin').offsetTop-20,behavior:'smooth'});}catch(e){document.getElementById('saveMsg').className='error';document.getElementById('saveMsg').textContent='Erro ao carregar produto: '+e.message}}
 window.editProduct=editProduct;
 function cancelEdit(){editingProductId=null;['pName','pSale','pCost','pMin'].forEach(id=>document.getElementById(id).value='');document.getElementById('pMargin').value='100';document.getElementById('btnSaveProduct').textContent='Salvar produto';document.getElementById('saveMsg').className='muted';document.getElementById('saveMsg').textContent='';}
 window.cancelEdit=cancelEdit;
@@ -124,19 +124,17 @@ async function loadAdmin(){
   const tbody=document.getElementById('productsAdmin');
   tbody.innerHTML='<tr><td colspan="5">Carregando...</td></tr>';
   try{
-    const data=await sb('/rest/v1/products?select=id,name,cost,margin_percent,current_price,active&order=name.asc');
-    tbody.innerHTML=(data||[]).map(p=>`
-      <tr>
-        <td>${escapeHtml(p.name)}</td>
-        <td>${money(p.cost)}</td>
-        <td>100.00%</td>
-        <td>${money(p.current_price)}</td>
-        <td>
-          <button class="secondary" onclick="editProduct('${p.id}')">Editar</button>
-          <button class="danger" onclick="delProduct('${p.id}')">Excluir</button>
-        </td>
-      </tr>`).join('')
-      ||'<tr><td colspan="5">Nenhum produto cadastrado.</td></tr>';
+    const data=await sb('/rest/v1/products?select=id,name,cost,margin_percent,current_price&order=name.asc');
+    tbody.innerHTML=(data||[]).map(p=>`<tr>
+      <td>${escapeHtml(p.name)}</td>
+      <td>${money(p.cost)}</td>
+      <td>100.00%</td>
+      <td>${money(p.current_price)}</td>
+      <td>
+        <button class="secondary" onclick="editProduct('${p.id}')">Editar</button>
+        <button class="danger" onclick="delProduct('${p.id}')">Excluir</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="5">Nenhum produto cadastrado.</td></tr>';
   }catch(e){
     tbody.innerHTML=`<tr><td colspan="5" class="error">Erro ao consultar produtos: ${escapeHtml(e.message)}</td></tr>`;
   }
@@ -164,36 +162,39 @@ async function importERPProducts(){
     const keys=Object.keys(data[0]);
     const key=(names)=>keys.find(k=>names.some(n=>String(k).trim().toLowerCase()===n.toLowerCase()))
                ||keys.find(k=>names.some(n=>String(k).trim().toLowerCase().includes(n.toLowerCase())));
+    const kCode=key(["Código","Codigo","Código ERP","Codigo ERP"]);
     const kName=key(["Produto","Nome","Nome do produto"]);
     const kCost=key(["Custo","Custo unitário","Custo Unitario"]);
     const kSale=key(["Preço de venda","Preco de venda","Preço","Preco","Preço atual","Preco atual"]);
     if(!kName) throw new Error("Não encontrei a coluna Produto na planilha.");
-     let created=0,updated=0,skipped=0;
+
+    const existing=await sb('/rest/v1/products?select=id,code');
+    const byCode=new Map((existing||[]).filter(p=>p.code!==null && p.code!==undefined && String(p.code).trim()!=="").map(p=>[String(p.code).trim(),p]));
+    let created=0,updated=0,skipped=0;
 
     for(const row of data){
       const name=String(row[kName]??"").trim();
       if(!name){skipped++;continue;}
-       const cost=num(row[kCost]);
-       const sale=num(row[kSale]);
-       const margin=100;
-       const suggested=Number((cost*(1+margin/100)).toFixed(2));
-       const current=sale>0?sale:suggested;
-       const payload={
-         name, cost,
-         margin_percent:margin,
-         suggested_price:suggested,
-         current_price:current,
-         active:true
-       };
+      const code=kCode && row[kCode]!=="" ? String(row[kCode]).trim() : null;
+      const cost=num(row[kCost]);
+      const sale=num(row[kSale]);
+      const margin=100;
+      const suggested=Number((cost*(1+margin/100)).toFixed(2));
+      const current=sale>0?sale:suggested;
+      const payload={
+        name, code, cost,
+        margin_percent:margin,
+        suggested_price:suggested,
+        current_price:current,
+        active:true
+      };
 
-       await sb('/rest/v1/products',{
-         method:'POST',
-         headers:{'Prefer':'return=minimal'},
-         body:JSON.stringify(payload)
-       });
-       created++;
-    }
-,body:JSON.stringify(payload)});
+      let result;
+      if(code && byCode.has(code)){
+        await sb('/rest/v1/products?id=eq.'+encodeURIComponent(byCode.get(code).id),{method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify(payload)});
+        updated++;
+      }else{
+        const inserted=await sb('/rest/v1/products',{method:'POST',headers:{'Prefer':'return=representation'},body:JSON.stringify(payload)});
         const newProduct=Array.isArray(inserted)?inserted[0]:inserted;
         if(code && newProduct?.id) byCode.set(code,{id:newProduct.id,code});
         created++;
