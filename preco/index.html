@@ -159,49 +159,112 @@ async function saveOrderDraft(){
     const margin=costTotal?((profit/costTotal)*100):0;
 
     msg.className='muted';
-    msg.textContent='Salvando pedido...';
+    msg.textContent=currentOrderId ? 'Atualizando pedido '+currentOrderId+'...' : 'Salvando pedido...';
 
-    const payload={
-      p_customer_name:customer,
-      p_total:Number(total.toFixed(2)),
-      p_cost_total:Number(costTotal.toFixed(2)),
-      p_profit:Number(profit.toFixed(2)),
-      p_margin_percent:Number(margin.toFixed(2)),
-      p_status:'Orçamento',
-      p_items:items.map(x=>({
-        product_id:x.productId==null?null:String(x.productId),
-        product_name:String(x.name||''),
-        quantity:Number(num(x.qty)),
-        cost:Number(num(x.cost).toFixed(2)),
-        sale_price:Number(num(x.price).toFixed(2)),
-        total:Number((num(x.qty)*num(x.price)).toFixed(2)),
-        margin_percent:Number((num(x.cost)?(((num(x.price)-num(x.cost))/num(x.cost))*100):0).toFixed(2))
-      }))
+    const orderPayload={
+      customer_name:customer,
+      total:Number(total.toFixed(2)),
+      cost_total:Number(costTotal.toFixed(2)),
+      profit:Number(profit.toFixed(2)),
+      margin_percent:Number(margin.toFixed(2)),
+      status:'Orçamento'
     };
 
-    const result=await sb('/rest/v1/rpc/ab_save_order',{
-      method:'POST',
-      headers:{Prefer:'return=representation'},
-      body:JSON.stringify(payload)
-    });
+    const itemRows=items.map(x=>({
+      order_id:currentOrderId,
+      product_id:x.productId==null?null:String(x.productId),
+      product_name:String(x.name||''),
+      quantity:Number(num(x.qty)),
+      cost:Number(num(x.cost).toFixed(2)),
+      sale_price:Number(num(x.price).toFixed(2)),
+      total:Number((num(x.qty)*num(x.price)).toFixed(2)),
+      margin_percent:Number((num(x.cost)?(((num(x.price)-num(x.cost))/num(x.cost))*100):0).toFixed(2))
+    }));
 
-    const saved=Array.isArray(result)?result[0]:result;
-    if(!saved || !saved.id) throw new Error('O Supabase não retornou o ID do pedido.');
+    let savedId;
 
-    currentOrderId=saved.id;
-    msg.className='ok';
-    msg.textContent='PEDIDO SALVO NO SUPABASE — ID: '+saved.id;
+    if(currentOrderId){
+      // EDIÇÃO: altera o pedido existente, sem criar outro ID.
+      const updated=await sb(
+        '/rest/v1/ab_orders?id=eq.'+encodeURIComponent(currentOrderId),
+        {
+          method:'PATCH',
+          headers:{Prefer:'return=representation'},
+          body:JSON.stringify(orderPayload)
+        }
+      );
+
+      const updatedOrder=Array.isArray(updated)?updated[0]:updated;
+      if(!updatedOrder || !updatedOrder.id){
+        throw new Error('O Supabase não confirmou a atualização do pedido.');
+      }
+
+      // Remove os itens antigos e grava os itens atuais.
+      await sb(
+        '/rest/v1/ab_order_items?order_id=eq.'+encodeURIComponent(currentOrderId),
+        {method:'DELETE',headers:{Prefer:'return=minimal'}}
+      );
+
+      const rows=itemRows.map(x=>({...x,order_id:currentOrderId}));
+      if(rows.length){
+        await sb('/rest/v1/ab_order_items',{
+          method:'POST',
+          headers:{Prefer:'return=minimal'} ,
+          body:JSON.stringify(rows)
+        });
+      }
+
+      savedId=updatedOrder.id;
+      msg.className='ok';
+      msg.textContent='PEDIDO ATUALIZADO NO SUPABASE — ID: '+savedId;
+    }else{
+      // NOVO PEDIDO: usa a RPC existente para criar um novo ID.
+      const rpcPayload={
+        p_customer_name:customer,
+        p_total:Number(total.toFixed(2)),
+        p_cost_total:Number(costTotal.toFixed(2)),
+        p_profit:Number(profit.toFixed(2)),
+        p_margin_percent:Number(margin.toFixed(2)),
+        p_status:'Orçamento',
+        p_items:items.map(x=>({
+          product_id:x.productId==null?null:String(x.productId),
+          product_name:String(x.name||''),
+          quantity:Number(num(x.qty)),
+          cost:Number(num(x.cost).toFixed(2)),
+          sale_price:Number(num(x.price).toFixed(2)),
+          total:Number((num(x.qty)*num(x.price)).toFixed(2)),
+          margin_percent:Number((num(x.cost)?(((num(x.price)-num(x.cost))/num(x.cost))*100):0).toFixed(2))
+        }))
+      };
+
+      const result=await sb('/rest/v1/rpc/ab_save_order',{
+        method:'POST',
+        headers:{Prefer:'return=representation'},
+        body:JSON.stringify(rpcPayload)
+      });
+
+      const saved=Array.isArray(result)?result[0]:result;
+      if(!saved || !saved.id) throw new Error('O Supabase não retornou o ID do pedido.');
+
+      savedId=saved.id;
+      currentOrderId=saved.id;
+      msg.className='ok';
+      msg.textContent='PEDIDO SALVO NO SUPABASE — ID: '+savedId;
+    }
+
     await loadSavedOrders();
   }catch(e){
     console.error(e);
     msg.className='error';
-    msg.textContent='Erro ao salvar: '+(e?.message||String(e));
+    msg.textContent='Erro ao salvar/atualizar: '+(e?.message||String(e));
   }
 }
 
 function clearOrderDraft(){
   items=[];
   currentOrderId=null;
+  const saveBtn=document.getElementById('btnSaveOrder');
+  if(saveBtn) saveBtn.textContent='Salvar pedido';
   const customer=document.getElementById('orderCustomer');
   if(customer) customer.value='';
   render();
@@ -231,6 +294,8 @@ async function editSavedOrder(orderId){
       min:0
     }));
     currentOrderId=order.id;
+    const saveBtn=document.getElementById('btnSaveOrder');
+    if(saveBtn) saveBtn.textContent='Atualizar pedido';
 
     const customer=document.getElementById('orderCustomer');
     if(customer) customer.value=order.customer_name||'';
