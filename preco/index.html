@@ -57,6 +57,33 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 </div>
 </section>
 
+
+<section id="savedOrders" class="card" style="margin-top:16px">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+    <div>
+      <h2 style="margin-bottom:4px">Pedidos salvos</h2>
+      <p class="muted" style="margin:0">Pedidos gravados no Supabase.</p>
+    </div>
+    <button id="btnRefreshOrders" class="secondary" type="button">Atualizar pedidos</button>
+  </div>
+  <div id="savedOrdersMsg" class="muted" style="margin-top:10px"></div>
+  <div style="overflow:auto;margin-top:10px">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Cliente</th>
+          <th>Data</th>
+          <th>Total</th>
+          <th>Margem</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="savedOrdersBody"></tbody>
+    </table>
+  </div>
+</section>
+
 <section id="admin" class="card hidden">
 <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2>Produtos</h2><button class="secondary" type="button" onclick="show('sales')">Voltar</button></div>
 <p class="muted">Cadastro direto no Supabase. A margem padrão é de <strong>100%</strong>. O preço sugerido é calculado automaticamente como custo × 2. Não existe preço mínimo automático.</p>
@@ -163,6 +190,7 @@ async function saveOrderDraft(){
     currentOrderId=saved.id;
     msg.className='ok';
     msg.textContent='PEDIDO SALVO NO SUPABASE — ID: '+saved.id;
+    await loadSavedOrders();
   }catch(e){
     console.error(e);
     msg.className='error';
@@ -180,6 +208,39 @@ function clearOrderDraft(){
   if(msg){
     msg.className='muted';
     msg.textContent='Novo pedido.';
+  }
+}
+
+
+async function loadSavedOrders(){
+  const msg=document.getElementById('savedOrdersMsg');
+  const body=document.getElementById('savedOrdersBody');
+  if(!msg || !body) return;
+  msg.className='muted';
+  msg.textContent='Carregando pedidos...';
+  body.innerHTML='';
+  try{
+    const rows=await sb('/rest/v1/ab_orders?select=id,customer_name,total,margin_percent,status,created_at&order=id.desc');
+    if(!rows || !rows.length){
+      msg.textContent='Nenhum pedido salvo encontrado.';
+      return;
+    }
+    body.innerHTML=rows.map(o=>{
+      const date=o.created_at ? new Date(o.created_at).toLocaleString('pt-BR') : '—';
+      return `<tr>
+        <td><strong>${escapeHtml(o.id)}</strong></td>
+        <td>${escapeHtml(o.customer_name||'—')}</td>
+        <td>${escapeHtml(date)}</td>
+        <td>${money(o.total)}</td>
+        <td>${num(o.margin_percent).toFixed(2)}%</td>
+        <td>${escapeHtml(o.status||'—')}</td>
+      </tr>`;
+    }).join('');
+    msg.textContent=`${rows.length} pedido(s) salvo(s).`;
+  }catch(e){
+    console.error(e);
+    msg.className='error';
+    msg.textContent='Erro ao carregar pedidos: '+(e?.message||String(e));
   }
 }
 
@@ -239,9 +300,12 @@ document.addEventListener('DOMContentLoaded',()=>{
   const saleInput=document.getElementById('pSale');
   if(saveBtn) saveBtn.addEventListener('click',saveOrderDraft);
   if(clearBtn) clearBtn.addEventListener('click',clearOrderDraft);
+  const refreshOrders=document.getElementById('btnRefreshOrders');
+  if(refreshOrders) refreshOrders.addEventListener('click',loadSavedOrders);
   if(costInput) costInput.addEventListener('input',updateProductMarginRealtime);
   if(saleInput) saleInput.addEventListener('input',updateProductMarginRealtime);
   updateProductMarginRealtime();
+  loadSavedOrders();
 });
 
 loadProducts().catch(e=>{console.error(e);document.getElementById('product').innerHTML='<option>Erro ao carregar produtos</option>'});
