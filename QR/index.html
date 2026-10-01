@@ -691,10 +691,29 @@ document.getElementById("form-produto").addEventListener("submit", async functio
   }
 });
 
-function excluirProduto(id){
+async function excluirProduto(id){
   const p = produtosCache.find(function(x){ return x.id === id; });
-  if (confirm('Excluir "' + p.nome + '"? Essa ação não pode ser desfeita.')) {
-    db.collection(COLECAO).doc(id).delete();
+  if (!p) {
+    alert("Produto não encontrado.");
+    return;
+  }
+
+  if (!confirm('Excluir "' + p.nome + '"? Essa ação não pode ser desfeita.')) {
+    return;
+  }
+
+  try {
+    // Exclui o documento do Firestore e aguarda a confirmação da operação.
+    await db.collection(COLECAO).doc(id).delete();
+
+    // Remove imediatamente do cache/tela para não depender apenas do onSnapshot.
+    produtosCache = produtosCache.filter(function(item){ return item.id !== id; });
+    renderizarGrade();
+
+    alert("Produto excluído com sucesso.");
+  } catch (err) {
+    console.error("Erro ao excluir produto:", err);
+    alert("Não foi possível excluir o produto.\n\n" + (err && err.message ? err.message : err));
   }
 }
 
