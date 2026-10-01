@@ -120,7 +120,27 @@ async function editProduct(id){try{const p=await sb('/rest/v1/products?id=eq.'+e
 window.editProduct=editProduct;
 function cancelEdit(){editingProductId=null;['pName','pSale','pCost','pMin'].forEach(id=>document.getElementById(id).value='');document.getElementById('pMargin').value='100';document.getElementById('btnSaveProduct').textContent='Salvar produto';document.getElementById('saveMsg').className='muted';document.getElementById('saveMsg').textContent='';}
 window.cancelEdit=cancelEdit;
-async function loadAdmin(){const tbody=document.getElementById('productsAdmin');tbody.innerHTML='<tr><td colspan=6>Carregando...</td></tr>';try{const data=await sb('/rest/v1/products?select=id,name,cost,margin_percent,suggested_price,current_price,active&order=name.asc');const ids=(data||[]).map(p=>p.id);let pricing=[];if(ids.length)pricing=await sb('/rest/v1/product_pricing?select=product_id,min_price&product_id=in.('+ids.join(',')+')');const pm=new Map((pricing||[]).map(x=>[String(x.product_id),num(x.min_price)]));tbody.innerHTML=(data||[]).map(p=>`<tr><td>${escapeHtml(p.name)}</td><td>${money(p.cost)}</td><td>${Number(p.margin_percent??100).toFixed(2)}%</td><td>${money(p.suggested_price)}</td><td>${money(pm.get(String(p.id))||0)}</td><td>${money(p.current_price)}</td><td><button class="secondary" onclick="editProduct('${p.id}')">Editar</button> <button class="danger" onclick="delProduct('${p.id}')">Excluir</button></td></tr>`).join('')||'<tr><td colspan=6>Nenhum produto cadastrado.</td></tr>'}catch(e){tbody.innerHTML=`<tr><td colspan=6 class="error">Erro ao consultar produtos: ${escapeHtml(e.message)}</td></tr>`}}
+async function loadAdmin(){
+  const tbody=document.getElementById('productsAdmin');
+  tbody.innerHTML='<tr><td colspan="5">Carregando...</td></tr>';
+  try{
+    const data=await sb('/rest/v1/products?select=id,name,cost,margin_percent,current_price,active&order=name.asc');
+    tbody.innerHTML=(data||[]).map(p=>`
+      <tr>
+        <td>${escapeHtml(p.name)}</td>
+        <td>${money(p.cost)}</td>
+        <td>100.00%</td>
+        <td>${money(p.current_price)}</td>
+        <td>
+          <button class="secondary" onclick="editProduct('${p.id}')">Editar</button>
+          <button class="danger" onclick="delProduct('${p.id}')">Excluir</button>
+        </td>
+      </tr>`).join('')
+      ||'<tr><td colspan="5">Nenhum produto cadastrado.</td></tr>';
+  }catch(e){
+    tbody.innerHTML=`<tr><td colspan="5" class="error">Erro ao consultar produtos: ${escapeHtml(e.message)}</td></tr>`;
+  }
+}
 window.loadAdmin=loadAdmin;
 async function saveProduct(){const msg=document.getElementById('saveMsg');try{const name=document.getElementById('pName').value.trim(),cost=num(document.getElementById('pCost').value),sale=num(document.getElementById('pSale').value),minPrice=num(document.getElementById('pMin').value),margin=100;if(!name){msg.className='error';msg.textContent='Informe o nome do produto.';return}if(cost<=0){msg.className='error';msg.textContent='Informe um custo maior que zero.';return}const suggested=Number((cost*(1+margin/100)).toFixed(2)),current=sale>0?Number(sale.toFixed(2)):suggested;msg.className='muted';msg.textContent=editingProductId?'Atualizando...':'Salvando...';if(editingProductId){await sb('/rest/v1/products?id=eq.'+encodeURIComponent(editingProductId),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({name,cost,margin_percent:margin,suggested_price:suggested,current_price:current,active:true})});await sb('/rest/v1/product_pricing?product_id=eq.'+encodeURIComponent(editingProductId),{method:'DELETE'});if(minPrice>0)await sb('/rest/v1/product_pricing',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({product_id:editingProductId,min_price:minPrice})});msg.className='ok';msg.textContent='Produto atualizado com sucesso.';}else{const created=await sb('/rest/v1/products',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({name,cost,margin_percent:margin,suggested_price:suggested,current_price:current,active:true})});const id=Array.isArray(created)?created[0]?.id:created?.id;if(!id)throw new Error('Produto foi enviado, mas o Supabase não retornou o ID.');if(minPrice>0)await sb('/rest/v1/product_pricing',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({product_id:id,min_price:minPrice})});msg.className='ok';msg.textContent=`Produto salvo. Margem ${margin.toFixed(2)}% e preço sugerido ${money(suggested)}.`;}editingProductId=null;document.getElementById('btnSaveProduct').textContent='Salvar produto';['pName','pSale','pCost','pMin'].forEach(id=>document.getElementById(id).value='');document.getElementById('pMargin').value='100';await loadAdmin();await loadProducts()}catch(e){console.error(e);msg.className='error';msg.textContent='Erro no cadastro: '+(e?.message||e)}}
 window.saveProduct=saveProduct;document.getElementById('btnSaveProduct').addEventListener('click',saveProduct);
