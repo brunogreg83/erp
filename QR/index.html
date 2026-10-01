@@ -713,7 +713,20 @@ async function excluirProduto(id){
     alert("Produto excluído com sucesso.");
   } catch (err) {
     console.error("Erro ao excluir produto:", err);
-    alert("Não foi possível excluir o produto.\n\n" + (err && err.message ? err.message : err));
+
+    if (err && (err.code === "permission-denied" || /Missing or insufficient permissions/i.test(err.message || ""))) {
+      alert(
+        "Não foi possível excluir o produto.\n\n" +
+        "O Firebase bloqueou a exclusão por falta de permissão.\n\n" +
+        "No Firestore, a coleção produtos_modo_uso precisa permitir " +
+        "read, create, update e delete para este aplicativo."
+      );
+    } else {
+      alert(
+        "Não foi possível excluir o produto.\n\n" +
+        (err && err.message ? err.message : err)
+      );
+    }
   }
 }
 
