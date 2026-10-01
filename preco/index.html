@@ -227,9 +227,6 @@ function updateProductMarginRealtime(){
   const margin=cost>0?((sale-cost)/cost)*100:0;
   document.getElementById('pMargin').value=margin.toFixed(2);
 }
-document.getElementById('pCost').addEventListener('input',updateProductMarginRealtime);
-document.getElementById('pSale').addEventListener('input',updateProductMarginRealtime);
-
 let editingProductId=null;
 
 async function editProduct(id){try{const p=await sb('/rest/v1/products?id=eq.'+encodeURIComponent(id)+'&select=id,code,name,cost,margin_percent,suggested_price,current_price&limit=1'); if(!p.length) throw new Error('Produto não encontrado.'); const x=p[0]; const pr=await sb('/rest/v1/product_pricing?select=min_price&product_id=eq.'+encodeURIComponent(id)+'&limit=1'); document.getElementById('pName').value=x.name||'';document.getElementById('pSale').value=x.current_price??'';document.getElementById('pCost').value=x.cost??'';document.getElementById('pMin').value=pr?.[0]?.min_price??'';document.getElementById('pMargin').value=x.margin_percent??100; editingProductId=id; document.getElementById('btnSaveProduct').textContent='Atualizar produto'; document.getElementById('saveMsg').className='muted';document.getElementById('saveMsg').textContent='Editando produto. Altere os dados e clique em Atualizar produto.'; window.scrollTo({top:document.getElementById('admin').offsetTop-20,behavior:'smooth'});}catch(e){document.getElementById('saveMsg').className='error';document.getElementById('saveMsg').textContent='Erro ao carregar produto: '+e.message}}
@@ -263,8 +260,13 @@ async function delProduct(id){if(!confirm('Excluir este produto?'))return;try{aw
 document.addEventListener('DOMContentLoaded',()=>{
   const saveBtn=document.getElementById('btnSaveOrder');
   const clearBtn=document.getElementById('btnClearOrder');
+  const costInput=document.getElementById('pCost');
+  const saleInput=document.getElementById('pSale');
   if(saveBtn) saveBtn.addEventListener('click',saveOrderDraft);
   if(clearBtn) clearBtn.addEventListener('click',clearOrderDraft);
+  if(costInput) costInput.addEventListener('input',updateProductMarginRealtime);
+  if(saleInput) saleInput.addEventListener('input',updateProductMarginRealtime);
+  updateProductMarginRealtime();
 });
 
 loadProducts().catch(e=>{console.error(e);document.getElementById('product').innerHTML='<option>Erro ao carregar produtos</option>'});
