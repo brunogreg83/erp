@@ -77,6 +77,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
           <th>Total</th>
           <th>Margem</th>
           <th>Status</th>
+          <th>Ações</th>
         </tr>
       </thead>
       <tbody id="savedOrdersBody"></tbody>
@@ -212,6 +213,77 @@ function clearOrderDraft(){
 }
 
 
+
+async function editSavedOrder(orderId){
+  try{
+    const orders=await sb('/rest/v1/ab_orders?id=eq.'+encodeURIComponent(orderId)+'&select=id,customer_name');
+    const order=Array.isArray(orders)?orders[0]:null;
+    if(!order) throw new Error('Pedido não encontrado.');
+
+    const details=await sb('/rest/v1/ab_order_items?order_id=eq.'+encodeURIComponent(orderId)+'&select=product_id,product_name,quantity,cost,sale_price,total,margin_percent');
+    items=(details||[]).map(x=>({
+      productId:x.product_id,
+      name:x.product_name,
+      cost:num(x.cost),
+      qty:num(x.quantity),
+      price:num(x.sale_price),
+      suggested:0,
+      min:0
+    }));
+    currentOrderId=order.id;
+
+    const customer=document.getElementById('orderCustomer');
+    if(customer) customer.value=order.customer_name||'';
+    render();
+
+    const msg=document.getElementById('orderSaveMsg');
+    if(msg){
+      msg.className='muted';
+      msg.textContent='Editando pedido ID '+order.id+'. Altere os dados e clique em Salvar pedido.';
+    }
+
+    document.getElementById('sales')?.scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){
+    const msg=document.getElementById('savedOrdersMsg');
+    if(msg){
+      msg.className='error';
+      msg.textContent='Erro ao editar: '+(e?.message||String(e));
+    }
+    console.error(e);
+  }
+}
+
+async function deleteSavedOrder(orderId){
+  if(!confirm('Excluir o pedido ID '+orderId+'? Esta ação não pode ser desfeita.')) return;
+
+  const msg=document.getElementById('savedOrdersMsg');
+  try{
+    await sb('/rest/v1/ab_orders?id=eq.'+encodeURIComponent(orderId),{
+      method:'DELETE',
+      headers:{Prefer:'return=minimal'}
+    });
+
+    if(String(currentOrderId)===String(orderId)){
+      items=[];
+      currentOrderId=null;
+      const customer=document.getElementById('orderCustomer');
+      if(customer) customer.value='';
+      render();
+    }
+
+    msg.className='ok';
+    msg.textContent='Pedido ID '+orderId+' excluído.';
+    await loadSavedOrders();
+  }catch(e){
+    msg.className='error';
+    msg.textContent='Erro ao excluir pedido: '+(e?.message||String(e));
+    console.error(e);
+  }
+}
+
+window.editSavedOrder=editSavedOrder;
+window.deleteSavedOrder=deleteSavedOrder;
+
 async function loadSavedOrders(){
   const msg=document.getElementById('savedOrdersMsg');
   const body=document.getElementById('savedOrdersBody');
@@ -234,6 +306,10 @@ async function loadSavedOrders(){
         <td>${money(o.total)}</td>
         <td>${num(o.margin_percent).toFixed(2)}%</td>
         <td>${escapeHtml(o.status||'—')}</td>
+        <td style="white-space:nowrap">
+          <button class="secondary" type="button" onclick="editSavedOrder(${Number(o.id)})">Editar</button>
+          <button class="danger" type="button" onclick="deleteSavedOrder(${Number(o.id)})">Excluir</button>
+        </td>
       </tr>`;
     }).join('');
     msg.textContent=`${rows.length} pedido(s) salvo(s).`;
