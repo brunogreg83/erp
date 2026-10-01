@@ -144,18 +144,18 @@ async function saveOrderDraft(){
 
     let order;
     if(currentOrderId){
-      const updated=await sb('/rest/v1/orders?id=eq.'+encodeURIComponent(currentOrderId),{
+      const updated=await sb('/rest/v1/ab_orders?id=eq.'+encodeURIComponent(currentOrderId),{
         method:'PATCH',
         headers:{Prefer:'return=representation'},
         body:JSON.stringify(payload)
       });
       order=Array.isArray(updated)?updated[0]:updated;
-      await sb('/rest/v1/order_items?order_id=eq.'+encodeURIComponent(currentOrderId),{
+      await sb('/rest/v1/ab_order_items?order_id=eq.'+encodeURIComponent(currentOrderId),{
         method:'DELETE',
         headers:{Prefer:'return=minimal'}
       });
     }else{
-      const created=await sb('/rest/v1/orders',{
+      const created=await sb('/rest/v1/ab_orders',{
         method:'POST',
         headers:{Prefer:'return=representation'},
         body:JSON.stringify(payload)
@@ -180,14 +180,14 @@ async function saveOrderDraft(){
       margin_percent:Number((num(x.cost)?(((num(x.price)-num(x.cost))/num(x.cost))*100):0).toFixed(2))
     }));
 
-    await sb('/rest/v1/order_items',{
+    await sb('/rest/v1/ab_order_items',{
       method:'POST',
       headers:{Prefer:'return=minimal'},
       body:JSON.stringify(rows)
     });
 
     msg.className='ok';
-    msg.textContent='Pedido salvo no Supabase. ID: '+order.id;
+    msg.textContent='PEDIDO SALVO NO SUPABASE — ID: '+order.id;
   }catch(e){
     console.error(e);
     msg.className='error';
