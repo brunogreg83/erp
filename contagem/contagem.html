@@ -1,1 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contagem de Estoque por Foto - AB Chemicals</title>
+<style>
+  body{font:15px/1.45 system-ui,sans-serif;margin:0;background:#f6f7f9;color:#1b2430}
+  main{max-width:760px;margin:0 auto;padding:16px}
+  .card{background:#fff;border:1px solid #dde2e8;border-radius:12px;padding:14px;margin-bottom:14px}
+  button{font:inherit;border:1px solid #dde2e8;background:#fff;border-radius:9px;padding:9px 14px;cursor:pointer}
+  button.p{background:#0a7d6c;border-color:#0a7d6c;color:#fff;font-weight:600}
+  button:disabled{opacity:.5}
+  input{font:inherit;border:1px solid #dde2e8;border-radius:8px;padding:7px 9px;min-width:0}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+  .th img{width:70px;height:70px;object-fit:cover;border-radius:8px;margin:0 6px 6px 0}
+  .tw{overflow-x:auto} table{width:100%;border-collapse:collapse;min-width:460px}
+  th,td{text-align:left;padding:6px;border-bottom:1px solid #dde2e8}
+  th{font-size:12px;color:#6b7686;text-transform:uppercase}
+  td input[type=number]{width:70px} td input{width:100%}
+  .m{color:#6b7686;font-size:13px} .e{color:#b91c1c}
+</style>
+</head>
+<body>
+<main>
+  <h1>📦 Contagem de Estoque por Foto</h1>
 
+  <!-- Login (só aparece se você não estiver logado neste site) -->
+  <div class="card" id="loginCard" hidden>
+    <div class="row">
+      <input id="email" type="email" placeholder="E-mail">
+      <input id="senha" type="password" placeholder="Senha">
+      <button class="p" id="entrar">Entrar</button>
+    </div>
+    <span class="m e" id="loginErr"></span>
+  </div>
+
+  <div id="app" hidden>
+    <div class="card">
+      <div class="row">
+        <input id="local" type="text" placeholder="Local (ex.: Corredor 3, Prateleira B)" style="flex:1;min-width:200px">
+        <input id="fotos" type="file" accept="image/*" multiple>
+      </div>
+      <div class="th" id="th"></div>
+      <div class="row">
+        <button class="p" id="go" disabled>Contar com IA</button>
+        <span class="m" id="st"></span>
+      </div>
+    </div>
+
+    <div class="card" id="resCard" hidden>
+      <strong>Resultado</strong>
+      <p class="m">Corrija o que for preciso antes de confirmar.</p>
+      <div class="tw"><table>
+        <thead><tr><th>Produto</th><th>Qtd</th><th>Unid.</th><th>Conf.</th><th></th></tr></thead>
+        <tbody id="res"></tbody>
+      </table></div>
+      <p class="m" id="obs"></p>
+      <button class="p" id="ok">Confirmar e salvar</button>
+    </div>
+  </div>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// ===== TROQUE 1: configuração do Firebase (a mesma que o seu sistema já usa; projeto ab-clean) =====
+const firebaseConfig = {
+  apiKey: "COLE_AQUI",
+  authDomain: "COLE_AQUI",
+  projectId: "ab-clean",
+  appId: "COLE_AQUI"
+};
+// ===== TROQUE 2: endereço da Cloud Function e nomes das coleções =====
+const ENDPOINT = "https://southamerica-east1-ab-clean.cloudfunctions.net/contarEstoque";
+const COLECAO_CONTAGENS = "contagens";   // onde a contagem será salva
+const COLECAO_PRODUTOS  = "produtos";    // (opcional) coleção com campo "nome", usada para casar os nomes
+// ==================================================================================================
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth(), db = firebase.firestore();
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let files = [], itens = [], catalogo = [];
+
+auth.onAuthStateChanged(async u => {
+  $("loginCard").hidden = !!u;
+  $("app").hidden = !u;
+  if (u) {
+    try {
+      const s = await db.collection(COLECAO_PRODUTOS).limit(500).get();
+      catalogo = s.docs.map(d => d.data().nome).filter(Boolean);
+    } catch (e) { catalogo = []; }
+  }
+});
+$("entrar").onclick = async () => {
+  try { await auth.signInWithEmailAndPassword($("email").value, $("senha").value); }
+  catch (e) { $("loginErr").textContent = "Não foi possível entrar: " + e.message; }
+};
+
+const reduzir = f => new Promise((ok, no) => {
+  const i = new Image();
+  i.onload = () => {
+    const k = Math.min(1, 1600 / Math.max(i.width, i.height));
+    const c = document.createElement("canvas");
+    c.width = Math.round(i.width * k); c.height = Math.round(i.height * k);
+    c.getContext("2d").drawImage(i, 0, 0, c.width, c.height);
+    ok(c.toDataURL("image/jpeg", 0.82));
+  };
+  i.onerror = no; i.src = URL.createObjectURL(f);
+});
+
+$("fotos").onchange = e => {
+  files = [...e.target.files].slice(0, 6);
+  $("th").innerHTML = "";
+  files.forEach(f => { const i = new Image(); i.src = URL.createObjectURL(f); $("th").appendChild(i); });
+  $("go").disabled = !files.length;
+};
+
+function desenhar() {
+  $("resCard").hidden = !itens.length;
+  $("res").innerHTML = itens.map((r, i) => `<tr>
+    <td><input data-i="${i}" data-k="produto" value="${esc(r.produto)}"></td>
+    <td><input type="number" min="0" data-i="${i}" data-k="quantidade" value="${Number(r.quantidade) || 0}"></td>
+    <td><input data-i="${i}" data-k="unidade" value="${esc(r.unidade || "un")}"></td>
+    <td>${esc(r.confianca || "-")}</td>
+    <td><button data-del="${i}">✕</button></td></tr>`).join("");
+}
+$("res").oninput = e => {
+  const { i, k } = e.target.dataset;
+  if (i != null) itens[i][k] = k === "quantidade" ? Number(e.target.value) : e.target.value;
+};
+$("res").onclick = e => { if (e.target.dataset.del != null) { itens.splice(e.target.dataset.del, 1); desenhar(); } };
+
+$("go").onclick = async () => {
+  $("go").disabled = true; $("st").className = "m"; $("st").textContent = "Analisando fotos…";
+  try {
+    const imagens = await Promise.all(files.map(reduzir));
+    const token = await auth.currentUser.getIdToken();
+    const r = await fetch(ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+      body: JSON.stringify({ imagens, catalogo })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.erro || "erro");
+    itens = d.itens || [];
+    $("obs").textContent = d.observacoes || "";
+    $("st").textContent = itens.length ? "Revise os números antes de confirmar." : "Nenhum item identificado.";
+    desenhar();
+  } catch (e) { $("st").className = "m e"; $("st").textContent = "Falha: " + e.message; }
+  $("go").disabled = !files.length;
+};
+
+$("ok").onclick = async () => {
+  try {
+    const local = $("local").value.trim();
+    const batch = db.batch();
+    itens.forEach(it => batch.set(db.collection(COLECAO_CONTAGENS).doc(), {
+      produto: it.produto, quantidade: Number(it.quantidade) || 0, unidade: it.unidade || "un",
+      local, confianca: it.confianca || null,
+      usuario: auth.currentUser.email,
+      criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    }));
+    await batch.commit();
+    itens = []; files = []; $("fotos").value = ""; $("th").innerHTML = "";
+    desenhar(); $("go").disabled = true; $("st").textContent = "Contagem salva.";
+  } catch (e) { $("st").className = "m e"; $("st").textContent = "Erro ao salvar: " + e.message; }
+};
+</script>
+</body>
+</html>
