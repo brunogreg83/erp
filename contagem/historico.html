@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1d2d">
+<title>Histórico de Contagens</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial,sans-serif;background:#f4f7fa;color:#17212b}.app{max-width:1100px;margin:auto;min-height:100vh}.header{background:#0b1d2d;color:#fff;padding:20px;position:sticky;top:0;z-index:10}.header h1{font-size:21px;margin:0 0 5px}.header p{margin:0;color:#b9c9d8;font-size:13px}.main{padding:20px}.card{background:#fff;border:1px solid #dfe7ee;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 5px 18px rgba(15,40,60,.05)}.btn{border:0;border-radius:11px;padding:12px 15px;cursor:pointer;font-weight:700;background:#1473e6;color:#fff;text-decoration:none;display:inline-block}.status{padding:12px;border-radius:10px;background:#f1f7ff;color:#185fa5;font-size:13px;line-height:1.5}.status.ok{background:#eefaf2;color:#18733b}.status.error{background:#fff1f0;color:#b42318}.history-item{border:1px solid #e0e8ee;border-radius:13px;padding:15px;margin-bottom:12px;background:#fff}.history-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.date{font-size:12px;color:#71808d}.place{font-size:17px;font-weight:800}.meta{font-size:12px;color:#607181;margin-top:5px}.details{margin-top:12px;border-top:1px solid #e7edf2;padding-top:10px}.detail-row{display:grid;grid-template-columns:90px 1fr 80px 70px;gap:8px;padding:8px 0;border-bottom:1px solid #edf1f4;font-size:13px}.code{font-weight:800;font-size:15px}.name{color:#71808d;font-size:11px}.empty{text-align:center;color:#71808d;padding:35px 10px}.footer{text-align:center;padding:25px;color:#71808d;font-size:12px}@media(max-width:650px){.main{padding:12px}.card{padding:15px}.history-top{flex-direction:column}.detail-row{grid-template-columns:80px 1fr 55px 55px;font-size:12px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="header"><h1>📋 Histórico de Contagens</h1><p>Contagens de estoque salvas no Supabase</p></header>
+<main class="main">
+<div style="margin-bottom:15px"><a class="btn" href="./">← Nova contagem</a></div>
+<section class="card"><div id="status" class="status">Carregando histórico...</div></section>
+<section id="history"></section>
+</main>
+<div class="footer">Contagem de Estoque • AB | ERP</div>
+</div>
+<script>
+const SUPABASE_URL='https://yhebzpjgcbfowfljaoxz.supabase.co';
+const SUPABASE_KEY='sb_publishable_8-sLy7NgtG2PHnN5x1Aamg_3wqWlmVM';
+const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function fmtDate(v){return new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})}
+async function load(){try{const session=await db.auth.getSession();if(session.error)throw session.error;if(!session.data.session){const anon=await db.auth.signInAnonymously();if(anon.error)throw anon.error}const user=(await db.auth.getUser()).data.user;if(!user)throw new Error('Sessão não encontrada.');const q=await db.from('contagens_estoque').select('id,local_estoque,observacoes,status,total_itens,criado_em').order('criado_em',{ascending:false});if(q.error)throw q.error;if(!q.data.length){$('status').className='status ok';$('status').textContent='Nenhuma contagem salva ainda.';return}const ids=q.data.map(x=>x.id);const iq=await db.from('itens_contagem').select('contagem_id,codigo,produto,quantidade,confianca,observacao').in('contagem_id',ids);if(iq.error)throw iq.error;const by=new Map();for(const item of iq.data){if(!by.has(item.contagem_id))by.set(item.contagem_id,[]);by.get(item.contagem_id).push(item)}$('status').className='status ok';$('status').textContent=`${q.data.length} contagem(ns) encontrada(s).`;$('history').innerHTML=q.data.map(c=>{const items=by.get(c.id)||[];return `<article class="history-item"><div class="history-top"><div><div class="place">${esc(c.local_estoque||'Local não informado')}</div><div class="meta">${fmtDate(c.criado_em)} • ${items.length} produto(s) • ${Number(c.total_itens||0)} unidade(s)</div>${c.observacoes?`<div class="meta">${esc(c.observacoes)}</div>`:''}</div><div class="date">${esc(c.status||'')}</div></div><div class="details">${items.length?items.map(i=>`<div class="detail-row"><div class="code">${esc(i.codigo||'—')}</div><div><strong>${esc(i.produto||'Não identificado')}</strong>${i.observacao?`<div class="name">${esc(i.observacao)}</div>`:''}</div><div>Qtd: ${Number(i.quantidade||0)}</div><div>${Math.round(Number(i.confianca||0)*100)}%</div></div>`).join(''):'<div class="empty">Sem itens registrados.</div>'}</div></article>`}).join('')}catch(e){console.error(e);$('status').className='status error';$('status').textContent='Não foi possível carregar o histórico: '+(e.message||'erro desconhecido')}}load();
+</script>
+</body>
+</html>
