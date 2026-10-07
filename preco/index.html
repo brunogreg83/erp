@@ -37,7 +37,7 @@ async function loadProducts(){const data=await api("/rest/v1/preco_products?sele
 function selected(){return products.find(p=>String(p.id)===String($("produto").value))}
 function setPrice(){const p=selected();$("markup").value=p?(p.markup_percent??0):"";$("preco").value=p?(p.suggested_price||0):""}
 $("produto").addEventListener("change",setPrice);
-$("markup").addEventListener("input",()=>{const p=selected(),m=num($("markup").value);if(p){$("preco").value=(num(p.cost)*(1+m/100)).toFixed(2)}});
+$("markup").addEventListener("input",()=>{const p=selected(),m=num($("markup").value);if(p){const baseMarkup=num(p.markup_percent);const suggested=num(p.suggested_price);const base=suggested/(1+baseMarkup/100);$("preco").value=(base*(1+m/100)).toFixed(2)}});
 $("adicionar").addEventListener("click",()=>{const p=selected(),q=num($("quantidade").value),price=num($("preco").value),markup=num($("markup").value);if(!p){alert("Selecione um produto.");return}if(q<=0){alert("Informe uma quantidade maior que zero.");return}if(price<0||markup<0){alert("Preço ou markup inválido.");return}items.push({product_id:p.id,name:p.name,qty:q,price,cost:num(p.cost),markup});render()});
 function render(){$("itens").innerHTML=items.map((x,i)=>'<tr><td>'+escape(x.name)+'</td><td>'+x.qty+'</td><td>'+money(x.price)+'</td><td>'+money(x.qty*x.price)+'</td><td><button class="danger" data-del="'+i+'">Excluir</button></td></tr>').join("");const total=items.reduce((s,x)=>s+x.qty*x.price,0);$("qtdItens").textContent=items.length;$("total").textContent=money(total);$("status").textContent=items.length?"Pronto para salvar":"Novo"}
 $("itens").addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(b){items.splice(Number(b.dataset.del),1);render()}});
