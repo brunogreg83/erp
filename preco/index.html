@@ -59,9 +59,8 @@ async function loadHistorico(){
   const orders=await api("/rest/v1/preco_orders?select=id,customer_name,total,markup_percent,status,created_at&order=created_at.desc&limit=20");
   if(!orders?.length){h.innerHTML='<tr><td colspan="7" class="muted">Nenhum pedido salvo.</td></tr>';return}
   h.innerHTML=orders.map(o=>'<tr><td>#'+o.id+'</td><td>'+new Date(o.created_at).toLocaleDateString("pt-BR")+'</td><td>'+escape(o.customer_name||"—")+'</td><td>'+escape(o.status||"—")+'</td><td>'+money(o.total)+'</td><td>'+num(o.markup_percent).toFixed(2)+'%</td><td><button class="secondary" data-view-order="'+o.id+'">Ver</button></td></tr>').join("");
- }catch(e){m.className="msg bad";m.textContent="Erro ao carregar histórico: "+e.message}
-}
-$("historico").addEventListener("click",async e=>{
+ }catch(e){h.innerHTML='<tr><td colspan="7" class="bad">Não foi possível carregar o histórico.</td></tr>';m.className="msg bad";m.textContent="Erro ao carregar histórico: "+e.message}
+}$("historico").addEventListener("click",async e=>{
  const b=e.target.closest("[data-view-order]"); if(!b)return;
  const id=b.dataset.viewOrder;
  try{
@@ -72,5 +71,6 @@ $("historico").addEventListener("click",async e=>{
 });
 loadProducts().catch(e=>{$("msg").className="msg bad";$("msg").textContent="Erro ao carregar produtos: "+e.message});
 loadHistorico();
+setInterval(loadHistorico, 10000);
 render();
 </script></body></html>
