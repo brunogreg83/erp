@@ -2,7 +2,7 @@
 <html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB | Precificação</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f3f6fa;color:#172033;font-family:Arial,Helvetica,sans-serif}.wrap{max-width:1050px;margin:auto;padding:14px}.head{background:#0b1d2d;color:#fff;padding:20px;border-radius:14px;margin-bottom:14px}.head h1{margin:0 0 5px;font-size:24px}.head p{margin:0;color:#c9d6e1}.card{background:#fff;border:1px solid #dbe3eb;border-radius:13px;padding:17px;margin-bottom:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.full{grid-column:1/-1}label{display:block;font-size:12px;font-weight:700;margin-bottom:5px}input,select{width:100%;padding:12px;border:1px solid #cbd6e0;border-radius:8px;font-size:16px;background:#fff}button{border:0;border-radius:8px;padding:12px 16px;font-weight:700;cursor:pointer}.primary{background:#1268a8;color:#fff}.secondary{background:#e8eef4;color:#17324b}.danger{background:#fde5e5;color:#ad2424}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}.farol-card{grid-column:2;grid-row:2}.status-card{grid-column:1;grid-row:2}.farol-percent{display:block;color:#68788a;font-size:19px;margin-top:4px}.metric{background:#f6f9fc;border:1px solid #e1e7ed;border-radius:9px;padding:12px}.metric small{display:block;color:#68788a}.metric b{display:block;font-size:19px;margin-top:4px}.muted{font-size:12px;color:#68788a;margin-top:8px}.msg{font-size:13px;margin-top:9px}.ok{color:#087443}.bad{color:#b42318}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 7px;border-bottom:1px solid #e6ebf0;text-align:left}th{background:#f7f9fb}.right{text-align:right}.scroll{overflow:auto}@media(max-width:700px){.grid{grid-template-columns:1fr}.summary{grid-template-columns:1fr 1fr}.wrap{padding:9px}}
+*{box-sizing:border-box}body{margin:0;background:#f3f6fa;color:#172033;font-family:Arial,Helvetica,sans-serif}.wrap{max-width:1050px;margin:auto;padding:14px}.head{background:#0b1d2d;color:#fff;padding:20px;border-radius:14px;margin-bottom:14px}.head h1{margin:0 0 5px;font-size:24px}.head p{margin:0;color:#c9d6e1}.card{background:#fff;border:1px solid #dbe3eb;border-radius:13px;padding:17px;margin-bottom:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.full{grid-column:1/-1}label{display:block;font-size:12px;font-weight:700;margin-bottom:5px}input,select{width:100%;padding:12px;border:1px solid #cbd6e0;border-radius:8px;font-size:16px;background:#fff}button{border:0;border-radius:8px;padding:12px 16px;font-weight:700;cursor:pointer}.primary{background:#1268a8;color:#fff}.secondary{background:#e8eef4;color:#17324b}.danger{background:#fde5e5;color:#ad2424}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}.farol-card{grid-column:2;grid-row:2}.status-card{grid-column:1;grid-row:2}.farol-percent{display:block;color:#68788a;font-size:19px;margin-top:4px}.fixed-info{margin-top:14px;padding:12px;background:#f7f9fb;border:1px solid #e1e7ed;border-radius:9px}.fixed-info-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.fixed-info-item small{display:block;color:#68788a;font-size:12px}.fixed-info-item b{display:block;font-size:16px;margin-top:4px}@media(max-width:700px){.fixed-info-grid{grid-template-columns:1fr 1fr}}.metric{background:#f6f9fc;border:1px solid #e1e7ed;border-radius:9px;padding:12px}.metric small{display:block;color:#68788a}.metric b{display:block;font-size:19px;margin-top:4px}.muted{font-size:12px;color:#68788a;margin-top:8px}.msg{font-size:13px;margin-top:9px}.ok{color:#087443}.bad{color:#b42318}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 7px;border-bottom:1px solid #e6ebf0;text-align:left}th{background:#f7f9fb}.right{text-align:right}.scroll{overflow:auto}@media(max-width:700px){.grid{grid-template-columns:1fr}.summary{grid-template-columns:1fr 1fr}.wrap{padding:9px}}
 </style></head><body><div class="wrap">
 <header class="head"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><h1>AB | Precificação</h1><p>Selecione o cliente, os produtos e informe as quantidades.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><a href="admin.html" style="display:inline-block;background:#fff;color:#0b1d2d;text-decoration:none;padding:10px 14px;border-radius:8px;font-weight:700">⚙️ Administração / Backend</a></div></div></header>
 
@@ -25,7 +25,7 @@
 <h2>Itens do pedido</h2>
 <div class="scroll"><table><thead><tr><th>Produto</th><th>Qtd.</th><th>Preço unit.</th><th>Total</th><th>Markup</th><th></th></tr></thead><tbody id="itens"></tbody></table></div>
 <div class="summary"><div class="metric"><small>Itens</small><b id="qtdItens">0</b></div><div class="metric"><small>Total do pedido</small><b id="total">R$ 0,00</b></div><div class="metric status-card"><small>Status</small><b id="status">Novo</b></div><div class="metric farol-card"><small>Farol do pedido</small><b id="farolGeral"></b><span id="farolPercentual" class="farol-percent">0.00%</span></div></div>
-<div class="actions"><button class="primary" id="salvar">Salvar pedido</button><button class="secondary" id="limpar">Limpar pedido</button></div>
+<div class="fixed-info"><div style="font-weight:700;margin-bottom:9px">Rateio do custo fixo</div><div class="fixed-info-grid"><div class="fixed-info-item"><small>Custo fixo mensal</small><b id="fixoMensal">R$ 0,00</b></div><div class="fixed-info-item"><small>Custo fixo diário</small><b id="fixoDiario">R$ 0,00</b></div><div class="fixed-info-item"><small>Vendas realizadas hoje</small><b id="vendasHoje">R$ 0,00</b></div><div class="fixed-info-item"><small>Rateio do custo fixo</small><b id="rateioPercentual">0,00%</b></div></div><div class="muted">O rateio é aplicado somente com base nas vendas realizadas do dia. Orçamentos e cancelados não entram.</div></div><div class="actions"><button class="primary" id="salvar">Salvar pedido</button><button class="secondary" id="limpar">Limpar pedido</button></div>
 <div id="msg" class="msg"></div>
 </section>
 <section class="card">
@@ -37,7 +37,7 @@
 </div>
 <script>
 const URL="https://divokbonqrmpindszoqv.supabase.co",KEY="sb_publishable_sCTeIxcTB-oUswA-QVP0Wg_LrlGgjhY";
-let products=[],items=[],editingIndex=-1,fixedCostRateToday=0;
+let products=[],items=[],editingIndex=-1,fixedCostRateToday=0,fixedMonthlyToday=0,fixedDailyToday=0,realizedToday=0;
 const $=id=>document.getElementById(id),num=v=>Number(v)||0,money=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 async function api(path,opt={}){const r=await fetch(URL+path,{...opt,headers:{apikey:KEY,Authorization:"Bearer "+KEY,"Content-Type":"application/json",...(opt.headers||{})}});const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{d=t}if(!r.ok)throw new Error(d?.message||d?.hint||t||"Erro");return d}
 function escape(v){return String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
@@ -46,13 +46,20 @@ async function loadFixedCostRateToday(){
  try{
   const now=new Date(),month=new Date(now.getFullYear(),now.getMonth(),1),monthKey=month.getFullYear()+"-"+String(month.getMonth()+1).padStart(2,"0")+"-01";
   const fixed=await api("/rest/v1/preco_fixed_costs?select=amount&month=eq."+monthKey+"&limit=1");
-  const monthly=num(fixed?.[0]?.amount),daily=monthly/30;
+  fixedMonthlyToday=num(fixed?.[0]?.amount);fixedDailyToday=fixedMonthlyToday/30;
   const start=new Date(now.getFullYear(),now.getMonth(),now.getDate()),end=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
   const orders=await api("/rest/v1/preco_orders?select=total,status,created_at&created_at=gte."+encodeURIComponent(start.toISOString())+"&created_at=lt."+encodeURIComponent(end.toISOString())+"&limit=1000");
-  const realized=(orders||[]).filter(o=>String(o.status||"").toLowerCase()!=="orçamento"&&String(o.status||"").toLowerCase()!=="cancelado").reduce((s,o)=>s+num(o.total),0);
-  fixedCostRateToday=realized>0?daily/realized:0;
- }catch(e){console.warn("Não foi possível calcular o rateio do custo fixo:",e);fixedCostRateToday=0}
+  realizedToday=(orders||[]).filter(o=>{const st=String(o.status||"").toLowerCase();return st!=="orçamento"&&st!=="cancelado"}).reduce((s,o)=>s+num(o.total),0);
+  fixedCostRateToday=realizedToday>0?fixedDailyToday/realizedToday:0;
+ }catch(e){console.warn("Não foi possível calcular o rateio do custo fixo:",e);fixedMonthlyToday=0;fixedDailyToday=0;realizedToday=0;fixedCostRateToday=0}
+ updateFixedInfo();
  setPrice();
+}
+function updateFixedInfo(){
+ $("fixoMensal").textContent=money(fixedMonthlyToday);
+ $("fixoDiario").textContent=money(fixedDailyToday);
+ $("vendasHoje").textContent=money(realizedToday);
+ $("rateioPercentual").textContent=(fixedCostRateToday*100).toFixed(2).replace(".",",")+"%";
 }
 function selected(){return products.find(p=>String(p.id)===String($("produto").value))}
 function setPrice(){const p=selected();$("markup").value=p?(p.markup_percent??0):"";$("preco").value=p?(p.suggested_price||0):""}
