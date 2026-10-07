@@ -1,525 +1,90 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AB Chemicals | Controle de Preços</title>
+<title>AB | Precificação</title>
 <style>
-:root{--blue:#0b1d2d;--cyan:#159bd7;--bg:#f4f7fa;--green:#d9f7e2;--yellow:#fff3c4;--red:#ffd9d9}
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#17212b}
-header{background:var(--blue);color:#fff;padding:18px 20px}header h1{margin:0;font-size:21px}header small{opacity:.8}
-nav{display:flex;gap:8px;padding:12px;background:#fff;border-bottom:1px solid #ddd;position:sticky;top:0;z-index:5}
-button{border:0;border-radius:8px;padding:10px 14px;cursor:pointer;font-weight:600}.primary{background:var(--cyan);color:white}.secondary{background:#e9eef2}.danger{background:#c62828;color:white}
-main{max-width:1100px;margin:20px auto;padding:0 14px}.card{background:white;border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:0 2px 10px #0000000d}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
-label{font-size:13px;font-weight:700;display:block;margin-bottom:5px}input,select{width:100%;padding:10px;border:1px solid #cbd5df;border-radius:8px;font-size:15px}
-table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid #e6eaee;text-align:left}th{font-size:13px;background:#f7f9fb}
-.badge{display:inline-block;padding:7px 10px;border-radius:999px;font-weight:800;font-size:12px}.green{background:var(--green)}.yellow{background:var(--yellow)}.red{background:var(--red)}
-.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}.metric{background:#f7f9fb;border-radius:10px;padding:13px}.metric b{display:block;font-size:18px;margin-top:5px}
-.hidden{display:none!important}.muted{color:#6d7780;font-size:13px}.right{text-align:right}.ok{color:#087a35;font-weight:700}.error{color:#b00020;font-weight:700}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f3f6fa;color:#172033}.wrap{max-width:1180px;margin:auto;padding:16px}.head{background:#0b1d2d;color:#fff;padding:20px;border-radius:14px;margin-bottom:16px}.head h1{margin:0 0 5px}.head p{margin:0;color:#c7d5e1}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.card{background:#fff;border:1px solid #dce4ec;border-radius:13px;padding:17px;margin-bottom:16px}.card h2{font-size:18px;margin:0 0 14px}.fg{display:grid;grid-template-columns:1fr 1fr;gap:11px}.full{grid-column:1/-1}label{display:block;font-size:12px;font-weight:700;margin-bottom:5px}input,select{width:100%;padding:11px;border:1px solid #cbd6e1;border-radius:8px;font-size:16px;background:#fff}input:focus,select:focus{outline:2px solid #c7e2f7;border-color:#1976b8}.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}button{border:0;border-radius:8px;padding:11px 14px;font-weight:700;cursor:pointer}.pri{background:#1268a8;color:#fff}.sec{background:#e8eef4;color:#17324b}.del{background:#fde5e5;color:#ad2424}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:14px}.metric{background:#f6f9fc;border:1px solid #e1e7ed;border-radius:9px;padding:11px}.metric small{display:block;color:#667587}.metric b{display:block;font-size:18px;margin-top:4px}.ok{color:#087443}.bad{color:#b42318}.muted{font-size:12px;color:#68788a;margin-top:8px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 7px;border-bottom:1px solid #e6ebf0;text-align:left}th{background:#f6f8fa}.right{text-align:right}.scroll{overflow:auto}.pill{padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}.green{background:#dff5e7;color:#087443}.yellow{background:#fff1c7;color:#8a5a00}.red{background:#fde1e1;color:#b42318}.msg{font-size:12px;margin-top:8px}@media(max-width:800px){.grid,.fg{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.wrap{padding:10px}}@media(max-width:430px){.metrics{grid-template-columns:1fr 1fr}.metric b{font-size:15px}}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
-<body>
-<header><h1>AB Chemicals — Controle de Preços</h1><small>Vendas e Back-office</small></header>
-<nav>
-<button id="btnSales" class="primary" type="button">Vendas / Pedido</button>
-<button id="btnAdmin" class="secondary" type="button">Back-office</button>
-</nav>
-
-<main>
-<section id="sales" class="card">
-<h2>Novo pedido</h2>
-        <div style="margin:12px 0">
-          <label>Cliente</label>
-          <input id="orderCustomer" type="text" placeholder="Nome do cliente">
-        </div>
-<div class="grid">
-<div><label>Produto</label><select id="product"></select></div>
-<div><label>Quantidade</label><input id="qty" type="number" min="1" value="1"></div>
-<div><label>Preço de venda (un.)</label><input id="price" type="number" min="0" step="0.01"></div>
-<div><label>&nbsp;</label><button class="primary" onclick="addItem()">Adicionar ao pedido</button></div>
-</div>
-<p class="muted">Os dados de custo são usados somente para o cálculo interno de margem.</p>
-<div class="summary" style="margin-top:16px">
-<div class="metric">Venda total<b id="totalSale">R$ 0,00</b></div>
-<div class="metric">Margem<b id="totalMargin">—</b></div>
-<div class="metric">Margem padrão<b>100%</b></div>
-<div class="metric">Precificação do pedido<b id="totalStatus"><span class="badge yellow">⚪ SEM PEDIDO</span></b></div>
-</div>
-<div style="overflow:auto;margin-top:16px">
-<table><thead><tr><th>Produto</th><th>Qtd.</th><th>Preço</th><th>Total</th><th>Precificação</th><th>Margem</th><th></th></tr></thead><tbody id="items"></tbody></table>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px">
-      <button id="btnSaveOrder" class="primary" type="button">Salvar pedido</button>
-      <button id="btnClearOrder" class="secondary" type="button">Limpar pedido</button>
-      <span id="orderSaveMsg" class="muted"></span>
-    </div>
-</div>
-</section>
-
-
-<section id="savedOrders" class="card" style="margin-top:16px">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-    <div>
-      <h2 style="margin-bottom:4px">Pedidos salvos</h2>
-      <p class="muted" style="margin:0">Pedidos gravados no Supabase.</p>
-    </div>
-    <button id="btnRefreshOrders" class="secondary" type="button">Atualizar pedidos</button>
-  </div>
-  <div id="savedOrdersMsg" class="muted" style="margin-top:10px"></div>
-  <div style="overflow:auto;margin-top:10px">
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Cliente</th>
-          <th>Data</th>
-          <th>Total</th>
-          <th>Margem</th>
-          <th>Status</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody id="savedOrdersBody"></tbody>
-    </table>
-  </div>
-</section>
-
-<section id="admin" class="card hidden">
-<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2>Produtos</h2><button class="secondary" type="button" onclick="show('sales')">Voltar</button></div>
-<p class="muted">Cadastro direto no Supabase. A margem padrão é de <strong>100%</strong>. O preço sugerido é calculado automaticamente como custo × 2. Não existe preço mínimo automático.</p>
-    <div class="card" style="margin-top:14px;background:#f7fbff;border:1px solid #cfe8f6">
-      <h3 style="margin-top:0">Importar produtos do AB | ERP</h3>
-      <p class="muted">Selecione o Excel exportado do ERP. Produtos existentes pelo mesmo código serão atualizados; produtos sem código serão adicionados.</p>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <input id="erpFile" type="file" accept=".xlsx,.xls,.csv">
-        <button id="btnImportERP" class="primary" type="button">Importar produtos do ERP</button>
-      </div>
-      <p id="importMsg" class="muted"></p>
-    </div>
+<body><div class="wrap">
+<div class="head"><h1>AB | Precificação</h1><p>Formação de preço e análise de lucro para distribuição</p></div>
 
 <div class="grid">
-<div><label>Produto</label><input id="pName" placeholder="Nome do produto"></div>
-
-<div><label>Preço de Venda</label><input id="pSale" type="number" min="0" step="0.01" placeholder="Ex.: 200,00"></div>
-<div><label>Custo</label><input id="pCost" type="number" min="0" step="0.01" placeholder="Informe o custo"></div>
-<div><label>Preço mínimo aceitável</label><input id="pMin" type="number" min="0" step="0.01" placeholder="Informado manualmente"></div>
-<div><label>Margem (%)</label><input id="pMargin" type="number" min="0" step="0.01" value="100" readonly></div>
-<div><label>&nbsp;</label><button id="btnSaveProduct" class="primary" type="button">Salvar produto</button></div>
+<section class="card">
+<h2>1. Custos fixos</h2>
+<div class="fg">
+<div><label>Mês</label><input id="mes" type="month"></div>
+<div><label>Custos fixos mensais (R$)</label><input id="fixos" type="number" min="0" step="0.01" placeholder="0,00"></div>
 </div>
-<p id="saveMsg" class="muted"></p>
-<div style="overflow:auto;margin-top:18px"><table><thead><tr><th>Produto</th><th>Custo</th><th>Margem</th><th>Venda</th><th></th></tr></thead><tbody id="productsAdmin"></tbody></table></div>
+<div class="metrics">
+<div class="metric"><small>Mensal</small><b id="fixoMes">R$ 0,00</b></div>
+<div class="metric"><small>Diário ÷ 30</small><b id="fixoDia">R$ 0,00</b></div>
+</div>
+<div class="muted">O custo fixo diário é distribuído proporcionalmente pelo valor dos pedidos do dia.</div>
 </section>
-</main>
 
+<section class="card">
+<h2>2. Formação do preço</h2>
+<div class="fg">
+<div class="full"><label>Produto</label><input id="produto" placeholder="Nome do produto"></div>
+<div><label>Custo do produto (R$)</label><input id="custo" class="calc" type="number" min="0" step="0.01"></div>
+<div><label>Frete de compra (R$)</label><input id="freteCompra" class="calc" type="number" min="0" step="0.01"></div>
+<div><label>Rótulo (R$)</label><input id="rotulo" class="calc" type="number" min="0" step="0.01"></div>
+<div><label>Embalagem (R$)</label><input id="embalagem" class="calc" type="number" min="0" step="0.01"></div>
+<div><label>Galão/recipiente (R$)</label><input id="galao" class="calc" type="number" min="0" step="0.01"></div>
+<div><label>Tampa (R$)</label><input id="tampa" class="calc" type="number" min="0" step="0.01"></div>
+<div><label>Caixa (R$)</label><input id="caixa" class="calc" type="number" min="0" step="0.01"></div>
+<div><label>Etiqueta (R$)</label><input id="etiqueta" class="calc" type="number" min="0" step="0.01"></div>
+<div><label>Outros custos (R$)</label><input id="outros" class="calc" type="number" min="0" step="0.01"></div>
+<div><label>Frete ao cliente (R$)</label><input id="freteVenda" class="calc" type="number" min="0" step="0.01"></div>
+<div><label>Impostos (%)</label><input id="impostos" class="calc" type="number" min="0" step="0.01"></div>
+<div><label>Comissão (%)</label><input id="comissao" class="calc" type="number" min="0" step="0.01"></div>
+<div><label>Taxa financeira (%)</label><input id="taxa" class="calc" type="number" min="0" step="0.01"></div>
+<div><label>Margem desejada (%)</label><input id="margem" class="calc" type="number" min="0" max="99.99" step="0.01" value="20"></div>
+</div>
+<div class="metrics">
+<div class="metric"><small>Custo + fixo</small><b id="custoTotal">R$ 0,00</b></div>
+<div class="metric"><small>Preço sugerido</small><b id="preco">R$ 0,00</b></div>
+<div class="metric"><small>Lucro</small><b id="lucro">R$ 0,00</b></div>
+<div class="metric"><small>Margem</small><b id="margemReal">0,00%</b></div>
+</div>
+<div id="priceMsg" class="msg"></div>
+<div class="btns"><button class="pri" id="add">Adicionar pedido com este preço</button></div>
+<div class="muted">Campos vazios = R$ 0,00. Percentuais incidem sobre o preço de venda.</div>
+</section>
+</div>
+
+<section class="card">
+<h2>3. Pedidos do dia</h2>
+<div class="fg">
+<div><label>Data</label><input id="data" type="date"></div>
+<div><label>Valor do pedido (R$)</label><input id="valor" type="number" min="0" step="0.01"></div>
+<div><label>Custo total do pedido (R$)</label><input id="custoPedido" type="number" min="0" step="0.01"></div>
+<div><label>Frete/outros custos do pedido (R$)</label><input id="fretePedido" type="number" min="0" step="0.01"></div>
+</div>
+<div class="btns"><button class="sec" id="manual">Adicionar pedido manualmente</button></div>
+<div class="metrics">
+<div class="metric"><small>Pedidos</small><b id="qtd">0</b></div>
+<div class="metric"><small>Faturamento</small><b id="fat">R$ 0,00</b></div>
+<div class="metric"><small>Custos</small><b id="custos">R$ 0,00</b></div>
+<div class="metric"><small>Lucro</small><b id="lucroTotal">R$ 0,00</b></div>
+</div>
+<div class="scroll" style="margin-top:12px"><table><thead><tr><th>Data</th><th>Pedido</th><th>Venda</th><th>Custo</th><th>Fixo rateado</th><th>Lucro</th><th></th></tr></thead><tbody id="lista"></tbody></table></div>
+<div class="muted">O rateio é recalculado imediatamente quando um pedido é adicionado ou excluído. Não existe fechamento diário.</div>
+</section>
+</div>
 <script>
-function show(id){
-  const sales=document.getElementById("sales");
-  const admin=document.getElementById("admin");
-  if(!sales || !admin) return;
-  sales.classList.toggle("hidden",id!=="sales");
-  admin.classList.toggle("hidden",id!=="admin");
-  if(id==="admin" && typeof window.loadAdmin === "function") window.loadAdmin();
-}
-window.show=show;
-document.getElementById("btnSales").addEventListener("click",()=>show("sales"));
-document.getElementById("btnAdmin").addEventListener("click",()=>show("admin"));
-</script>
-
-
-<script>
-const SUPABASE_URL = "https://divokbonqrmpindszoqv.supabase.co";
-const SUPABASE_KEY = "sb_publishable_sCTeIxcTB-oUswA-QVP0Wg_LrlGgjhY";
-let products=[], items=[];
-const money=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-const num=v=>Number(String(v??0).replace(",","."))||0;
-async function sb(path, options={}){
- const r=await fetch(SUPABASE_URL+path,{...options,headers:{"apikey":SUPABASE_KEY,"Authorization":"Bearer "+SUPABASE_KEY,"Content-Type":"application/json",...(options.headers||{})}});
- const text=await r.text(); let data; try{data=text?JSON.parse(text):null}catch{data=text}
- if(!r.ok) throw new Error(data?.message||data?.hint||data?.error_description||text||("HTTP "+r.status));
- return data;
-}
-
-
-let currentOrderId=null;
-
-async function saveOrderDraft(){
-  const msg=document.getElementById('orderSaveMsg');
-  try{
-    if(!items || !items.length){
-      msg.className='error';
-      msg.textContent='Adicione pelo menos um item ao pedido.';
-      return;
-    }
-
-    const customer=(document.getElementById('orderCustomer')?.value||'').trim();
-    const total=items.reduce((s,x)=>s+(num(x.qty)*num(x.price)),0);
-    const costTotal=items.reduce((s,x)=>s+(num(x.qty)*num(x.cost)),0);
-    const profit=total-costTotal;
-    const margin=costTotal?((profit/costTotal)*100):0;
-
-    msg.className='muted';
-    msg.textContent=currentOrderId ? 'Atualizando pedido '+currentOrderId+'...' : 'Salvando pedido...';
-
-    const orderPayload={
-      customer_name:customer,
-      total:Number(total.toFixed(2)),
-      cost_total:Number(costTotal.toFixed(2)),
-      profit:Number(profit.toFixed(2)),
-      margin_percent:Number(margin.toFixed(2)),
-      status:'Orçamento'
-    };
-
-    const itemRows=items.map(x=>({
-      order_id:currentOrderId,
-      product_id:x.productId==null?null:String(x.productId),
-      product_name:String(x.name||''),
-      quantity:Number(num(x.qty)),
-      cost:Number(num(x.cost).toFixed(2)),
-      sale_price:Number(num(x.price).toFixed(2)),
-      total:Number((num(x.qty)*num(x.price)).toFixed(2)),
-      margin_percent:Number((num(x.cost)?(((num(x.price)-num(x.cost))/num(x.cost))*100):0).toFixed(2))
-    }));
-
-    let savedId;
-
-    if(currentOrderId){
-      // EDIÇÃO: altera o pedido existente, sem criar outro ID.
-      const updated=await sb(
-        '/rest/v1/ab_orders?id=eq.'+encodeURIComponent(currentOrderId),
-        {
-          method:'PATCH',
-          headers:{Prefer:'return=representation'},
-          body:JSON.stringify(orderPayload)
-        }
-      );
-
-      const updatedOrder=Array.isArray(updated)?updated[0]:updated;
-      if(!updatedOrder || !updatedOrder.id){
-        throw new Error('O Supabase não confirmou a atualização do pedido.');
-      }
-
-      // Remove os itens antigos e grava os itens atuais.
-      await sb(
-        '/rest/v1/ab_order_items?order_id=eq.'+encodeURIComponent(currentOrderId),
-        {method:'DELETE',headers:{Prefer:'return=minimal'}}
-      );
-
-      const rows=itemRows.map(x=>({...x,order_id:currentOrderId}));
-      if(rows.length){
-        await sb('/rest/v1/ab_order_items',{
-          method:'POST',
-          headers:{Prefer:'return=minimal'} ,
-          body:JSON.stringify(rows)
-        });
-      }
-
-      savedId=updatedOrder.id;
-      msg.className='ok';
-      msg.textContent='PEDIDO ATUALIZADO NO SUPABASE — ID: '+savedId;
-    }else{
-      // NOVO PEDIDO: usa a RPC existente para criar um novo ID.
-      const rpcPayload={
-        p_customer_name:customer,
-        p_total:Number(total.toFixed(2)),
-        p_cost_total:Number(costTotal.toFixed(2)),
-        p_profit:Number(profit.toFixed(2)),
-        p_margin_percent:Number(margin.toFixed(2)),
-        p_status:'Orçamento',
-        p_items:items.map(x=>({
-          product_id:x.productId==null?null:String(x.productId),
-          product_name:String(x.name||''),
-          quantity:Number(num(x.qty)),
-          cost:Number(num(x.cost).toFixed(2)),
-          sale_price:Number(num(x.price).toFixed(2)),
-          total:Number((num(x.qty)*num(x.price)).toFixed(2)),
-          margin_percent:Number((num(x.cost)?(((num(x.price)-num(x.cost))/num(x.cost))*100):0).toFixed(2))
-        }))
-      };
-
-      const result=await sb('/rest/v1/rpc/ab_save_order',{
-        method:'POST',
-        headers:{Prefer:'return=representation'},
-        body:JSON.stringify(rpcPayload)
-      });
-
-      const saved=Array.isArray(result)?result[0]:result;
-      if(!saved || !saved.id) throw new Error('O Supabase não retornou o ID do pedido.');
-
-      savedId=saved.id;
-      currentOrderId=saved.id;
-      msg.className='ok';
-      msg.textContent='PEDIDO SALVO NO SUPABASE — ID: '+savedId;
-    }
-
-    await loadSavedOrders();
-  }catch(e){
-    console.error(e);
-    msg.className='error';
-    msg.textContent='Erro ao salvar/atualizar: '+(e?.message||String(e));
-  }
-}
-
-function clearOrderDraft(){
-  items=[];
-  currentOrderId=null;
-  const saveBtn=document.getElementById('btnSaveOrder');
-  if(saveBtn) saveBtn.textContent='Salvar pedido';
-  const customer=document.getElementById('orderCustomer');
-  if(customer) customer.value='';
-  render();
-  const msg=document.getElementById('orderSaveMsg');
-  if(msg){
-    msg.className='muted';
-    msg.textContent='Novo pedido.';
-  }
-}
-
-
-
-async function editSavedOrder(orderId){
-  try{
-    const orders=await sb('/rest/v1/ab_orders?id=eq.'+encodeURIComponent(orderId)+'&select=id,customer_name');
-    const order=Array.isArray(orders)?orders[0]:null;
-    if(!order) throw new Error('Pedido não encontrado.');
-
-    const details=await sb('/rest/v1/ab_order_items?order_id=eq.'+encodeURIComponent(orderId)+'&select=product_id,product_name,quantity,cost,sale_price,total,margin_percent');
-    items=(details||[]).map(x=>({
-      productId:x.product_id,
-      name:x.product_name,
-      cost:num(x.cost),
-      qty:num(x.quantity),
-      price:num(x.sale_price),
-      suggested:0,
-      min:0
-    }));
-    currentOrderId=order.id;
-    const saveBtn=document.getElementById('btnSaveOrder');
-    if(saveBtn) saveBtn.textContent='Atualizar pedido';
-
-    const customer=document.getElementById('orderCustomer');
-    if(customer) customer.value=order.customer_name||'';
-    render();
-
-    const msg=document.getElementById('orderSaveMsg');
-    if(msg){
-      msg.className='muted';
-      msg.textContent='Editando pedido ID '+order.id+'. Altere os dados e clique em Salvar pedido.';
-    }
-
-    document.getElementById('sales')?.scrollIntoView({behavior:'smooth',block:'start'});
-  }catch(e){
-    const msg=document.getElementById('savedOrdersMsg');
-    if(msg){
-      msg.className='error';
-      msg.textContent='Erro ao editar: '+(e?.message||String(e));
-    }
-    console.error(e);
-  }
-}
-
-async function deleteSavedOrder(orderId){
-  if(!confirm('Excluir o pedido ID '+orderId+'? Esta ação não pode ser desfeita.')) return;
-
-  const msg=document.getElementById('savedOrdersMsg');
-  try{
-    await sb('/rest/v1/ab_orders?id=eq.'+encodeURIComponent(orderId),{
-      method:'DELETE',
-      headers:{Prefer:'return=minimal'}
-    });
-
-    if(String(currentOrderId)===String(orderId)){
-      items=[];
-      currentOrderId=null;
-      const customer=document.getElementById('orderCustomer');
-      if(customer) customer.value='';
-      render();
-    }
-
-    msg.className='ok';
-    msg.textContent='Pedido ID '+orderId+' excluído.';
-    await loadSavedOrders();
-  }catch(e){
-    msg.className='error';
-    msg.textContent='Erro ao excluir pedido: '+(e?.message||String(e));
-    console.error(e);
-  }
-}
-
-window.editSavedOrder=editSavedOrder;
-window.deleteSavedOrder=deleteSavedOrder;
-
-async function loadSavedOrders(){
-  const msg=document.getElementById('savedOrdersMsg');
-  const body=document.getElementById('savedOrdersBody');
-  if(!msg || !body) return;
-  msg.className='muted';
-  msg.textContent='Carregando pedidos...';
-  body.innerHTML='';
-  try{
-    const rows=await sb('/rest/v1/ab_orders?select=id,customer_name,total,margin_percent,status,created_at&order=id.desc');
-    if(!rows || !rows.length){
-      msg.textContent='Nenhum pedido salvo encontrado.';
-      return;
-    }
-    body.innerHTML=rows.map(o=>{
-      const date=o.created_at ? new Date(o.created_at).toLocaleString('pt-BR') : '—';
-      return `<tr>
-        <td><strong>${escapeHtml(o.id)}</strong></td>
-        <td>${escapeHtml(o.customer_name||'—')}</td>
-        <td>${escapeHtml(date)}</td>
-        <td>${money(o.total)}</td>
-        <td>${num(o.margin_percent).toFixed(2)}%</td>
-        <td>${escapeHtml(o.status||'—')}</td>
-        <td style="white-space:nowrap">
-          <button class="secondary" type="button" onclick="editSavedOrder(${Number(o.id)})">Editar</button>
-          <button class="danger" type="button" onclick="deleteSavedOrder(${Number(o.id)})">Excluir</button>
-        </td>
-      </tr>`;
-    }).join('');
-    msg.textContent=`${rows.length} pedido(s) salvo(s).`;
-  }catch(e){
-    console.error(e);
-    msg.className='error';
-    msg.textContent='Erro ao carregar pedidos: '+(e?.message||String(e));
-  }
-}
-
-async function loadProducts(){
- const q=await sb('/rest/v1/products?select=id,code,name,cost,margin_percent,suggested_price,current_price,active&active=eq.true&order=name.asc');
- products=q||[];
- if(products.length){ const ids=products.map(p=>p.id); const pricing=await sb('/rest/v1/product_pricing?select=product_id,min_price&product_id=in.('+ids.join(',')+')'); const pm=new Map((pricing||[]).map(x=>[String(x.product_id),num(x.min_price)])); products.forEach(p=>p.min_price=pm.get(String(p.id))||0);}
- const el=document.getElementById('product'); el.innerHTML=products.length?products.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join(''):'<option value="">Nenhum produto cadastrado</option>'; if(products.length) document.getElementById('price').value=products[0].current_price??products[0].suggested_price??'';
-}
-document.getElementById('product').addEventListener('change',()=>{const p=products.find(x=>String(x.id)===String(document.getElementById('product').value));document.getElementById('price').value=p?.current_price??p?.suggested_price??''});
-function escapeHtml(v){return String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]))}
-function addItem(){const p=products.find(x=>String(x.id)===String(document.getElementById('product').value));if(!p)return;const q=Math.max(1,num(document.getElementById('qty').value)),pr=num(document.getElementById('price').value);items.push({productId:p.id,name:p.name,cost:num(p.cost),suggested:num(p.suggested_price),min:num(p.min_price),qty:q,price:pr});render()}
-window.addItem=addItem;window.removeItem=i=>{items.splice(i,1);render()};
-function priceStatus(price,suggested,min){const p=num(price),s=num(suggested),m=num(min);if(m>0&&p<m)return ['red','🔴 VERMELHO'];if(s>0&&p<s)return ['yellow','🟡 AMARELO'];return ['green','🟢 VERDE']}
-function render(){const tbody=document.getElementById('items');tbody.innerHTML='';let total=0,costTotal=0,suggestedTotal=0,minTotal=0;items.forEach((x,i)=>{const t=x.qty*x.price,c=x.qty*x.cost;total+=t;costTotal+=c;suggestedTotal+=x.qty*x.suggested;minTotal+=x.qty*x.min;const margin=c?((t-c)/c)*100:0,st=priceStatus(x.price,x.suggested,x.min);tbody.insertAdjacentHTML('beforeend',`<tr><td>${escapeHtml(x.name)}</td><td>${x.qty}</td><td>${money(x.price)}</td><td>${money(t)}</td><td><span class="badge ${st[0]}">${st[1]}</span></td><td>${margin.toFixed(1)}%</td><td><button class="danger" onclick="removeItem(${i})">X</button></td></tr>`)});document.getElementById('totalSale').textContent=money(total);document.getElementById('totalMargin').textContent=costTotal?money(total-costTotal)+' ('+(((total-costTotal)/costTotal)*100).toFixed(1)+'%)':'—';const overall=items.length?priceStatus(total,suggestedTotal,minTotal):['yellow','⚪ SEM PEDIDO'];document.getElementById('totalStatus').innerHTML=`<span class="badge ${overall[0]}">${overall[1]}</span>`}
-
-function updateProductMarginRealtime(){
-  const cost=num(document.getElementById('pCost').value);
-  const sale=num(document.getElementById('pSale').value);
-  const margin=cost>0?((sale-cost)/cost)*100:0;
-  document.getElementById('pMargin').value=margin.toFixed(2);
-}
-let editingProductId=null;
-
-async function editProduct(id){try{const p=await sb('/rest/v1/products?id=eq.'+encodeURIComponent(id)+'&select=id,code,name,cost,margin_percent,suggested_price,current_price&limit=1'); if(!p.length) throw new Error('Produto não encontrado.'); const x=p[0]; const pr=await sb('/rest/v1/product_pricing?select=min_price&product_id=eq.'+encodeURIComponent(id)+'&limit=1'); document.getElementById('pName').value=x.name||'';document.getElementById('pSale').value=x.current_price??'';document.getElementById('pCost').value=x.cost??'';document.getElementById('pMin').value=pr?.[0]?.min_price??'';document.getElementById('pMargin').value=x.margin_percent??100; editingProductId=id; document.getElementById('btnSaveProduct').textContent='Atualizar produto'; document.getElementById('saveMsg').className='muted';document.getElementById('saveMsg').textContent='Editando produto. Altere os dados e clique em Atualizar produto.'; window.scrollTo({top:document.getElementById('admin').offsetTop-20,behavior:'smooth'});}catch(e){document.getElementById('saveMsg').className='error';document.getElementById('saveMsg').textContent='Erro ao carregar produto: '+e.message}}
-window.editProduct=editProduct;
-function cancelEdit(){editingProductId=null;['pName','pSale','pCost','pMin'].forEach(id=>document.getElementById(id).value='');updateProductMarginRealtime();document.getElementById('btnSaveProduct').textContent='Salvar produto';document.getElementById('saveMsg').className='muted';document.getElementById('saveMsg').textContent='';}
-window.cancelEdit=cancelEdit;
-async function loadAdmin(){
-  const tbody=document.getElementById('productsAdmin');
-  tbody.innerHTML='<tr><td colspan="5">Carregando...</td></tr>';
-  try{
-    const data=await sb('/rest/v1/products?select=id,name,cost,margin_percent,current_price&order=name.asc');
-    tbody.innerHTML=(data||[]).map(p=>`<tr>
-      <td>${escapeHtml(p.name)}</td>
-      <td>${money(p.cost)}</td>
-      <td>${Number(p.cost)>0?(((Number(p.current_price)-Number(p.cost))/Number(p.cost))*100).toFixed(1):'0.0'}%</td>
-      <td>${money(p.current_price)}</td>
-      <td>
-        <button class="secondary" onclick="editProduct('${p.id}')">Editar</button>
-        <button class="danger" onclick="delProduct('${p.id}')">Excluir</button>
-      </td>
-    </tr>`).join('') || '<tr><td colspan="5">Nenhum produto cadastrado.</td></tr>';
-  }catch(e){
-    tbody.innerHTML=`<tr><td colspan="5" class="error">Erro ao consultar produtos: ${escapeHtml(e.message)}</td></tr>`;
-  }
-}
-window.loadAdmin=loadAdmin;
-async function saveProduct(){const msg=document.getElementById('saveMsg');try{const name=document.getElementById('pName').value.trim(),cost=num(document.getElementById('pCost').value),sale=num(document.getElementById('pSale').value),minPrice=num(document.getElementById('pMin').value),margin=100;if(!name){msg.className='error';msg.textContent='Informe o nome do produto.';return}if(cost<=0){msg.className='error';msg.textContent='Informe um custo maior que zero.';return}const suggested=Number((cost*(1+margin/100)).toFixed(2)),current=sale>0?Number(sale.toFixed(2)):suggested;msg.className='muted';msg.textContent=editingProductId?'Atualizando...':'Salvando...';if(editingProductId){await sb('/rest/v1/products?id=eq.'+encodeURIComponent(editingProductId),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({name,cost,margin_percent:margin,suggested_price:suggested,current_price:current,active:true})});await sb('/rest/v1/product_pricing?product_id=eq.'+encodeURIComponent(editingProductId),{method:'DELETE'});if(minPrice>0)await sb('/rest/v1/product_pricing',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({product_id:editingProductId,min_price:minPrice})});msg.className='ok';msg.textContent='Produto atualizado com sucesso.';}else{const created=await sb('/rest/v1/products',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({name,cost,margin_percent:margin,suggested_price:suggested,current_price:current,active:true})});const id=Array.isArray(created)?created[0]?.id:created?.id;if(!id)throw new Error('Produto foi enviado, mas o Supabase não retornou o ID.');if(minPrice>0)await sb('/rest/v1/product_pricing',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({product_id:id,min_price:minPrice})});msg.className='ok';msg.textContent=`Produto salvo. Margem ${margin.toFixed(2)}% e preço sugerido ${money(suggested)}.`;}editingProductId=null;document.getElementById('btnSaveProduct').textContent='Salvar produto';['pName','pSale','pCost','pMin'].forEach(id=>document.getElementById(id).value='');updateProductMarginRealtime();await loadAdmin();await loadProducts()}catch(e){console.error(e);msg.className='error';msg.textContent='Erro no cadastro: '+(e?.message||e)}}
-window.saveProduct=saveProduct;document.getElementById('btnSaveProduct').addEventListener('click',saveProduct);
-async function delProduct(id){if(!confirm('Excluir este produto?'))return;try{await sb('/rest/v1/products?id=eq.'+encodeURIComponent(id),{method:'DELETE'});await loadAdmin();await loadProducts()}catch(e){alert('Não foi possível excluir: '+e.message)}}window.delProduct=delProduct;
-
-document.addEventListener('DOMContentLoaded',()=>{
-  const saveBtn=document.getElementById('btnSaveOrder');
-  const clearBtn=document.getElementById('btnClearOrder');
-  const costInput=document.getElementById('pCost');
-  const saleInput=document.getElementById('pSale');
-  if(saveBtn) saveBtn.addEventListener('click',saveOrderDraft);
-  if(clearBtn) clearBtn.addEventListener('click',clearOrderDraft);
-  const refreshOrders=document.getElementById('btnRefreshOrders');
-  if(refreshOrders) refreshOrders.addEventListener('click',loadSavedOrders);
-  if(costInput) costInput.addEventListener('input',updateProductMarginRealtime);
-  if(saleInput) saleInput.addEventListener('input',updateProductMarginRealtime);
-  updateProductMarginRealtime();
-  loadSavedOrders();
-});
-
-loadProducts().catch(e=>{console.error(e);document.getElementById('product').innerHTML='<option>Erro ao carregar produtos</option>'});
-
-async function importERPProducts(){
-  const fileInput=document.getElementById("erpFile");
-  const msg=document.getElementById("importMsg");
-  const file=fileInput?.files?.[0];
-  if(!file){msg.className="error";msg.textContent="Selecione o arquivo Excel do ERP.";return;}
-  if(typeof XLSX==="undefined"){msg.className="error";msg.textContent="Biblioteca Excel não carregada. Atualize a página e tente novamente.";return;}
-  msg.className="muted";msg.textContent="Lendo arquivo...";
-  try{
-    const buffer=await file.arrayBuffer();
-    const wb=XLSX.read(buffer,{type:"array"});
-    const ws=wb.Sheets[wb.SheetNames.includes("Produtos")?"Produtos":wb.SheetNames[0]];
-    const data=XLSX.utils.sheet_to_json(ws,{defval:""});
-    if(!data.length) throw new Error("A planilha não contém produtos.");
-
-    const keys=Object.keys(data[0]);
-    const key=(names)=>keys.find(k=>names.some(n=>String(k).trim().toLowerCase()===n.toLowerCase()))
-               ||keys.find(k=>names.some(n=>String(k).trim().toLowerCase().includes(n.toLowerCase())));
-    const kCode=key(["Código","Codigo","Código ERP","Codigo ERP"]);
-    const kName=key(["Produto","Nome","Nome do produto"]);
-    const kCost=key(["Custo","Custo unitário","Custo Unitario"]);
-    const kSale=key(["Preço de venda","Preco de venda","Preço","Preco","Preço atual","Preco atual"]);
-    if(!kName) throw new Error("Não encontrei a coluna Produto na planilha.");
-
-    const existing=await sb('/rest/v1/products?select=id,code');
-    const byCode=new Map((existing||[]).filter(p=>p.code!==null && p.code!==undefined && String(p.code).trim()!=="").map(p=>[String(p.code).trim(),p]));
-    let created=0,updated=0,skipped=0;
-
-    for(const row of data){
-      const name=String(row[kName]??"").trim();
-      if(!name){skipped++;continue;}
-      const code=kCode && row[kCode]!=="" ? String(row[kCode]).trim() : null;
-      const cost=num(row[kCost]);
-      const sale=num(row[kSale]);
-      const margin=100;
-      const suggested=Number((cost*(1+margin/100)).toFixed(2));
-      const current=sale>0?sale:suggested;
-      const payload={
-        name, code, cost,
-        margin_percent:margin,
-        suggested_price:suggested,
-        current_price:current,
-        active:true
-      };
-
-      let result;
-      if(code && byCode.has(code)){
-        await sb('/rest/v1/products?id=eq.'+encodeURIComponent(byCode.get(code).id),{method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify(payload)});
-        updated++;
-      }else{
-        const inserted=await sb('/rest/v1/products',{method:'POST',headers:{'Prefer':'return=representation'},body:JSON.stringify(payload)});
-        const newProduct=Array.isArray(inserted)?inserted[0]:inserted;
-        if(code && newProduct?.id) byCode.set(code,{id:newProduct.id,code});
-        created++;
-      }
-    }
-
-    msg.className="ok";
-    msg.textContent=`Importação concluída: ${created} novos, ${updated} atualizados e ${skipped} ignorados.`;
-    await loadAdmin();
-    await loadProducts();
-  }catch(e){
-    console.error(e);
-    msg.className="error";
-    msg.textContent="Erro na importação: "+(e?.message||e);
-  }
-}
-window.importERPProducts=importERPProducts;
-const importBtn=document.getElementById("btnImportERP");
-if(importBtn) importBtn.addEventListener("click",importERPProducts);
-</script>
-</body>
-</html>
+(()=>{const $=id=>document.getElementById(id),n=id=>Math.max(0,Number($(id).value)||0),money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),pct=v=>(Number(v)||0).toFixed(2).replace('.',',')+'%';let orders=[];
+const costs=['custo','freteCompra','rotulo','embalagem','galao','tampa','caixa','etiqueta','outros','freteVenda'];
+function calc(){const direct=costs.reduce((s,id)=>s+n(id),0),fix=n('fixos')/30,imp=n('impostos')/100,com=n('comissao')/100,tax=n('taxa')/100,mar=n('margem')/100,den=1-imp-com-tax-mar;let p=den>0?(direct+fix)/den:0;if(!Number.isFinite(p))p=0;const profit=p-direct-fix-p*(imp+com+tax);$('fixoMes').textContent=money(n('fixos'));$('fixoDia').textContent=money(fix);$('custoTotal').textContent=money(direct+fix);$('preco').textContent=money(p);$('lucro').textContent=money(profit);$('margemReal').textContent=pct(p?profit/p*100:0);$('priceMsg').textContent=den<=0?'A soma de impostos, comissão, taxa e margem deve ser menor que 100%.':'';return{p,direct,fix}}
+function render(){const fd=n('fixos')/30,by={};orders.forEach(o=>by[o.date]=(by[o.date]||0)+o.value);let fat=0,cost=0,prof=0;$('lista').innerHTML=orders.map((o,i)=>{const fixed=fd*(o.value/(by[o.date]||1)),imp=o.value*n('impostos')/100,com=o.value*n('comissao')/100,tax=o.value*n('taxa')/100,total=o.cost+o.freight+imp+com+tax+fixed,profit=o.value-total;fat+=o.value;cost+=total;prof+=profit;return '<tr><td>'+new Date(o.date+'T12:00:00').toLocaleDateString('pt-BR')+'</td><td>'+o.name+'</td><td>'+money(o.value)+'</td><td>'+money(total-fixed)+'</td><td>'+money(fixed)+'</td><td class="'+(profit>=0?'ok':'bad')+'">'+money(profit)+'</td><td><button class="del" data-i="'+i+'">Excluir</button></td></tr>'}).join('');$('qtd').textContent=orders.length;$('fat').textContent=money(fat);$('custos').textContent=money(cost);$('lucroTotal').textContent=money(prof)}
+function add(value,cost,freight,name){const date=$('data').value||new Date().toISOString().slice(0,10);if(value<=0){alert('Informe um valor maior que zero.');return}orders.push({date,value,cost,freight,name:name||$('produto').value||'Pedido'});render()}
+$('add').onclick=()=>{const x=calc();add(x.p,x.direct,n('freteVenda'),$('produto').value||'Produto')};
+$('manual').onclick=()=>{add(n('valor'),n('custoPedido'),n('fretePedido'),'Pedido manual');$('valor').value='';$('custoPedido').value='';$('fretePedido').value=''};
+$('lista').onclick=e=>{const b=e.target.closest('[data-i]');if(b){orders.splice(Number(b.dataset.i),1);render()}};
+document.querySelectorAll('input').forEach(e=>e.addEventListener('input',()=>{calc();render()}));
+const today=new Date().toISOString().slice(0,10);$('data').value=today;$('mes').value=today.slice(0,7);calc();render()
+})();</script>
+</body></html>
