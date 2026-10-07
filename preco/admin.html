@@ -117,5 +117,27 @@ $("#mes").value=new Date().toISOString().slice(0,7);
 $("#mes").addEventListener("change",loadFixed);$("#fixo").addEventListener("input",()=>{$("#fixoDia").value=money(num("fixo")/30)});
 async function loadFixed(){const m=$("#mes").value+"-01";const r=await api("/rest/v1/preco_fixed_costs?select=amount&month=eq."+m+"&limit=1");$("#fixo").value=r?.[0]?.amount||0;$("#fixoDia").value=money(num("fixo")/30)}
 $("#saveFixed").onclick=async()=>{const msg=$("#fixedMsg"),m=$("#mes").value+"-01";try{await api("/rest/v1/preco_fixed_costs?month=eq."+m,{method:"DELETE"});await api("/rest/v1/preco_fixed_costs",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({month:m,amount:num("fixo")})});msg.className="msg ok";msg.textContent="Custo fixo salvo.";await loadFixed()}catch(e){msg.className="msg bad";msg.textContent="Erro: "+e.message}};
-load().then(()=>{loadFixed().catch(e=>console.warn("Custo fixo:",e));$("runtimeStatus").textContent=products.length+" produto(s) carregado(s) no backend."}).catch(e=>{$("runtimeStatus").textContent="ERRO NOS PRODUTOS: "+e.message});recalc();
+async function backendBoot(){
+ const status=$("runtimeStatus"), body=$("products");
+ status.textContent="BACKEND — CONSULTANDO BANCO AGORA…";
+ try{
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),7000);
+  const r=await fetch(URL+"/rest/v1/preco_products?select=id,code,name,category,cost,margin_percent,suggested_price,current_price,active&active=eq.true&order=name.asc",{headers:{apikey:KEY,Accept:"application/json"},signal:controller.signal});
+  clearTimeout(timer);
+  const txt=await r.text();
+  if(!r.ok) throw new Error(txt||("HTTP "+r.status));
+  const data=JSON.parse(txt);
+  products=Array.isArray(data)?data:[];
+  render();
+  status.textContent="BACKEND — "+products.length+" PRODUTO(S) CARREGADO(S).";
+  $("productMsg").className="msg ok";
+  $("productMsg").textContent=products.length+" produto(s) carregado(s) no backend.";
+ }catch(e){
+  status.textContent="BACKEND — ERRO: "+(e.name==="AbortError"?"tempo esgotado":e.message);
+  $("productMsg").className="msg bad";
+  $("productMsg").textContent="Erro ao carregar produtos: "+e.message;
+ }
+}
+backendBoot();
 </script></body></html>
