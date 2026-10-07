@@ -161,6 +161,7 @@ $("historico").addEventListener("click",async e=>{
  }catch(e){alert("Erro ao carregar itens: "+e.message)}
 });
 Promise.all([loadProducts(),loadFixedCostRateToday()]).catch(e=>{$("msg").className="msg bad";$("msg").textContent="Erro ao carregar dados de precificação: "+e.message});
-recalculateDailyFixedAllocation().finally(()=>loadHistorico());
+loadHistorico();
+recalculateDailyFixedAllocation().then(()=>loadHistorico()).catch(()=>{});
 render();
 </script></body></html>
