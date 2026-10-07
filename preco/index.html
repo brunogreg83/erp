@@ -2,7 +2,7 @@
 <html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB | Precificação</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f3f6fa;color:#172033;font-family:Arial,Helvetica,sans-serif}.wrap{max-width:1050px;margin:auto;padding:14px}.head{background:#0b1d2d;color:#fff;padding:20px;border-radius:14px;margin-bottom:14px}.head h1{margin:0 0 5px;font-size:24px}.head p{margin:0;color:#c9d6e1}.card{background:#fff;border:1px solid #dbe3eb;border-radius:13px;padding:17px;margin-bottom:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.full{grid-column:1/-1}label{display:block;font-size:12px;font-weight:700;margin-bottom:5px}input,select{width:100%;padding:12px;border:1px solid #cbd6e0;border-radius:8px;font-size:16px;background:#fff}button{border:0;border-radius:8px;padding:12px 16px;font-weight:700;cursor:pointer}.primary{background:#1268a8;color:#fff}.secondary{background:#e8eef4;color:#17324b}.danger{background:#fde5e5;color:#ad2424}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}.farol-card{grid-column:2;grid-row:2}.status-card{grid-column:1;grid-row:2}.farol-percent{display:block;color:#68788a;font-size:19px;margin-top:4px}.fixed-info{margin-top:14px;padding:12px;background:#f7f9fb;border:1px solid #e1e7ed;border-radius:9px}.fixed-info-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.fixed-info-item small{display:block;color:#68788a;font-size:12px}.fixed-info-item b{display:block;font-size:16px;margin-top:4px}@media(max-width:700px){.fixed-info-grid{grid-template-columns:1fr 1fr}}.metric{background:#f6f9fc;border:1px solid #e1e7ed;border-radius:9px;padding:12px}.metric small{display:block;color:#68788a}.metric b{display:block;font-size:19px;margin-top:4px}.muted{font-size:12px;color:#68788a;margin-top:8px}.msg{font-size:13px;margin-top:9px}.ok{color:#087443}.bad{color:#b42318}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 7px;border-bottom:1px solid #e6ebf0;text-align:left}th{background:#f7f9fb}.right{text-align:right}.scroll{overflow:auto}@media(max-width:700px){.grid{grid-template-columns:1fr}.summary{grid-template-columns:1fr 1fr}.wrap{padding:9px}}
+*{box-sizing:border-box}body{margin:0;background:#f3f6fa;color:#172033;font-family:Arial,Helvetica,sans-serif}.wrap{max-width:1050px;margin:auto;padding:14px}.head{background:#0b1d2d;color:#fff;padding:20px;border-radius:14px;margin-bottom:14px}.head h1{margin:0 0 5px;font-size:24px}.head p{margin:0;color:#c9d6e1}.card{background:#fff;border:1px solid #dbe3eb;border-radius:13px;padding:17px;margin-bottom:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.full{grid-column:1/-1}label{display:block;font-size:12px;font-weight:700;margin-bottom:5px}input,select{width:100%;padding:12px;border:1px solid #cbd6e0;border-radius:8px;font-size:16px;background:#fff}button{border:0;border-radius:8px;padding:12px 16px;font-weight:700;cursor:pointer}.primary{background:#1268a8;color:#fff}.secondary{background:#e8eef4;color:#17324b}.danger{background:#fde5e5;color:#ad2424}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}.farol-card{grid-column:2;grid-row:2}.status-card{grid-column:1;grid-row:2}.farol-percent{display:block;color:#68788a;font-size:19px;margin-top:4px}.fixed-info{margin-top:14px;padding:12px;background:#f7f9fb;border:1px solid #e1e7ed;border-radius:9px}.fixed-info-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.fixed-info-item small{display:block;color:#68788a;font-size:12px}.fixed-info-item b{display:block;font-size:16px;margin-top:4px}@media(max-width:850px){.fixed-info-grid{grid-template-columns:1fr 1fr}}.metric{background:#f6f9fc;border:1px solid #e1e7ed;border-radius:9px;padding:12px}.metric small{display:block;color:#68788a}.metric b{display:block;font-size:19px;margin-top:4px}.muted{font-size:12px;color:#68788a;margin-top:8px}.msg{font-size:13px;margin-top:9px}.ok{color:#087443}.bad{color:#b42318}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 7px;border-bottom:1px solid #e6ebf0;text-align:left}th{background:#f7f9fb}.right{text-align:right}.scroll{overflow:auto}@media(max-width:700px){.grid{grid-template-columns:1fr}.summary{grid-template-columns:1fr 1fr}.wrap{padding:9px}}
 </style></head><body><div class="wrap">
 <header class="head"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><h1>AB | Precificação</h1><p>Selecione o cliente, os produtos e informe as quantidades.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><a href="admin.html" style="display:inline-block;background:#fff;color:#0b1d2d;text-decoration:none;padding:10px 14px;border-radius:8px;font-weight:700">⚙️ Administração / Backend</a></div></div></header>
 
@@ -25,7 +25,7 @@
 <h2>Itens do pedido</h2>
 <div class="scroll"><table><thead><tr><th>Produto</th><th>Qtd.</th><th>Preço unit.</th><th>Total</th><th>Markup</th><th></th></tr></thead><tbody id="itens"></tbody></table></div>
 <div class="summary"><div class="metric"><small>Itens</small><b id="qtdItens">0</b></div><div class="metric"><small>Total do pedido</small><b id="total">R$ 0,00</b></div><div class="metric status-card"><small>Status</small><b id="status">Novo</b></div><div class="metric farol-card"><small>Farol do pedido</small><b id="farolGeral"></b><span id="farolPercentual" class="farol-percent">0.00%</span></div></div>
-<div class="fixed-info"><div style="font-weight:700;margin-bottom:9px">Rateio do custo fixo</div><div class="fixed-info-grid"><div class="fixed-info-item"><small>Custo fixo mensal</small><b id="fixoMensal">R$ 0,00</b></div><div class="fixed-info-item"><small>Custo fixo diário</small><b id="fixoDiario">R$ 0,00</b></div><div class="fixed-info-item"><small>Vendas realizadas hoje</small><b id="vendasHoje">R$ 0,00</b></div><div class="fixed-info-item"><small>Rateio do custo fixo</small><b id="rateioPercentual">0,00%</b></div></div><div class="muted">O custo fixo diário corresponde a 100% e é distribuído proporcionalmente ao valor de cada venda realizada no dia. Orçamentos e cancelados não entram.</div></div><div class="actions"><button class="primary" id="salvar">Salvar pedido</button><button class="secondary" id="limpar">Limpar pedido</button></div>
+<div class="fixed-info"><div style="font-weight:700;margin-bottom:9px">Rateio do custo fixo</div><div class="fixed-info-grid"><div class="fixed-info-item"><small>Custo fixo mensal</small><b id="fixoMensal">R$ 0,00</b></div><div class="fixed-info-item"><small>Custo fixo diário</small><b id="fixoDiario">R$ 0,00</b></div><div class="fixed-info-item"><small>Vendas realizadas hoje</small><b id="vendasHoje">R$ 0,00</b></div><div class="fixed-info-item"><small>Participação deste pedido</small><b id="rateioPercentual">0,00%</b></div><div class="fixed-info-item"><small>Custo fixo deste pedido</small><b id="fixoPedido">R$ 0,00</b></div></div><div class="muted">O custo fixo diário corresponde a 100% e é distribuído proporcionalmente ao valor de cada venda realizada no dia. Orçamentos e cancelados não entram.</div></div><div class="actions"><button class="primary" id="salvar">Salvar pedido</button><button class="secondary" id="limpar">Limpar pedido</button></div>
 <div id="msg" class="msg"></div>
 </section>
 <section class="card">
@@ -59,7 +59,12 @@ function updateFixedInfo(){
  $("fixoMensal").textContent=money(fixedMonthlyToday);
  $("fixoDiario").textContent=money(fixedDailyToday);
  $("vendasHoje").textContent=money(realizedToday);
- $("rateioPercentual").textContent=(fixedCostRateToday*100).toFixed(2).replace(".",",")+"%";
+ const currentTotal=items.reduce((s,x)=>s+x.qty*x.price,0);
+ const allocationBase=realizedToday+currentTotal;
+ const share=allocationBase>0?(currentTotal/allocationBase)*100:0;
+ const fixedForOrder=fixedDailyToday*(share/100);
+ $("rateioPercentual").textContent=share.toFixed(2).replace(".",",")+"%";
+ $("fixoPedido").textContent=money(fixedForOrder);
 }
 function selected(){return products.find(p=>String(p.id)===String($("produto").value))}
 function setPrice(){const p=selected();$("markup").value=p?(p.markup_percent??0):"";$("preco").value=p?(p.suggested_price||0):""}
@@ -70,6 +75,7 @@ $("preco").addEventListener("input",()=>{const p=selected(),price=num($("preco")
 $("adicionar").addEventListener("click",()=>{const p=selected(),q=num($("quantidade").value),price=num($("preco").value),markup=num($("markup").value);if(!p){alert("Selecione um produto.");return}if(q<=0){alert("Informe uma quantidade maior que zero.");return}if(price<0||markup<0){alert("Preço ou markup inválido.");return}const obj={product_id:p.id,name:p.name,qty:q,price,cost:num(p.cost),markup,costs:p.costs||{}};
 if(editingIndex>=0){items[editingIndex]=obj;editingIndex=-1;$("adicionar").textContent="Adicionar produto";$("cancelarEdicao").style.display="none"}else items.push(obj);render()});
 function itemMarkup(x){return num(x.markup)}function lamp(m){if(m<50)return '<span title="Markup abaixo de 49,99%" style="display:inline-block;width:18px;height:18px;border-radius:50%;background:#dc2626;vertical-align:middle"></span>';if(m<100)return '<span title="Markup de 50% a 99,99%" style="display:inline-block;width:18px;height:18px;border-radius:50%;background:#f59e0b;vertical-align:middle"></span>';return '<span title="Markup de 100% ou mais" style="display:inline-block;width:18px;height:18px;border-radius:50%;background:#16a34a;vertical-align:middle"></span>'}function render(){
+ updateFixedInfo();
  $("itens").innerHTML=items.map((x,i)=>{const m=itemMarkup(x);return '<tr><td>'+escape(x.name)+'</td><td>'+x.qty+'</td><td>'+money(x.price)+'</td><td>'+money(x.qty*x.price)+'</td><td>'+lamp(m)+' <small>'+m.toFixed(2)+'%</small></td><td><button class="secondary" data-edit="'+i+'">Editar</button> <button class="danger" data-del="'+i+'">Excluir</button></td></tr>'}).join("");
  const total=items.reduce((s,x)=>s+x.qty*x.price,0);
  const geralMarkup=total>0?items.reduce((s,x)=>s+x.qty*x.price*num(x.markup),0)/total:0;
@@ -123,6 +129,7 @@ $("historico").addEventListener("click",async e=>{
   if(!confirm("Excluir o pedido #"+id+"? Esta ação também excluirá os itens deste pedido."))return;
   try{
    await api("/rest/v1/preco_orders?id=eq."+encodeURIComponent(id),{method:"DELETE",headers:{Prefer:"return=minimal"}});
+   await recalculateDailyFixedAllocation();
    await loadHistorico();
    $("historicoMsg").className="msg ok";
    $("historicoMsg").textContent="Pedido #"+id+" excluído com sucesso.";
@@ -141,6 +148,6 @@ $("historico").addEventListener("click",async e=>{
  }catch(e){alert("Erro ao carregar itens: "+e.message)}
 });
 Promise.all([loadProducts(),loadFixedCostRateToday()]).catch(e=>{$("msg").className="msg bad";$("msg").textContent="Erro ao carregar dados de precificação: "+e.message});
-loadHistorico();
+recalculateDailyFixedAllocation().finally(()=>loadHistorico());
 render();
 </script></body></html>
