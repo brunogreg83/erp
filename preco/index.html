@@ -1,90 +1,46 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AB | Precificação</title>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AB | Novo Pedido</title>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f3f6fa;color:#172033}.wrap{max-width:1180px;margin:auto;padding:16px}.head{background:#0b1d2d;color:#fff;padding:20px;border-radius:14px;margin-bottom:16px}.head h1{margin:0 0 5px}.head p{margin:0;color:#c7d5e1}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.card{background:#fff;border:1px solid #dce4ec;border-radius:13px;padding:17px;margin-bottom:16px}.card h2{font-size:18px;margin:0 0 14px}.fg{display:grid;grid-template-columns:1fr 1fr;gap:11px}.full{grid-column:1/-1}label{display:block;font-size:12px;font-weight:700;margin-bottom:5px}input,select{width:100%;padding:11px;border:1px solid #cbd6e1;border-radius:8px;font-size:16px;background:#fff}input:focus,select:focus{outline:2px solid #c7e2f7;border-color:#1976b8}.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}button{border:0;border-radius:8px;padding:11px 14px;font-weight:700;cursor:pointer}.pri{background:#1268a8;color:#fff}.sec{background:#e8eef4;color:#17324b}.del{background:#fde5e5;color:#ad2424}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:14px}.metric{background:#f6f9fc;border:1px solid #e1e7ed;border-radius:9px;padding:11px}.metric small{display:block;color:#667587}.metric b{display:block;font-size:18px;margin-top:4px}.ok{color:#087443}.bad{color:#b42318}.muted{font-size:12px;color:#68788a;margin-top:8px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 7px;border-bottom:1px solid #e6ebf0;text-align:left}th{background:#f6f8fa}.right{text-align:right}.scroll{overflow:auto}.pill{padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}.green{background:#dff5e7;color:#087443}.yellow{background:#fff1c7;color:#8a5a00}.red{background:#fde1e1;color:#b42318}.msg{font-size:12px;margin-top:8px}@media(max-width:800px){.grid,.fg{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.wrap{padding:10px}}@media(max-width:430px){.metrics{grid-template-columns:1fr 1fr}.metric b{font-size:15px}}
-</style>
-</head>
-<body><div class="wrap">
-<div class="head"><h1>AB | Precificação</h1><p>Formação de preço e análise de lucro para distribuição</p></div>
+*{box-sizing:border-box}body{margin:0;background:#f3f6fa;color:#172033;font-family:Arial,Helvetica,sans-serif}.wrap{max-width:1050px;margin:auto;padding:14px}.head{background:#0b1d2d;color:#fff;padding:20px;border-radius:14px;margin-bottom:14px}.head h1{margin:0 0 5px;font-size:24px}.head p{margin:0;color:#c9d6e1}.card{background:#fff;border:1px solid #dbe3eb;border-radius:13px;padding:17px;margin-bottom:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.full{grid-column:1/-1}label{display:block;font-size:12px;font-weight:700;margin-bottom:5px}input,select{width:100%;padding:12px;border:1px solid #cbd6e0;border-radius:8px;font-size:16px;background:#fff}button{border:0;border-radius:8px;padding:12px 16px;font-weight:700;cursor:pointer}.primary{background:#1268a8;color:#fff}.secondary{background:#e8eef4;color:#17324b}.danger{background:#fde5e5;color:#ad2424}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}.metric{background:#f6f9fc;border:1px solid #e1e7ed;border-radius:9px;padding:12px}.metric small{display:block;color:#68788a}.metric b{display:block;font-size:19px;margin-top:4px}.muted{font-size:12px;color:#68788a;margin-top:8px}.msg{font-size:13px;margin-top:9px}.ok{color:#087443}.bad{color:#b42318}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 7px;border-bottom:1px solid #e6ebf0;text-align:left}th{background:#f7f9fb}.right{text-align:right}.scroll{overflow:auto}@media(max-width:700px){.grid{grid-template-columns:1fr}.summary{grid-template-columns:1fr 1fr}.wrap{padding:9px}}
+</style></head><body><div class="wrap">
+<header class="head"><h1>AB | Novo Pedido</h1><p>Selecione o cliente, os produtos e informe as quantidades.</p></header>
 
+<section class="card">
+<h2>Pedido do cliente</h2>
 <div class="grid">
-<section class="card">
-<h2>1. Custos fixos</h2>
-<div class="fg">
-<div><label>Mês</label><input id="mes" type="month"></div>
-<div><label>Custos fixos mensais (R$)</label><input id="fixos" type="number" min="0" step="0.01" placeholder="0,00"></div>
+<div class="full"><label>Cliente</label><input id="cliente" placeholder="Nome do cliente"></div>
+<div><label>Produto</label><select id="produto"></select></div>
+<div><label>Quantidade</label><input id="quantidade" type="number" min="0.01" step="0.01" value="1"></div>
+<div><label>Preço de venda (un.)</label><input id="preco" type="number" min="0" step="0.01"></div>
+<div><label>&nbsp;</label><button class="primary" id="adicionar">Adicionar produto</button></div>
 </div>
-<div class="metrics">
-<div class="metric"><small>Mensal</small><b id="fixoMes">R$ 0,00</b></div>
-<div class="metric"><small>Diário ÷ 30</small><b id="fixoDia">R$ 0,00</b></div>
-</div>
-<div class="muted">O custo fixo diário é distribuído proporcionalmente pelo valor dos pedidos do dia.</div>
+<div class="muted">O produto, custo e preço sugerido vêm do cadastro do backend. O usuário do pedido não precisa acessar os custos internos.</div>
 </section>
 
 <section class="card">
-<h2>2. Formação do preço</h2>
-<div class="fg">
-<div class="full"><label>Produto</label><input id="produto" placeholder="Nome do produto"></div>
-<div><label>Custo do produto (R$)</label><input id="custo" class="calc" type="number" min="0" step="0.01"></div>
-<div><label>Frete de compra (R$)</label><input id="freteCompra" class="calc" type="number" min="0" step="0.01"></div>
-<div><label>Rótulo (R$)</label><input id="rotulo" class="calc" type="number" min="0" step="0.01"></div>
-<div><label>Embalagem (R$)</label><input id="embalagem" class="calc" type="number" min="0" step="0.01"></div>
-<div><label>Galão/recipiente (R$)</label><input id="galao" class="calc" type="number" min="0" step="0.01"></div>
-<div><label>Tampa (R$)</label><input id="tampa" class="calc" type="number" min="0" step="0.01"></div>
-<div><label>Caixa (R$)</label><input id="caixa" class="calc" type="number" min="0" step="0.01"></div>
-<div><label>Etiqueta (R$)</label><input id="etiqueta" class="calc" type="number" min="0" step="0.01"></div>
-<div><label>Outros custos (R$)</label><input id="outros" class="calc" type="number" min="0" step="0.01"></div>
-<div><label>Frete ao cliente (R$)</label><input id="freteVenda" class="calc" type="number" min="0" step="0.01"></div>
-<div><label>Impostos (%)</label><input id="impostos" class="calc" type="number" min="0" step="0.01"></div>
-<div><label>Comissão (%)</label><input id="comissao" class="calc" type="number" min="0" step="0.01"></div>
-<div><label>Taxa financeira (%)</label><input id="taxa" class="calc" type="number" min="0" step="0.01"></div>
-<div><label>Markup desejado (%)</label><input id="margem" class="calc" type="number" min="0" max="1000" step="0.01" value="100"></div>
-</div>
-<div class="metrics">
-<div class="metric"><small>Custo + fixo</small><b id="custoTotal">R$ 0,00</b></div>
-<div class="metric"><small>Preço sugerido</small><b id="preco">R$ 0,00</b></div>
-<div class="metric"><small>Lucro</small><b id="lucro">R$ 0,00</b></div>
-<div class="metric"><small>Margem</small><b id="margemReal">0,00%</b></div>
-</div>
-<div id="priceMsg" class="msg"></div>
-<div class="btns"><button class="pri" id="add">Adicionar pedido com este preço</button></div>
-<div class="muted">Campos vazios = R$ 0,00. O markup é aplicado sobre o custo. 100% = custo dobrado. Impostos, comissão e taxa são descontados depois para calcular a margem líquida real.</div>
-</section>
-</div>
-
-<section class="card">
-<h2>3. Pedidos do dia</h2>
-<div class="fg">
-<div><label>Data</label><input id="data" type="date"></div>
-<div><label>Valor do pedido (R$)</label><input id="valor" type="number" min="0" step="0.01"></div>
-<div><label>Custo total do pedido (R$)</label><input id="custoPedido" type="number" min="0" step="0.01"></div>
-<div><label>Frete/outros custos do pedido (R$)</label><input id="fretePedido" type="number" min="0" step="0.01"></div>
-</div>
-<div class="btns"><button class="sec" id="manual">Adicionar pedido manualmente</button></div>
-<div class="metrics">
-<div class="metric"><small>Pedidos</small><b id="qtd">0</b></div>
-<div class="metric"><small>Faturamento</small><b id="fat">R$ 0,00</b></div>
-<div class="metric"><small>Custos</small><b id="custos">R$ 0,00</b></div>
-<div class="metric"><small>Lucro</small><b id="lucroTotal">R$ 0,00</b></div>
-</div>
-<div class="scroll" style="margin-top:12px"><table><thead><tr><th>Data</th><th>Pedido</th><th>Venda</th><th>Custo</th><th>Fixo rateado</th><th>Lucro</th><th></th></tr></thead><tbody id="lista"></tbody></table></div>
-<div class="muted">O rateio é recalculado imediatamente quando um pedido é adicionado ou excluído. Não existe fechamento diário.</div>
+<h2>Itens do pedido</h2>
+<div class="scroll"><table><thead><tr><th>Produto</th><th>Qtd.</th><th>Preço unit.</th><th>Total</th><th></th></tr></thead><tbody id="itens"></tbody></table></div>
+<div class="summary"><div class="metric"><small>Itens</small><b id="qtdItens">0</b></div><div class="metric"><small>Total do pedido</small><b id="total">R$ 0,00</b></div><div class="metric"><small>Status</small><b id="status">Novo</b></div></div>
+<div class="actions"><button class="primary" id="salvar">Salvar pedido</button><button class="secondary" id="limpar">Limpar pedido</button></div>
+<div id="msg" class="msg"></div>
 </section>
 </div>
 <script>
-(()=>{const $=id=>document.getElementById(id),n=id=>Math.max(0,Number($(id).value)||0),money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),pct=v=>(Number(v)||0).toFixed(2).replace('.',',')+'%';let orders=[];
-const costs=['custo','freteCompra','rotulo','embalagem','galao','tampa','caixa','etiqueta','outros','freteVenda'];
-function calc(){const direct=costs.reduce((s,id)=>s+n(id),0),fix=n('fixos')/30,imp=n('impostos')/100,com=n('comissao')/100,tax=n('taxa')/100,markup=n('margem')/100;const base=direct+fix;let p=base*(1+markup);if(!Number.isFinite(p))p=0;const profit=p-direct-fix-p*(imp+com+tax);$('fixoMes').textContent=money(n('fixos'));$('fixoDia').textContent=money(fix);$('custoTotal').textContent=money(direct+fix);$('preco').textContent=money(p);$('lucro').textContent=money(profit);$('margemReal').textContent=pct(p?profit/p*100:0);$('priceMsg').textContent='Markup de '+pct(markup*100)+' aplicado sobre o custo total. Margem líquida considera impostos, comissão e taxa.';return{p,direct,fix}}
-function render(){const fd=n('fixos')/30,by={};orders.forEach(o=>by[o.date]=(by[o.date]||0)+o.value);let fat=0,cost=0,prof=0;$('lista').innerHTML=orders.map((o,i)=>{const fixed=fd*(o.value/(by[o.date]||1)),imp=o.value*n('impostos')/100,com=o.value*n('comissao')/100,tax=o.value*n('taxa')/100,total=o.cost+o.freight+imp+com+tax+fixed,profit=o.value-total;fat+=o.value;cost+=total;prof+=profit;return '<tr><td>'+new Date(o.date+'T12:00:00').toLocaleDateString('pt-BR')+'</td><td>'+o.name+'</td><td>'+money(o.value)+'</td><td>'+money(total-fixed)+'</td><td>'+money(fixed)+'</td><td class="'+(profit>=0?'ok':'bad')+'">'+money(profit)+'</td><td><button class="del" data-i="'+i+'">Excluir</button></td></tr>'}).join('');$('qtd').textContent=orders.length;$('fat').textContent=money(fat);$('custos').textContent=money(cost);$('lucroTotal').textContent=money(prof)}
-function add(value,cost,freight,name){const date=$('data').value||new Date().toISOString().slice(0,10);if(value<=0){alert('Informe um valor maior que zero.');return}orders.push({date,value,cost,freight,name:name||$('produto').value||'Pedido'});render()}
-$('add').onclick=()=>{const x=calc();add(x.p,x.direct,n('freteVenda'),$('produto').value||'Produto')};
-$('manual').onclick=()=>{add(n('valor'),n('custoPedido'),n('fretePedido'),'Pedido manual');$('valor').value='';$('custoPedido').value='';$('fretePedido').value=''};
-$('lista').onclick=e=>{const b=e.target.closest('[data-i]');if(b){orders.splice(Number(b.dataset.i),1);render()}};
-document.querySelectorAll('input').forEach(e=>e.addEventListener('input',()=>{calc();render()}));
-const today=new Date().toISOString().slice(0,10);$('data').value=today;$('mes').value=today.slice(0,7);calc();render()
-})();</script>
-</body></html>
+const URL="https://divokbonqrmpindszoqv.supabase.co",KEY="sb_publishable_sCTeIxcTB-oUswA-QVP0Wg_LrlGgjhY";
+let products=[],items=[];
+const $=id=>document.getElementById(id),num=v=>Number(v)||0,money=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+async function api(path,opt={}){const r=await fetch(URL+path,{...opt,headers:{apikey:KEY,Authorization:"Bearer "+KEY,"Content-Type":"application/json",...(opt.headers||{})}});const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{d=t}if(!r.ok)throw new Error(d?.message||d?.hint||t||"Erro");return d}
+function escape(v){return String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+async function loadProducts(){const data=await api("/rest/v1/products?select=id,code,name,cost,current_price,suggested_price&active=eq.true&order=name.asc");products=data||[];$("produto").innerHTML=products.length?products.map(p=>'<option value="'+p.id+'">'+escape(p.name)+'</option>').join(""):'<option value="">Nenhum produto cadastrado</option>';setPrice()}
+function selected(){return products.find(p=>String(p.id)===String($("produto").value))}
+function setPrice(){const p=selected();$("preco").value=p?(p.current_price||p.suggested_price||0):""}
+$("produto").addEventListener("change",setPrice);
+$("adicionar").addEventListener("click",()=>{const p=selected(),q=num($("quantidade").value),price=num($("preco").value);if(!p){alert("Selecione um produto.");return}if(q<=0){alert("Informe uma quantidade maior que zero.");return}if(price<0){alert("Preço inválido.");return}items.push({product_id:p.id,name:p.name,qty:q,price,cost:num(p.cost)});render()});
+function render(){$("itens").innerHTML=items.map((x,i)=>'<tr><td>'+escape(x.name)+'</td><td>'+x.qty+'</td><td>'+money(x.price)+'</td><td>'+money(x.qty*x.price)+'</td><td><button class="danger" data-del="'+i+'">Excluir</button></td></tr>').join("");const total=items.reduce((s,x)=>s+x.qty*x.price,0);$("qtdItens").textContent=items.length;$("total").textContent=money(total);$("status").textContent=items.length?"Pronto para salvar":"Novo"}
+$("itens").addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(b){items.splice(Number(b.dataset.del),1);render()}});
+$("limpar").addEventListener("click",()=>{$("cliente").value="";items=[];render();$("msg").textContent=""});
+$("salvar").addEventListener("click",async()=>{const msg=$("msg");try{if(!items.length){msg.className="msg bad";msg.textContent="Adicione pelo menos um produto.";return}const total=items.reduce((s,x)=>s+x.qty*x.price,0),cost=items.reduce((s,x)=>s+x.qty*x.cost,0);msg.className="msg";msg.textContent="Salvando...";const order=await api("/rest/v1/ab_orders",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({customer_name:$("cliente").value.trim(),total:Number(total.toFixed(2)),cost_total:Number(cost.toFixed(2)),profit:Number((total-cost).toFixed(2)),margin_percent:Number(cost?((total-cost)/cost*100).toFixed(2):0),status:"Orçamento"})});const o=Array.isArray(order)?order[0]:order;if(!o?.id)throw new Error("O pedido não retornou ID.");await api("/rest/v1/ab_order_items",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify(items.map(x=>({order_id:o.id,product_id:String(x.product_id),product_name:x.name,quantity:x.qty,cost:x.cost,sale_price:x.price,total:Number((x.qty*x.price).toFixed(2)),margin_percent:Number(x.cost?((x.price-x.cost)/x.cost*100).toFixed(2):0)})))});msg.className="msg ok";msg.textContent="Pedido salvo com sucesso. ID: "+o.id;items=[];render()}catch(e){console.error(e);msg.className="msg bad";msg.textContent="Erro ao salvar: "+e.message}});
+loadProducts().catch(e=>{$("msg").className="msg bad";$("msg").textContent="Erro ao carregar produtos: "+e.message});
+render();
+</script></body></html>
