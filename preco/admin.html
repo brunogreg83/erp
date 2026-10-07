@@ -31,9 +31,9 @@
 <div><label>Frete ao cliente (R$)</label><input id="customerFreight" type="number" min="0" step="0.01"></div>
 <div><label>Custo do veículo (R$)</label><input id="vehicleCost" type="number" min="0" step="0.01" placeholder="0,00"></div>
 <div><label>Custos de viagem (R$)</label><input id="travelCost" type="number" min="0" step="0.01" placeholder="0,00"></div>
-<div><label>Impostos (%)</label><input id="taxes" type="number" value="4" readonly></div>
+<div><label>Impostos (%)</label><input id="taxes" type="number" min="0" step="0.01" value="4"></div>
 <div><label>Comissão (%)</label><input id="commission" type="number" min="0" step="0.01"></div>
-<div><label>Taxa financeira (%)</label><input id="fee" type="number" value="1" readonly></div>
+<div><label>Taxa financeira (%)</label><input id="fee" type="number" min="0" step="0.01" value="1"></div>
 <div><label>Markup desejado (%)</label><input id="markup" type="number" min="0" step="0.01" value="100"></div>
 </div>
 <div class="summary"><div class="metric"><small>Custo direto total</small><b id="totalCost">R$ 0,00</b></div><div class="metric"><small>Preço sugerido</small><b id="suggested">R$ 0,00</b></div><div class="metric"><small>Margem líquida estimada</small><b id="netMargin">0,00%</b></div><div class="metric"><small>Preço atual</small><b id="current">R$ 0,00</b></div></div>
