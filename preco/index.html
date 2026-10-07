@@ -37,12 +37,35 @@
 </section>
 </div>
 <script>
-const URL="https://divokbonqrmpindszoqv.supabase.co",KEY="sb_publishable_sCTeIxcTB-oUswA-QVP0Wg_LrlGgjhY";
+const URL="https://divokbonqrmpindszoqv.supabase.co",KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzIiwicmVmIjoiZGl2b2tib25xcm1waW5kc3pvcXYiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc4MDY5NzQ1NywiZXhwIjoyMDk2MjczNDU3fQ.XckvbZLbCtzht6Yp8G6vw2_m_65nJYdPjFo-jp5KR7Y";
 let products=[],items=[],editingIndex=-1,fixedCostRateToday=0,fixedMonthlyToday=0,fixedDailyToday=0,realizedToday=0;
 const $=id=>document.getElementById(id),num=v=>Number(v)||0,money=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 async function api(path,opt={}){const method=String(opt.method||"GET").toUpperCase();const sep=path.includes("?")?"&":"?";const target=URL+path+sep+"apikey="+encodeURIComponent(KEY);const headers={Accept:"application/json",...(opt.headers||{})};if(method!=="GET"&&method!=="HEAD"){headers.apikey=KEY;headers.Authorization="Bearer "+KEY;headers["Content-Type"]="application/json"}const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),10000);try{const r=await fetch(target,{...opt,headers,signal:controller.signal});const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{d=t}if(!r.ok)throw new Error(d?.message||d?.hint||t||("HTTP "+r.status));return d}catch(e){if(e?.name==="AbortError")throw new Error("Tempo esgotado ao acessar o banco Supabase (10s).");throw e}finally{clearTimeout(timer)}}
 function escape(v){return String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
-async function loadProducts(){try{const data=await api("/rest/v1/preco_products?select=id,code,name,cost,current_price,suggested_price&active=eq.true&order=name.asc");const costs=await api("/rest/v1/preco_product_costs?select=product_id,purchase_freight,label,packaging,container,box,tag,other_costs,customer_freight,vehicle_cost,travel_cost,taxes_percent,commission_percent,financial_fee_percent,markup_percent");const cm={};(costs||[]).forEach(x=>cm[String(x.product_id)]=x);products=(data||[]).map(p=>({...p,costs:cm[String(p.id)]||{},markup_percent:num(cm[String(p.id)]?.markup_percent)||100}));$("produto").innerHTML=products.length?products.map(p=>'<option value="'+p.id+'">'+escape(p.name)+'</option>').join(""):'<option value="">Nenhum produto cadastrado</option>';setPrice();$("msg").className="msg ok";$("msg").textContent=products.length+" produto(s) carregado(s) do banco."}catch(e){console.error("Produtos:",e);$("produto").innerHTML='<option value="">Erro ao carregar produtos</option>';$("msg").className="msg bad";$("msg").textContent="ERRO AO CARREGAR PRODUTOS: "+e.message;throw e}}
+async function loadProducts(){
+ try{
+  const data=await api("/rest/v1/preco_products?select=id,code,name,cost,current_price,suggested_price&active=eq.true&order=name.asc");
+  products=(data||[]).map(p=>({...p,costs:{},markup_percent:100}));
+  $("produto").innerHTML=products.length?products.map(p=>'<option value="'+p.id+'">'+escape(p.name)+'</option>').join(""):'<option value="">Nenhum produto cadastrado</option>';
+  setPrice();
+  $("msg").className="msg ok";
+  $("msg").textContent=products.length+" produto(s) carregado(s) do banco.";
+  try{
+   const costs=await api("/rest/v1/preco_product_costs?select=product_id,purchase_freight,label,packaging,container,box,tag,other_costs,customer_freight,vehicle_cost,travel_cost,taxes_percent,commission_percent,financial_fee_percent,markup_percent");
+   const cm={};(costs||[]).forEach(x=>cm[String(x.product_id)]=x);
+   products=products.map(p=>({...p,costs:cm[String(p.id)]||{},markup_percent:num(cm[String(p.id)]?.markup_percent)||100}));
+   setPrice();
+  }catch(costErr){
+   console.warn("Custos dos produtos não carregaram; produtos continuam disponíveis:",costErr);
+  }
+ }catch(e){
+  console.error("Produtos:",e);
+  $("produto").innerHTML='<option value="">Erro ao carregar produtos</option>';
+  $("msg").className="msg bad";
+  $("msg").textContent="ERRO AO CARREGAR PRODUTOS: "+e.message;
+  throw e;
+ }
+}
 async function loadFixedCostRateToday(){
  try{
   const now=new Date(),month=new Date(now.getFullYear(),now.getMonth(),1),monthKey=month.getFullYear()+"-"+String(month.getMonth()+1).padStart(2,"0")+"-01";
