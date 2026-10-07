@@ -25,13 +25,13 @@
 <h2>Itens do pedido</h2>
 <div class="scroll"><table><thead><tr><th>Produto</th><th>Qtd.</th><th>Preço unit.</th><th>Total</th><th>Markup</th><th></th></tr></thead><tbody id="itens"></tbody></table></div>
 <div class="summary"><div class="metric"><small>Itens</small><b id="qtdItens">0</b></div><div class="metric"><small>Total do pedido</small><b id="total">R$ 0,00</b></div><div class="metric status-card"><small>Status</small><b id="status">Novo</b></div><div class="metric farol-card"><small>Farol do pedido</small><b id="farolGeral"></b><span id="farolPercentual" class="farol-percent">0.00%</span></div></div>
-<div class="fixed-info"><div style="font-weight:700;margin-bottom:9px">Rateio do custo fixo</div><div class="fixed-info-grid"><div class="fixed-info-item"><small>Custo fixo mensal</small><b id="fixoMensal">R$ 0,00</b></div><div class="fixed-info-item"><small>Custo fixo diário</small><b id="fixoDiario">R$ 0,00</b></div><div class="fixed-info-item"><small>Vendas realizadas hoje</small><b id="vendasHoje">R$ 0,00</b></div><div class="fixed-info-item"><small>Rateio do custo fixo</small><b id="rateioPercentual">0,00%</b></div></div><div class="muted">O rateio é aplicado somente com base nas vendas realizadas do dia. Orçamentos e cancelados não entram.</div></div><div class="actions"><button class="primary" id="salvar">Salvar pedido</button><button class="secondary" id="limpar">Limpar pedido</button></div>
+<div class="fixed-info"><div style="font-weight:700;margin-bottom:9px">Rateio do custo fixo</div><div class="fixed-info-grid"><div class="fixed-info-item"><small>Custo fixo mensal</small><b id="fixoMensal">R$ 0,00</b></div><div class="fixed-info-item"><small>Custo fixo diário</small><b id="fixoDiario">R$ 0,00</b></div><div class="fixed-info-item"><small>Vendas realizadas hoje</small><b id="vendasHoje">R$ 0,00</b></div><div class="fixed-info-item"><small>Rateio do custo fixo</small><b id="rateioPercentual">0,00%</b></div></div><div class="muted">O custo fixo diário corresponde a 100% e é distribuído proporcionalmente ao valor de cada venda realizada no dia. Orçamentos e cancelados não entram.</div></div><div class="actions"><button class="primary" id="salvar">Salvar pedido</button><button class="secondary" id="limpar">Limpar pedido</button></div>
 <div id="msg" class="msg"></div>
 </section>
 <section class="card">
 <h2>Histórico de Pedidos Salvos</h2>
 <div class="muted">Últimos pedidos de precificação salvos neste banco exclusivo.</div>
-<div class="scroll" style="margin-top:10px"><table><thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Status</th><th>Total</th><th>Markup</th><th></th></tr></thead><tbody id="historico"></tbody></table></div>
+<div class="scroll" style="margin-top:10px"><table><thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Status</th><th>Total</th><th>Custo fixo</th><th>Total c/ fixo</th><th>Markup</th><th></th></tr></thead><tbody id="historico"></tbody></table></div>
 <div id="historicoMsg" class="msg"></div>
 </section>
 </div>
@@ -84,13 +84,29 @@ $("itens").addEventListener("click",e=>{
 });
 $("cancelarEdicao").addEventListener("click",()=>{editingIndex=-1;$("adicionar").textContent="Adicionar produto";$("cancelarEdicao").style.display="none";setPrice()});
 $("limpar").addEventListener("click",()=>{$("cliente").value="";items=[];render();$("msg").textContent=""});
-$("salvar").addEventListener("click",async()=>{const msg=$("msg");try{if(!items.length){msg.className="msg bad";msg.textContent="Adicione pelo menos um produto.";return}const total=items.reduce((s,x)=>s+x.qty*x.price,0),cost=items.reduce((s,x)=>s+x.qty*x.cost,0);msg.className="msg";msg.textContent="Salvando...";const totalMarkup=items.reduce((s,x)=>s+num(x.markup)*x.qty,0),weightedMarkup=items.reduce((s,x)=>s+x.qty*x.price,0)>0?items.reduce((s,x)=>s+x.qty*x.price*num(x.markup),0)/items.reduce((s,x)=>s+x.qty*x.price,0):0;const order=await api("/rest/v1/preco_orders",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({customer_name:$("cliente").value.trim(),total:Number(total.toFixed(2)),cost_total:Number(cost.toFixed(2)),profit:Number((total-cost).toFixed(2)),markup_percent:Number(weightedMarkup.toFixed(2)),status:"Venda"})});const o=Array.isArray(order)?order[0]:order;if(!o?.id)throw new Error("O pedido não retornou ID.");await api("/rest/v1/preco_order_items",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify(items.map(x=>({order_id:o.id,product_id:String(x.product_id),product_name:x.name,quantity:x.qty,cost:x.cost,sale_price:x.price,total:Number((x.qty*x.price).toFixed(2)),markup_percent:Number(x.markup.toFixed(2))})))});msg.className="msg ok";msg.textContent="Pedido salvo com sucesso. ID: "+o.id;items=[];render();loadHistorico()}catch(e){console.error(e);msg.className="msg bad";msg.textContent="Erro ao salvar: "+e.message}});
+$("salvar").addEventListener("click",async()=>{const msg=$("msg");try{if(!items.length){msg.className="msg bad";msg.textContent="Adicione pelo menos um produto.";return}const total=items.reduce((s,x)=>s+x.qty*x.price,0),cost=items.reduce((s,x)=>s+x.qty*x.cost,0);msg.className="msg";msg.textContent="Salvando...";const totalMarkup=items.reduce((s,x)=>s+num(x.markup)*x.qty,0),weightedMarkup=items.reduce((s,x)=>s+x.qty*x.price,0)>0?items.reduce((s,x)=>s+x.qty*x.price*num(x.markup),0)/items.reduce((s,x)=>s+x.qty*x.price,0):0;const order=await api("/rest/v1/preco_orders",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({customer_name:$("cliente").value.trim(),total:Number(total.toFixed(2)),total_with_fixed_cost:Number(total.toFixed(2)),fixed_cost_allocated:0,cost_total:Number(cost.toFixed(2)),profit:Number((total-cost).toFixed(2)),markup_percent:Number(weightedMarkup.toFixed(2)),status:"Venda"})});const o=Array.isArray(order)?order[0]:order;if(!o?.id)throw new Error("O pedido não retornou ID.");await api("/rest/v1/preco_order_items",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify(items.map(x=>({order_id:o.id,product_id:String(x.product_id),product_name:x.name,quantity:x.qty,cost:x.cost,sale_price:x.price,total:Number((x.qty*x.price).toFixed(2)),markup_percent:Number(x.markup.toFixed(2))})));await recalculateDailyFixedAllocation();msg.className="msg ok";msg.textContent="Pedido salvo com sucesso. ID: "+o.id;items=[];render();loadHistorico()}catch(e){console.error(e);msg.className="msg bad";msg.textContent="Erro ao salvar: "+e.message}});
+async function recalculateDailyFixedAllocation(){
+ try{
+  const now=new Date(),start=new Date(now.getFullYear(),now.getMonth(),now.getDate()),end=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1),monthKey=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-01";
+  const fixed=await api("/rest/v1/preco_fixed_costs?select=amount&month=eq."+monthKey+"&limit=1");
+  const daily=num(fixed?.[0]?.amount)/30;
+  const orders=await api("/rest/v1/preco_orders?select=id,total,status&created_at=gte."+encodeURIComponent(start.toISOString())+"&created_at=lt."+encodeURIComponent(end.toISOString())+"&limit=1000");
+  const sales=(orders||[]).filter(o=>String(o.status||"").toLowerCase()==="venda");
+  const totalSales=sales.reduce((s,o)=>s+num(o.total),0);
+  for(const o of sales){
+   const allocated=totalSales>0?daily*num(o.total)/totalSales:0;
+   await api("/rest/v1/preco_orders?id=eq."+encodeURIComponent(o.id),{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({fixed_cost_allocated:Number(allocated.toFixed(2)),total_with_fixed_cost:Number((num(o.total)+allocated).toFixed(2))})});
+  }
+  await loadFixedCostRateToday();
+ }catch(e){console.warn("Não foi possível atualizar o rateio diário:",e)}
+}
+
 async function loadHistorico(attempt=0){
  const h=$("historico"),m=$("historicoMsg");
  try{
-  const orders=await api("/rest/v1/preco_orders?select=id,customer_name,total,markup_percent,status,created_at&order=created_at.desc&limit=20");
-  if(!orders?.length){h.innerHTML='<tr><td colspan="7" class="muted">Nenhum pedido salvo.</td></tr>';m.textContent="";return}
-  h.innerHTML=orders.map(o=>'<tr><td>#'+o.id+'</td><td>'+new Date(o.created_at).toLocaleDateString("pt-BR")+'</td><td>'+escape(o.customer_name||"—")+'</td><td>'+escape(o.status||"—")+'</td><td>'+money(o.total)+'</td><td>'+num(o.markup_percent).toFixed(2)+'%</td><td><button class="secondary" data-view-order="'+o.id+'">Ver</button> '+'<button class="danger" data-del-order="'+o.id+'">Excluir</button></td></tr>').join("");
+  const orders=await api("/rest/v1/preco_orders?select=id,customer_name,total,fixed_cost_allocated,total_with_fixed_cost,markup_percent,status,created_at&order=created_at.desc&limit=20");
+  if(!orders?.length){h.innerHTML='<tr><td colspan="9" class="muted">Nenhum pedido salvo.</td></tr>';m.textContent="";return}
+  h.innerHTML=orders.map(o=>'<tr><td>#'+o.id+'</td><td>'+new Date(o.created_at).toLocaleDateString("pt-BR")+'</td><td>'+escape(o.customer_name||"—")+'</td><td>'+escape(o.status||"—")+'</td><td>'+money(o.total)+'</td><td>'+money(o.fixed_cost_allocated)+'</td><td>'+money(o.total_with_fixed_cost)+'</td><td>'+num(o.markup_percent).toFixed(2)+'%</td><td><button class="secondary" data-view-order="'+o.id+'">Ver</button> '+'<button class="danger" data-del-order="'+o.id+'">Excluir</button></td></tr>').join("");
   m.textContent="";
  }catch(e){
   if(attempt<2){setTimeout(()=>loadHistorico(attempt+1),800);return}
