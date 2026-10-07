@@ -112,7 +112,7 @@ async function loadHistorico(attempt=0){
  try{
   const orders=await api("/rest/v1/preco_orders?select=id,customer_name,total,fixed_cost_allocated,total_with_fixed_cost,markup_percent,status,created_at&order=created_at.desc&limit=20");
   if(!orders?.length){h.innerHTML='<tr><td colspan="9" class="muted">Nenhum pedido salvo.</td></tr>';m.textContent="";return}
-  h.innerHTML=orders.map(o=>'<tr><td>#'+o.id+'</td><td>'+new Date(o.created_at).toLocaleDateString("pt-BR")+'</td><td>'+escape(o.customer_name||"—")+'</td><td>'+escape(o.status||"—")+'</td><td>'+money(o.total)+'</td><td>'+money(o.fixed_cost_allocated)+'</td><td>'+money(o.total_with_fixed_cost)+'</td><td>'+num(o.markup_percent).toFixed(2)+'%</td><td><button class="secondary" data-view-order="'+o.id+'">Ver</button> '+'<button class="danger" data-del-order="'+o.id+'">Excluir</button></td></tr>').join("");
+  h.innerHTML=orders.map(o=>'<tr><td>#'+o.id+'</td><td>'+new Date(o.created_at).toLocaleDateString("pt-BR")+'</td><td>'+escape(o.customer_name||"—")+'</td><td>'+escape(o.status||"—")+'</td><td>'+money(o.total)+'</td><td>'+money(o.fixed_cost_allocated||0)+'</td><td>'+money((o.total_with_fixed_cost!=null?o.total_with_fixed_cost:o.total))+'</td><td>'+num(o.markup_percent).toFixed(2)+'%</td><td><button class="secondary" data-view-order="'+o.id+'">Ver</button> '+'<button class="danger" data-del-order="'+o.id+'">Excluir</button></td></tr>').join("");
   m.textContent="";
  }catch(e){
   if(attempt<2){setTimeout(()=>loadHistorico(attempt+1),800);return}
