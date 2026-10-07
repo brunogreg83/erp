@@ -81,7 +81,7 @@ function recalc(){const c=costs(),m=num("markup")/100,tax=num("taxes")/100,com=n
 function fillCost(row){const map={purchaseFreight:"purchaseFreight",label:"labelCost",packaging:"packaging",container:"containerCost",box:"boxCost",tag:"tagCost",other_costs:"otherCost",customer_freight:"customerFreight",vehicle_cost:"vehicleCost",travel_cost:"travelCost",taxes_percent:"taxes",commission_percent:"commission",financial_fee_percent:"fee",markup_percent:"markup"};Object.entries(map).forEach(([k,id])=>{const el=$(id);if(!el)return;el.value=row?.[k]??(k==="taxes_percent"?4:k==="financial_fee_percent"?1:k==="markup_percent"?100:0)})}
 async function load(){
  const msg=$("productMsg"),status=$("runtimeStatus");
- status.textContent="BACKEND V3 — CONSULTANDO PRODUTOS…";
+ status.textContent="Consultando produtos…";
  try{
   const data=await api("/rest/v1/preco_products?select=id,code,name,category,supplier,cost,margin_percent,suggested_price,current_price,active&active=eq.true&order=name.asc");
   products=Array.isArray(data)?data:[];
@@ -89,21 +89,20 @@ async function load(){
   render();
   msg.className="msg ok";
   msg.textContent=products.length+" produto(s) carregado(s) no backend.";
-  status.textContent="BACKEND V3 — "+products.length+" PRODUTO(S) CARREGADO(S).";
+  status.textContent=products.length+" produto(s) carregado(s) no backend.";
+  // Custos são carregados depois, sem bloquear a lista de produtos.
   if(products.length){
-   try{
-    const ids=products.map(p=>p.id);
-    const rows=await api("/rest/v1/preco_product_costs?select=product_id,purchase_freight,label,packaging,container,box,tag,other_costs,customer_freight,vehicle_cost,travel_cost,taxes_percent,commission_percent,financial_fee_percent,markup_percent&product_id=in.("+ids.join(",")+")");
-    (rows||[]).forEach(x=>costRows.set(String(x.product_id),x));
-    render();
-   }catch(e){console.warn("Custos não carregaram:",e);status.textContent=products.length+" produtos carregados; custos não carregados."}
+   const ids=products.map(p=>p.id);
+   api("/rest/v1/preco_product_costs?select=product_id,purchase_freight,label,packaging,container,box,tag,other_costs,customer_freight,vehicle_cost,travel_cost,taxes_percent,commission_percent,financial_fee_percent,markup_percent&product_id=in.("+ids.join(",")+")")
+    .then(rows=>{(rows||[]).forEach(x=>costRows.set(String(x.product_id),x));render()})
+    .catch(e=>console.warn("Custos não carregados:",e));
   }
  }catch(e){
   products=[];
   render();
   msg.className="msg bad";
   msg.textContent="ERRO AO CARREGAR PRODUTOS: "+e.message;
-  status.textContent="ERRO: "+e.message;
+  status.textContent="ERRO AO CARREGAR PRODUTOS: "+e.message;
   console.error(e);
  }
 }
