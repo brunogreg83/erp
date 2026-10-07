@@ -78,7 +78,23 @@ async function loadHistorico(attempt=0){
   console.warn("Histórico temporariamente indisponível:",e);
   if(!h.innerHTML.trim()) h.innerHTML='<tr><td colspan="7" class="muted">Não foi possível atualizar o histórico agora. Tente novamente.</td></tr>';
 }$("historico").addEventListener("click",async e=>{
- const b=e.target.closest("[data-view-order]"); if(!b)return;
+ const b=e.target.closest("[data-view-order]");
+ const d=e.target.closest("[data-del-order]");
+ if(d){
+  const id=d.dataset.delOrder;
+  if(!confirm("Excluir o pedido #"+id+"? Esta ação também excluirá os itens deste pedido."))return;
+  try{
+   await api("/rest/v1/preco_orders?id=eq."+encodeURIComponent(id),{method:"DELETE",headers:{Prefer:"return=minimal"}});
+   await loadHistorico();
+   $("historicoMsg").className="msg ok";
+   $("historicoMsg").textContent="Pedido #"+id+" excluído com sucesso.";
+  }catch(e){
+   $("historicoMsg").className="msg bad";
+   $("historicoMsg").textContent="Não foi possível excluir o pedido: "+e.message;
+  }
+  return;
+ }
+ if(!b)return;
  const id=b.dataset.viewOrder;
  try{
   const rows=await api("/rest/v1/preco_order_items?select=product_name,quantity,sale_price,total,markup_percent&order_id=eq."+encodeURIComponent(id)+"&order=id.asc");
