@@ -6,12 +6,7 @@
 </style></head><body><div class="wrap">
 <header class="head"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><h1>AB | Novo Pedido</h1><p>Selecione o cliente, os produtos e informe as quantidades.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><a href="admin.html" style="display:inline-block;background:#fff;color:#0b1d2d;text-decoration:none;padding:10px 14px;border-radius:8px;font-weight:700">⚙️ Administração / Backend</a></div></div></header>
 
-<section class="card">
-<h2>Histórico de Pedidos Salvos</h2>
-<div class="muted">Últimos pedidos de precificação salvos neste banco exclusivo.</div>
-<div class="scroll" style="margin-top:10px"><table><thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Status</th><th>Total</th><th>Markup</th><th></th></tr></thead><tbody id="historico"></tbody></table></div>
-<div id="historicoMsg" class="msg"></div>
-</section>
+
 
 <section class="card">
 <h2>Pedido do cliente</h2>
@@ -32,6 +27,12 @@
 <div class="summary"><div class="metric"><small>Itens</small><b id="qtdItens">0</b></div><div class="metric"><small>Total do pedido</small><b id="total">R$ 0,00</b></div><div class="metric"><small>Status</small><b id="status">Novo</b></div></div>
 <div class="actions"><button class="primary" id="salvar">Salvar pedido</button><button class="secondary" id="limpar">Limpar pedido</button></div>
 <div id="msg" class="msg"></div>
+</section>
+<section class="card">
+<h2>Histórico de Pedidos Salvos</h2>
+<div class="muted">Últimos pedidos de precificação salvos neste banco exclusivo.</div>
+<div class="scroll" style="margin-top:10px"><table><thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Status</th><th>Total</th><th>Markup</th><th></th></tr></thead><tbody id="historico"></tbody></table></div>
+<div id="historicoMsg" class="msg"></div>
 </section>
 </div>
 <script>
