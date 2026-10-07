@@ -110,28 +110,29 @@ async function recalculateDailyFixedAllocation(){
 async function loadHistorico(attempt=0){
  const h=$("historico"),m=$("historicoMsg");
  try{
-  const orders=await api("/rest/v1/preco_orders?select=id,customer_name,total,markup_percent,status,created_at&order=created_at.desc&limit=20");
-  if(!orders?.length){
-   h.innerHTML='<tr><td colspan="9" class="muted">Nenhum pedido salvo.</td></tr>';m.textContent="";return;
+  const orders=await api("/rest/v1/preco_orders?select=*&order=created_at.desc&limit=20");
+  if(!Array.isArray(orders)){
+   throw new Error("Resposta inesperada do banco.");
   }
-  let extra={};
-  try{
-   const ids=orders.map(o=>o.id).join(",");
-   const rows=await api("/rest/v1/preco_orders?select=id,fixed_cost_allocated,total_with_fixed_cost&id=in.("+encodeURIComponent(ids)+")");
-   (rows||[]).forEach(x=>extra[x.id]=x);
-  }catch(_){}
+  if(!orders.length){
+   h.innerHTML='<tr><td colspan="9" class="muted">Nenhum pedido salvo.</td></tr>';
+   m.textContent="";
+   return;
+  }
   h.innerHTML=orders.map(o=>{
-   const x=extra[o.id]||{};
-   const fixed=num(x.fixed_cost_allocated);
-   const totalFixed=x.total_with_fixed_cost!=null?num(x.total_with_fixed_cost):num(o.total)+fixed;
-   return '<tr><td>#'+o.id+'</td><td>'+new Date(o.created_at).toLocaleDateString("pt-BR")+'</td><td>'+escape(o.customer_name||"—")+'</td><td>'+escape(o.status||"—")+'</td><td>'+money(o.total)+'</td><td>'+money(fixed)+'</td><td>'+money(totalFixed)+'</td><td>'+num(o.markup_percent).toFixed(2)+'%</td><td><button class="secondary" data-view-order="'+o.id+'">Ver</button> '+'<button class="danger" data-del-order="'+o.id+'">Excluir</button></td></tr>';
+   const fixed=num(o.fixed_cost_allocated);
+   const totalFixed=o.total_with_fixed_cost!=null?num(o.total_with_fixed_cost):num(o.total)+fixed;
+   const date=o.created_at?new Date(o.created_at).toLocaleDateString("pt-BR"):"—";
+   return '<tr><td>#'+escape(o.id)+'</td><td>'+date+'</td><td>'+escape(o.customer_name||"—")+'</td><td>'+escape(o.status||"—")+'</td><td>'+money(o.total)+'</td><td>'+money(fixed)+'</td><td>'+money(totalFixed)+'</td><td>'+num(o.markup_percent).toFixed(2)+'%</td><td><button class="secondary" data-view-order="'+escape(o.id)+'">Ver</button> <button class="danger" data-del-order="'+escape(o.id)+'">Excluir</button></td></tr>';
   }).join("");
-  m.textContent="";
+  m.className="msg";
+  m.textContent=orders.length+" pedido(s) carregado(s).";
  }catch(e){
   if(attempt<2){setTimeout(()=>loadHistorico(attempt+1),800);return}
-  console.warn("Histórico temporariamente indisponível:",e);
-  h.innerHTML='<tr><td colspan="9" class="muted">Não foi possível atualizar o histórico agora. Tente novamente.</td></tr>';
-  m.className="msg bad";m.textContent="Erro ao carregar histórico: "+e.message;
+  console.error("Histórico:",e);
+  h.innerHTML='<tr><td colspan="9" class="muted">Erro ao carregar o histórico.</td></tr>';
+  m.className="msg bad";
+  m.textContent="Erro no histórico: "+e.message;
  }
 }
 $("historico").addEventListener("click",async e=>{
