@@ -50,7 +50,32 @@ const URL="https://divokbonqrmpindszoqv.supabase.co",KEY="sb_publishable_sCTeIxc
 let products=[],editing=null,costRows=new Map();
 const $=id=>document.getElementById(id),num=id=>Math.max(0,Number($(id).value)||0),money=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 $("runtimeStatus").textContent="BACKEND — CARREGANDO DADOS";
-async function api(path,opt={}){const method=String(opt.method||"GET").toUpperCase();const headers={apikey:KEY,Accept:"application/json",...(opt.headers||{})};if(method!=="GET"&&method!=="HEAD")headers["Content-Type"]="application/json";const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),8000);try{const r=await fetch(URL+path,{...opt,headers,signal:controller.signal});const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{d=t}if(!r.ok)throw new Error(d?.message||d?.hint||t||("HTTP "+r.status));return d}catch(e){if(e?.name==="AbortError")throw new Error("Tempo esgotado (8s)");throw e}finally{clearTimeout(timer)}}
+async function api(path,opt={}){const method=String(opt.method||"GET").toUpperCase();const target=URL+path;const headers={apikey:KEY,Accept:"application/json",...(opt.headers||{})};if(method!=="GET"&&method!=="HEAD")headers["Content-Type"]="application/json";const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),10000);try{const r=await fetch(target,{...opt,headers,signal:controller.signal});const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{d=t}if(!r.ok)throw new Error(d?.message||d?.hint||t||("HTTP "+r.status));return d}catch(e){if(e?.name==="AbortError")throw new Error("Tempo esgotado ao acessar o banco Supabase (10s).");throw e}finally{clearTimeout(timer)}}
+function escape(v){return String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+async function loadProducts(){
+ try{
+  const data=await api("/rest/v1/preco_products?select=id,code,name,cost,current_price,suggested_price&active=eq.true&order=name.asc");
+  products=(data||[]).map(p=>({...p,costs:{},markup_percent:100}));
+  $("produto").innerHTML=products.length?products.map(p=>'<option value="'+p.id+'">'+escape(p.name)+'</option>').join(""):'<option value="">Nenhum produto cadastrado</option>';
+  setPrice();
+  $("msg").className="msg ok";
+  $("msg").textContent=products.length+" produto(s) carregado(s) do banco.";
+  try{
+   const costs=await api("/rest/v1/preco_product_costs?select=product_id,purchase_freight,label,packaging,container,box,tag,other_costs,customer_freight,vehicle_cost,travel_cost,taxes_percent,commission_percent,financial_fee_percent,markup_percent");
+   const cm={};(costs||[]).forEach(x=>cm[String(x.product_id)]=x);
+   products=products.map(p=>({...p,costs:cm[String(p.id)]||{},markup_percent:num(cm[String(p.id)]?.markup_percent)||100}));
+   setPrice();
+  }catch(costErr){
+   console.warn("Custos dos produtos não carregaram; produtos continuam disponíveis:",costErr);
+  }
+ }catch(e){
+  console.error("Produtos:",e);
+  $("produto").innerHTML='<option value="">Erro ao carregar produtos</option>';
+  $("msg").className="msg bad";
+  $("msg").textContent="ERRO AO CARREGAR PRODUTOS: "+e.message;
+  throw e;
+ }
+}
 function costs(){return num("baseCost")+num("purchaseFreight")+num("labelCost")+num("packaging")+num("containerCost")+num("boxCost")+num("tagCost")+num("otherCost")+num("customerFreight")+num("vehicleCost")+num("travelCost")}
 function recalc(){const c=costs(),m=num("markup")/100,tax=num("taxes")/100,com=num("commission")/100,fee=num("fee")/100,r=tax+com+fee;const p=r<1?(c*(1+m)/(1-r)):0;const profit=p-c-p*r;$("#totalCost").textContent=money(c);$("#suggested").textContent=money(p);$("#netMargin").textContent=(p?((profit/p)*100):0).toFixed(2).replace(".",",")+"%";$("#current").textContent=money(editing?.current_price||p);return{c,p}}
 function fillCost(row){const map={purchaseFreight:"purchaseFreight",label:"labelCost",packaging:"packaging",container:"containerCost",box:"boxCost",tag:"tagCost",other_costs:"otherCost",customer_freight:"customerFreight",vehicle_cost:"vehicleCost",travel_cost:"travelCost",taxes_percent:"taxes",commission_percent:"commission",financial_fee_percent:"fee",markup_percent:"markup"};Object.entries(map).forEach(([k,id])=>{const el=$(id);if(!el)return;el.value=row?.[k]??(k==="taxes_percent"?4:k==="financial_fee_percent"?1:k==="markup_percent"?100:0)})}
