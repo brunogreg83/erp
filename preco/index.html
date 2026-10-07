@@ -110,13 +110,19 @@ async function recalculateDailyFixedAllocation(){
 async function loadHistorico(attempt=0){
  const h=$("historico"),m=$("historicoMsg");
  try{
-  const orders=await api("/rest/v1/preco_orders?select=*&order=created_at.desc&limit=20");
-  if(!Array.isArray(orders)){
-   throw new Error("Resposta inesperada do banco.");
-  }
+  let orders=await api("/rest/v1/preco_orders?select=*&limit=100");
+  if(!Array.isArray(orders)) throw new Error("Resposta inesperada do Supabase.");
   if(!orders.length){
-   h.innerHTML='<tr><td colspan="9" class="muted">Nenhum pedido salvo.</td></tr>';
-   m.textContent="";
+   // Fallback direto para os registros conhecidos, sem ordenação.
+   const a=await api("/rest/v1/preco_orders?id=eq.7&select=*");
+   const b=await api("/rest/v1/preco_orders?id=eq.8&select=*");
+   orders=[...(Array.isArray(a)?a:[]),...(Array.isArray(b)?b:[])];
+  }
+  orders.sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||"")));
+  if(!orders.length){
+   h.innerHTML='<tr><td colspan="9" class="muted">Nenhum pedido encontrado no banco.</td></tr>';
+   m.className="msg bad";
+   m.textContent="A conexão funcionou, mas a tabela retornou 0 registros.";
    return;
   }
   h.innerHTML=orders.map(o=>{
@@ -125,7 +131,7 @@ async function loadHistorico(attempt=0){
    const date=o.created_at?new Date(o.created_at).toLocaleDateString("pt-BR"):"—";
    return '<tr><td>#'+escape(o.id)+'</td><td>'+date+'</td><td>'+escape(o.customer_name||"—")+'</td><td>'+escape(o.status||"—")+'</td><td>'+money(o.total)+'</td><td>'+money(fixed)+'</td><td>'+money(totalFixed)+'</td><td>'+num(o.markup_percent).toFixed(2)+'%</td><td><button class="secondary" data-view-order="'+escape(o.id)+'">Ver</button> <button class="danger" data-del-order="'+escape(o.id)+'">Excluir</button></td></tr>';
   }).join("");
-  m.className="msg";
+  m.className="msg ok";
   m.textContent=orders.length+" pedido(s) carregado(s).";
  }catch(e){
   if(attempt<2){setTimeout(()=>loadHistorico(attempt+1),800);return}
