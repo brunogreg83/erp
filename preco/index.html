@@ -42,7 +42,7 @@
 <div><label>Impostos (%)</label><input id="impostos" class="calc" type="number" min="0" step="0.01"></div>
 <div><label>Comissão (%)</label><input id="comissao" class="calc" type="number" min="0" step="0.01"></div>
 <div><label>Taxa financeira (%)</label><input id="taxa" class="calc" type="number" min="0" step="0.01"></div>
-<div><label>Margem desejada (%)</label><input id="margem" class="calc" type="number" min="0" max="99.99" step="0.01" value="20"></div>
+<div><label>Markup desejado (%)</label><input id="margem" class="calc" type="number" min="0" max="1000" step="0.01" value="100"></div>
 </div>
 <div class="metrics">
 <div class="metric"><small>Custo + fixo</small><b id="custoTotal">R$ 0,00</b></div>
@@ -52,7 +52,7 @@
 </div>
 <div id="priceMsg" class="msg"></div>
 <div class="btns"><button class="pri" id="add">Adicionar pedido com este preço</button></div>
-<div class="muted">Campos vazios = R$ 0,00. Percentuais incidem sobre o preço de venda.</div>
+<div class="muted">Campos vazios = R$ 0,00. O markup é aplicado sobre o custo. 100% = custo dobrado. Impostos, comissão e taxa são descontados depois para calcular a margem líquida real.</div>
 </section>
 </div>
 
@@ -78,7 +78,7 @@
 <script>
 (()=>{const $=id=>document.getElementById(id),n=id=>Math.max(0,Number($(id).value)||0),money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),pct=v=>(Number(v)||0).toFixed(2).replace('.',',')+'%';let orders=[];
 const costs=['custo','freteCompra','rotulo','embalagem','galao','tampa','caixa','etiqueta','outros','freteVenda'];
-function calc(){const direct=costs.reduce((s,id)=>s+n(id),0),fix=n('fixos')/30,imp=n('impostos')/100,com=n('comissao')/100,tax=n('taxa')/100,mar=n('margem')/100,den=1-imp-com-tax-mar;let p=den>0?(direct+fix)/den:0;if(!Number.isFinite(p))p=0;const profit=p-direct-fix-p*(imp+com+tax);$('fixoMes').textContent=money(n('fixos'));$('fixoDia').textContent=money(fix);$('custoTotal').textContent=money(direct+fix);$('preco').textContent=money(p);$('lucro').textContent=money(profit);$('margemReal').textContent=pct(p?profit/p*100:0);$('priceMsg').textContent=den<=0?'A soma de impostos, comissão, taxa e margem deve ser menor que 100%.':'';return{p,direct,fix}}
+function calc(){const direct=costs.reduce((s,id)=>s+n(id),0),fix=n('fixos')/30,imp=n('impostos')/100,com=n('comissao')/100,tax=n('taxa')/100,markup=n('margem')/100;const base=direct+fix;let p=base*(1+markup);if(!Number.isFinite(p))p=0;const profit=p-direct-fix-p*(imp+com+tax);$('fixoMes').textContent=money(n('fixos'));$('fixoDia').textContent=money(fix);$('custoTotal').textContent=money(direct+fix);$('preco').textContent=money(p);$('lucro').textContent=money(profit);$('margemReal').textContent=pct(p?profit/p*100:0);$('priceMsg').textContent='Markup de '+pct(markup*100)+' aplicado sobre o custo total. Margem líquida considera impostos, comissão e taxa.';return{p,direct,fix}}
 function render(){const fd=n('fixos')/30,by={};orders.forEach(o=>by[o.date]=(by[o.date]||0)+o.value);let fat=0,cost=0,prof=0;$('lista').innerHTML=orders.map((o,i)=>{const fixed=fd*(o.value/(by[o.date]||1)),imp=o.value*n('impostos')/100,com=o.value*n('comissao')/100,tax=o.value*n('taxa')/100,total=o.cost+o.freight+imp+com+tax+fixed,profit=o.value-total;fat+=o.value;cost+=total;prof+=profit;return '<tr><td>'+new Date(o.date+'T12:00:00').toLocaleDateString('pt-BR')+'</td><td>'+o.name+'</td><td>'+money(o.value)+'</td><td>'+money(total-fixed)+'</td><td>'+money(fixed)+'</td><td class="'+(profit>=0?'ok':'bad')+'">'+money(profit)+'</td><td><button class="del" data-i="'+i+'">Excluir</button></td></tr>'}).join('');$('qtd').textContent=orders.length;$('fat').textContent=money(fat);$('custos').textContent=money(cost);$('lucroTotal').textContent=money(prof)}
 function add(value,cost,freight,name){const date=$('data').value||new Date().toISOString().slice(0,10);if(value<=0){alert('Informe um valor maior que zero.');return}orders.push({date,value,cost,freight,name:name||$('produto').value||'Pedido'});render()}
 $('add').onclick=()=>{const x=calc();add(x.p,x.direct,n('freteVenda'),$('produto').value||'Produto')};
