@@ -16,7 +16,7 @@
 <div><label>Quantidade</label><input id="quantidade" type="number" min="0.01" step="0.01" value="1"></div>
 <div><label>Markup (%)</label><input id="markup" type="number" min="0" step="0.01"></div>
 <div><label>Preço de venda (un.)</label><input id="preco" type="number" min="0" step="0.01"></div>
-<div><label>&nbsp;</label><button class="primary" id="adicionar">Adicionar produto</button></div>
+<div><label>&nbsp;</label><button class="primary" id="adicionar">Adicionar produto</button><button class="secondary" id="cancelarEdicao" style="display:none;margin-left:8px">Cancelar edição</button></div>
 </div>
 <div class="muted">O produto, custo e preço sugerido vêm do cadastro do backend. O usuário do pedido não precisa acessar os custos internos.</div>
 </section>
@@ -24,7 +24,7 @@
 <section class="card">
 <h2>Itens do pedido</h2>
 <div class="scroll"><table><thead><tr><th>Produto</th><th>Qtd.</th><th>Preço unit.</th><th>Total</th><th>Markup</th><th></th></tr></thead><tbody id="itens"></tbody></table></div>
-<div class="summary"><div class="metric"><small>Itens</small><b id="qtdItens">0</b></div><div class="metric"><small>Total do pedido</small><b id="total">R$ 0,00</b></div><div class="metric"><small>Status</small><b id="status">Novo</b></div></div>
+<div class="summary"><div class="metric"><small>Itens / Farol</small><b id="qtdItens">0 <span id="farolGeral"></span></b></div><div class="metric"><small>Total do pedido</small><b id="total">R$ 0,00</b></div><div class="metric"><small>Status</small><b id="status">Novo</b></div></div>
 <div class="actions"><button class="primary" id="salvar">Salvar pedido</button><button class="secondary" id="limpar">Limpar pedido</button></div>
 <div id="msg" class="msg"></div>
 </section>
@@ -37,7 +37,7 @@
 </div>
 <script>
 const URL="https://divokbonqrmpindszoqv.supabase.co",KEY="sb_publishable_sCTeIxcTB-oUswA-QVP0Wg_LrlGgjhY";
-let products=[],items=[];
+let products=[],items=[],editingIndex=-1;
 const $=id=>document.getElementById(id),num=v=>Number(v)||0,money=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 async function api(path,opt={}){const r=await fetch(URL+path,{...opt,headers:{apikey:KEY,Authorization:"Bearer "+KEY,"Content-Type":"application/json",...(opt.headers||{})}});const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{d=t}if(!r.ok)throw new Error(d?.message||d?.hint||t||"Erro");return d}
 function escape(v){return String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
@@ -48,9 +48,22 @@ $("produto").addEventListener("change",setPrice);
 function totalUnitCost(p,price){const c=p?.costs||{};const fixed=num(p?.cost)+num(c.purchase_freight)+num(c.label)+num(c.packaging)+num(c.container)+num(c.box)+num(c.tag)+num(c.other_costs)+num(c.customer_freight)+num(c.vehicle_cost)+num(c.travel_cost);const rates=(num(c.taxes_percent)+num(c.commission_percent)+num(c.financial_fee_percent))/100;return fixed+price*rates}function priceFromMarkup(p,m){const c=p?.costs||{};const fixed=num(p?.cost)+num(c.purchase_freight)+num(c.label)+num(c.packaging)+num(c.container)+num(c.box)+num(c.tag)+num(c.other_costs)+num(c.customer_freight)+num(c.vehicle_cost)+num(c.travel_cost);const rates=(num(c.taxes_percent)+num(c.commission_percent)+num(c.financial_fee_percent))/100;const markup=m/100;const denominator=1-rates*(2+markup);return denominator>0?(fixed*(1+markup))/denominator:0}
 $("markup").addEventListener("input",()=>{const p=selected(),m=num($("markup").value);if(p) $("preco").value=priceFromMarkup(p,m).toFixed(2)});
 $("preco").addEventListener("input",()=>{const p=selected(),price=num($("preco").value);if(p&&price>0){const cost=totalUnitCost(p,price);$("markup").value=cost>0?((price-cost)/cost*100).toFixed(2):"0.00"}});
-$("adicionar").addEventListener("click",()=>{const p=selected(),q=num($("quantidade").value),price=num($("preco").value),markup=num($("markup").value);if(!p){alert("Selecione um produto.");return}if(q<=0){alert("Informe uma quantidade maior que zero.");return}if(price<0||markup<0){alert("Preço ou markup inválido.");return}items.push({product_id:p.id,name:p.name,qty:q,price,cost:num(p.cost),markup,costs:p.costs||{}});render()});
-function itemMarkup(x){return num(x.markup)}function lamp(m){if(m<50)return '<span title="Markup abaixo de 49,99%" style="display:inline-block;width:18px;height:18px;border-radius:50%;background:#dc2626;vertical-align:middle"></span>';if(m<100)return '<span title="Markup de 50% a 99,99%" style="display:inline-block;width:18px;height:18px;border-radius:50%;background:#f59e0b;vertical-align:middle"></span>';return '<span title="Markup de 100% ou mais" style="display:inline-block;width:18px;height:18px;border-radius:50%;background:#16a34a;vertical-align:middle"></span>'}function render(){$("itens").innerHTML=items.map((x,i)=>{const m=itemMarkup(x);return '<tr><td>'+escape(x.name)+'</td><td>'+x.qty+'</td><td>'+money(x.price)+'</td><td>'+money(x.qty*x.price)+'</td><td>'+lamp(m)+' <small>'+m.toFixed(2)+'%</small></td><td><button class="danger" data-del="'+i+'">Excluir</button></td></tr>'}).join("");const total=items.reduce((s,x)=>s+x.qty*x.price,0);$("qtdItens").textContent=items.length;$("total").textContent=money(total);$("status").textContent=items.length?"Pronto para salvar":"Novo"}
-$("itens").addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(b){items.splice(Number(b.dataset.del),1);render()}});
+$("adicionar").addEventListener("click",()=>{const p=selected(),q=num($("quantidade").value),price=num($("preco").value),markup=num($("markup").value);if(!p){alert("Selecione um produto.");return}if(q<=0){alert("Informe uma quantidade maior que zero.");return}if(price<0||markup<0){alert("Preço ou markup inválido.");return}const obj={product_id:p.id,name:p.name,qty:q,price,cost:num(p.cost),markup,costs:p.costs||{}};
+if(editingIndex>=0){items[editingIndex]=obj;editingIndex=-1;$("adicionar").textContent="Adicionar produto";$("cancelarEdicao").style.display="none"}else items.push(obj);render()});
+function itemMarkup(x){return num(x.markup)}function lamp(m){if(m<50)return '<span title="Markup abaixo de 49,99%" style="display:inline-block;width:18px;height:18px;border-radius:50%;background:#dc2626;vertical-align:middle"></span>';if(m<100)return '<span title="Markup de 50% a 99,99%" style="display:inline-block;width:18px;height:18px;border-radius:50%;background:#f59e0b;vertical-align:middle"></span>';return '<span title="Markup de 100% ou mais" style="display:inline-block;width:18px;height:18px;border-radius:50%;background:#16a34a;vertical-align:middle"></span>'}function render(){
+ $("itens").innerHTML=items.map((x,i)=>{const m=itemMarkup(x);return '<tr><td>'+escape(x.name)+'</td><td>'+x.qty+'</td><td>'+money(x.price)+'</td><td>'+money(x.qty*x.price)+'</td><td>'+lamp(m)+' <small>'+m.toFixed(2)+'%</small></td><td><button class="secondary" data-edit="'+i+'">Editar</button> <button class="danger" data-del="'+i+'">Excluir</button></td></tr>'}).join("");
+ const total=items.reduce((s,x)=>s+x.qty*x.price,0);
+ const geralMarkup=total>0?items.reduce((s,x)=>s+x.qty*x.price*num(x.markup),0)/total:0;
+ $("qtdItens").innerHTML=items.length+' '+lamp(geralMarkup)+' <small>'+geralMarkup.toFixed(2)+'%</small>';
+ $("total").textContent=money(total);$("status").textContent=items.length?"Pronto para salvar":"Novo";
+}
+
+$("itens").addEventListener("click",e=>{
+ const edit=e.target.closest("[data-edit]");
+ if(edit){const i=Number(edit.dataset.edit),x=items[i];$("produto").value=x.product_id;$("quantidade").value=x.qty;$("markup").value=x.markup;$("preco").value=x.price;editingIndex=i;$("adicionar").textContent="Salvar alteração";$("cancelarEdicao").style.display="inline-block";window.scrollTo({top:0,behavior:"smooth"});return}
+ const b=e.target.closest("[data-del]");if(b){items.splice(Number(b.dataset.del),1);if(editingIndex===Number(b.dataset.del)){editingIndex=-1;$("adicionar").textContent="Adicionar produto";$("cancelarEdicao").style.display="none"}render()}
+});
+$("cancelarEdicao").addEventListener("click",()=>{editingIndex=-1;$("adicionar").textContent="Adicionar produto";$("cancelarEdicao").style.display="none";setPrice()});
 $("limpar").addEventListener("click",()=>{$("cliente").value="";items=[];render();$("msg").textContent=""});
 $("salvar").addEventListener("click",async()=>{const msg=$("msg");try{if(!items.length){msg.className="msg bad";msg.textContent="Adicione pelo menos um produto.";return}const total=items.reduce((s,x)=>s+x.qty*x.price,0),cost=items.reduce((s,x)=>s+x.qty*x.cost,0);msg.className="msg";msg.textContent="Salvando...";const totalMarkup=items.reduce((s,x)=>s+num(x.markup)*x.qty,0),weightedMarkup=items.reduce((s,x)=>s+x.qty*x.price,0)>0?items.reduce((s,x)=>s+x.qty*x.price*num(x.markup),0)/items.reduce((s,x)=>s+x.qty*x.price,0):0;const order=await api("/rest/v1/preco_orders",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({customer_name:$("cliente").value.trim(),total:Number(total.toFixed(2)),cost_total:Number(cost.toFixed(2)),profit:Number((total-cost).toFixed(2)),markup_percent:Number(weightedMarkup.toFixed(2)),status:"Orçamento"})});const o=Array.isArray(order)?order[0]:order;if(!o?.id)throw new Error("O pedido não retornou ID.");await api("/rest/v1/preco_order_items",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify(items.map(x=>({order_id:o.id,product_id:String(x.product_id),product_name:x.name,quantity:x.qty,cost:x.cost,sale_price:x.price,total:Number((x.qty*x.price).toFixed(2)),markup_percent:Number(x.markup.toFixed(2))})))});msg.className="msg ok";msg.textContent="Pedido salvo com sucesso. ID: "+o.id;items=[];render()}catch(e){console.error(e);msg.className="msg bad";msg.textContent="Erro ao salvar: "+e.message}});
 async function loadHistorico(){
