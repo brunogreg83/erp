@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="frontend-version" content="2026-10-08-10">
+<meta name="frontend-version" content="2026-10-08-11">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB Chemicals | Controle de Preços</title>
@@ -97,11 +97,11 @@ async function loadPricingContext(excludeOrderId=null){
  const dayEnd=y+'-'+m+'-'+d+'T23:59:59.999';
  const [fc,orders]=await Promise.all([
    sb('/rest/v1/preco_fixed_costs?select=amount&month=eq.'+encodeURIComponent(month)+'&limit=1'),
-   sb('/rest/v1/preco_orders?select=id,total,created_at&created_at=gte.'+encodeURIComponent(dayStart)+'&created_at=lte.'+encodeURIComponent(dayEnd))
+   sb('/rest/v1/preco_orders?select=id,total,fixed_cost_allocated,created_at&created_at=gte.'+encodeURIComponent(dayStart)+'&created_at=lte.'+encodeURIComponent(dayEnd))
  ]);
  const amount=num(fc?.[0]?.amount); const daysInMonth=new Date(y,now.getMonth()+1,0).getDate();
  pricingContext.fixedCostDaily=amount/daysInMonth;
- pricingContext.dailySales=(orders||[]).filter(o=>String(o.id)!==String(excludeOrderId)).reduce((s,o)=>s+num(o.total),0);
+ pricingContext.dailySales=(orders||[]).filter(o=>String(o.id)!==String(excludeOrderId)).reduce((s,o)=>s+Math.max(0,num(o.total)-num(o.fixed_cost_allocated)),0);
 }
 function targetOrderTotal(productCost,baseSales){
  const C=num(productCost),F=num(pricingContext.fixedCostDaily),B=num(baseSales),S=num(pricingContext.dailySales);
@@ -130,6 +130,85 @@ async function sb(path, options={}){
 
 
 let currentOrderId=null;
+
+async function rebalanceDailyOrders(){
+  // Regra: o custo fixo diário é distribuído proporcionalmente ao valor
+  // dos produtos (antes do custo fixo) de TODOS os pedidos do dia.
+  // Portanto, quando entra um novo pedido, o rateio dos pedidos anteriores
+  // também é recalculado retroativamente.
+  const now=new Date();
+  const y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0'),d=String(now.getDate()).padStart(2,'0');
+  const dayStart=y+'-'+m+'-'+d+'T00:00:00';
+  const dayEnd=y+'-'+m+'-'+d+'T23:59:59.999';
+
+  const orders=await sb('/rest/v1/preco_orders?select=id,total,cost_total,profit,fixed_cost_allocated,created_at&created_at=gte.'+encodeURIComponent(dayStart)+'&created_at=lte.'+encodeURIComponent(dayEnd)+'&order=id.asc');
+  if(!orders || !orders.length) return;
+
+  const fixedDaily=num(pricingContext.fixedCostDaily);
+  if(fixedDaily<=0) return;
+
+  const orderIds=orders.map(o=>o.id);
+  const itemsByOrder={};
+  if(orderIds.length){
+    const detail=await sb('/rest/v1/preco_order_items?select=id,order_id,quantity,cost,sale_price&order_id=in.('+orderIds.join(',')+')');
+    (detail||[]).forEach(it=>{
+      (itemsByOrder[it.order_id] ||= []).push(it);
+    });
+  }
+
+  const baseByOrder={};
+  let baseGrandTotal=0;
+
+  for(const o of orders){
+    // O total salvo contém o rateio anterior. Recuperamos o valor dos produtos.
+    const base=Math.max(0,num(o.total)-num(o.fixed_cost_allocated));
+    baseByOrder[o.id]=base;
+    baseGrandTotal+=base;
+  }
+
+  if(baseGrandTotal<=0) return;
+
+  for(const o of orders){
+    const base=baseByOrder[o.id];
+    const fixed= fixedDaily*(base/baseGrandTotal);
+    const orderItems=itemsByOrder[o.id]||[];
+    const oldTotal=num(o.total);
+    const newTotal=base+fixed;
+    const productCost=orderItems.reduce((s,it)=>s+num(it.quantity)*num(it.cost),0);
+    const newCostTotal=productCost+fixed;
+    const newProfit=newTotal-newCostTotal;
+
+    await sb('/rest/v1/preco_orders?id=eq.'+encodeURIComponent(o.id),{
+      method:'PATCH',
+      headers:{Prefer:'return=minimal'},
+      body:JSON.stringify({
+        total:Number(newTotal.toFixed(2)),
+        cost_total:Number(newCostTotal.toFixed(2)),
+        profit:Number(newProfit.toFixed(2)),
+        fixed_cost_allocated:Number(fixed.toFixed(2)),
+        total_with_fixed_cost:Number(newCostTotal.toFixed(2))
+      })
+    });
+
+    // Mantém a proporção dos preços dos itens e redistribui o custo fixo
+    // sem aplicar margem sobre ele.
+    if(orderItems.length && oldTotal>0){
+      const factor=newTotal/oldTotal;
+      for(const it of orderItems){
+        const newPrice=num(it.sale_price)*factor;
+        const newItemTotal=num(it.quantity)*newPrice;
+        await sb('/rest/v1/preco_order_items?id=eq.'+encodeURIComponent(it.id),{
+          method:'PATCH',
+          headers:{Prefer:'return=minimal'},
+          body:JSON.stringify({
+            sale_price:Number(newPrice.toFixed(2)),
+            total:Number(newItemTotal.toFixed(2))
+          })
+        });
+      }
+    }
+  }
+}
 
 async function saveOrderDraft(){
   const msg=document.getElementById('orderSaveMsg');
@@ -237,6 +316,8 @@ async function saveOrderDraft(){
       msg.textContent='PEDIDO SALVO NO SUPABASE — ID: '+savedId;
     }
 
+    await rebalanceDailyOrders();
+    await loadPricingContext(currentOrderId);
     await loadSavedOrders();
   }catch(e){
     console.error(e);
@@ -330,6 +411,8 @@ async function deleteSavedOrder(orderId){
 
     msg.className='ok';
     msg.textContent='Pedido ID '+orderId+' excluído.';
+    await loadPricingContext(null);
+    await rebalanceDailyOrders();
     await loadSavedOrders();
   }catch(e){
     msg.className='error';
