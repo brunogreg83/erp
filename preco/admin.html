@@ -19,7 +19,7 @@
 <section class="card">
 <h2 id="formTitle">Cadastro de produto</h2>
 <div class="grid">
-<div class="full"><label>Produto</label><input id="name" placeholder="Nome do produto"></div>
+<div><label>Código</label><input id="code" placeholder="Código do produto"></div><div><label>Produto</label><input id="name" placeholder="Nome do produto"></div><div><label>Categoria</label><input id="category" placeholder="Categoria"></div><div><label>Fornecedor</label><input id="supplier" placeholder="Fornecedor"></div>
 <div><label>Custo do produto (R$)</label><input id="baseCost" type="number" min="0" step="0.01"></div>
 <div><label>Frete de compra (R$)</label><input id="purchaseFreight" type="number" min="0" step="0.01"></div>
 <div><label>Rótulo (R$)</label><input id="labelCost" type="number" min="0" step="0.01"></div>
@@ -34,7 +34,7 @@
 <div><label>Impostos (%)</label><input id="taxes" type="number" min="0" step="0.01" value="4"></div>
 <div><label>Comissão (%)</label><input id="commission" type="number" min="0" step="0.01"></div>
 <div><label>Taxa financeira (%)</label><input id="fee" type="number" min="0" step="0.01" value="1"></div>
-<div><label>Markup desejado (%)</label><input id="markup" type="number" min="0" step="0.01" value="100"></div>
+<div><label>Markup desejado (%)</label><input id="markup" type="number" min="0" step="0.01" value="100"></div><div><label>Preço atual (R$)</label><input id="currentPrice" type="number" min="0" step="0.01" value="0"></div>
 </div>
 <div class="summary"><div class="metric"><small>Custo direto total</small><b id="totalCost">R$ 0,00</b></div><div class="metric"><small>Preço sugerido</small><b id="suggested">R$ 0,00</b></div><div class="metric"><small>Margem líquida estimada</small><b id="netMargin">0,00%</b></div><div class="metric"><small>Preço atual</small><b id="current">R$ 0,00</b></div></div>
 <div class="actions"><button class="primary" id="saveProduct">Cadastrar produto</button><button class="secondary" id="cancelEdit">Limpar</button></div><div id="productMsg" class="msg"></div>
@@ -79,20 +79,25 @@
     if(edit){
       const p=data.find(x=>String(x.id)===String(edit.dataset.editProduct));
       if(!p)return;
-      const name=prompt("Nome do produto:",p.name||"");
-      if(name===null)return;
-      const cost=prompt("Custo do produto (R$):",p.cost??0);
-      if(cost===null)return;
-      const margin=prompt("Markup (%):",p.margin_percent??100);
-      if(margin===null)return;
       try{
-        const current=p.current_price??p.suggested_price??0;
-        const c=Number(String(cost).replace(",", "."))||0;
-        const m=Number(String(margin).replace(",", "."))||0;
-        const suggested=c*(1+m/100);
-        await request("/rest/v1/preco_products?id=eq."+encodeURIComponent(p.id),{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({name:name.trim()||p.name,cost:c,margin_percent:m,suggested_price:Number(suggested.toFixed(2)),current_price:current})});
-        await load();
-      }catch(err){alert("Erro ao editar produto: "+err.message);}
+        editing=p;
+        document.getElementById("formTitle").textContent="Editar produto";
+        document.getElementById("saveProduct").textContent="Atualizar produto";
+        document.getElementById("code").value=p.code||"";
+        document.getElementById("name").value=p.name||"";
+        document.getElementById("category").value=p.category||"";
+        document.getElementById("supplier").value=p.supplier||"";
+        document.getElementById("baseCost").value=p.cost??0;
+        document.getElementById("markup").value=p.margin_percent??100;
+        document.getElementById("currentPrice").value=p.current_price??p.suggested_price??0;
+        const rows=await request("/rest/v1/preco_product_costs?select=product_id,purchase_freight,label,packaging,container,box,tag,other_costs,customer_freight,vehicle_cost,travel_cost,taxes_percent,commission_percent,financial_fee_percent,markup_percent&product_id=eq."+encodeURIComponent(p.id));
+        const x=Array.isArray(rows)?rows[0]:null;
+        const map={purchase_freight:"purchaseFreight",label:"labelCost",packaging:"packaging",container:"containerCost",box:"boxCost",tag:"tagCost",other_costs:"otherCost",customer_freight:"customerFreight",vehicle_cost:"vehicleCost",travel_cost:"travelCost",taxes_percent:"taxes",commission_percent:"commission",financial_fee_percent:"fee",markup_percent:"markup"};
+        Object.entries(map).forEach(([from,to])=>{if(x&&document.getElementById(to))document.getElementById(to).value=x[from]??0});
+        document.getElementById("productMsg").className="msg ok";
+        document.getElementById("productMsg").textContent="Todos os dados do produto foram carregados para edição.";
+        document.getElementById("saveProduct").scrollIntoView({behavior:"smooth",block:"center"});
+      }catch(err){alert("Erro ao carregar dados do produto: "+err.message);}
     }
     if(del){
       const p=data.find(x=>String(x.id)===String(del.dataset.deleteProduct));
@@ -171,11 +176,11 @@ async function load(){
 }
 function render(){const q=$("#search").value.trim().toLowerCase();const list=products.filter(p=>(p.name+" "+(p.code||"")+" "+(p.category||"")).toLowerCase().includes(q));$("#products").innerHTML=list.map(p=>'<tr><td>'+esc(p.code||"")+'</td><td>'+esc(p.name)+'</td><td>'+esc(p.category||"")+'</td><td>'+money(p.cost)+'</td><td>'+Number(p.margin_percent||100).toFixed(2)+'%</td><td>'+money(p.suggested_price)+'</td><td>'+money(p.current_price)+'</td><td><button class="secondary" data-edit="'+p.id+'">Editar</button></td></tr>').join("")||'<tr><td colspan="8">Nenhum produto encontrado.</td></tr>'}
 function esc(v){return String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
-function clearForm(){editing=null;$("#formTitle").textContent="Cadastro de produto";$("#saveProduct").textContent="Cadastrar produto";["name","baseCost","purchaseFreight","labelCost","packaging","containerCost","boxCost","tagCost","otherCost","customerFreight","vehicleCost","travelCost","taxes","commission","fee"].forEach(id=>$(id).value="");$("#markup").value=100;$("#taxes").value=4;$("#fee").value=1;recalc();$("#productMsg").textContent=""}
+function clearForm(){editing=null;$("#formTitle").textContent="Cadastro de produto";$("#saveProduct").textContent="Cadastrar produto";["code","name","category","supplier","baseCost","purchaseFreight","labelCost","packaging","containerCost","boxCost","tagCost","otherCost","customerFreight","vehicleCost","travelCost","taxes","commission","fee","currentPrice"].forEach(id=>$(id).value="");$("#markup").value=100;$("#taxes").value=4;$("#fee").value=1;recalc();$("#productMsg").textContent=""}
 async function edit(id){const p=products.find(x=>String(x.id)===String(id));if(!p)return;editing=p;$("#formTitle").textContent="Editar produto";$("#saveProduct").textContent="Atualizar produto";$("#name").value=p.name||"";$("#baseCost").value=p.cost??0;const row=costRows.get(String(id));fillCost(row);recalc();window.scrollTo({top:0,behavior:"smooth"})}
 $("#products").addEventListener("click",e=>{const b=e.target.closest("[data-edit]");if(b)edit(b.dataset.edit)});
 $("#search").addEventListener("input",render);document.querySelectorAll("input").forEach(e=>e.addEventListener("input",recalc));$("#cancelEdit").onclick=clearForm;
-$("#saveProduct").onclick=async()=>{const msg=$("#productMsg");try{const name=$("#name").value.trim();if(!name){msg.className="msg bad";msg.textContent="Informe o nome do produto.";return}const x=recalc(),payload={name,cost:Number(num("baseCost").toFixed(2)),margin_percent:num("markup"),suggested_price:Number(x.p.toFixed(2)),current_price:Number((editing?.current_price||x.p).toFixed(2)),active:true};let id;if(editing){await api("/rest/v1/preco_products?id=eq."+encodeURIComponent(editing.id),{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(payload)});id=editing.id;await api("/rest/v1/preco_product_costs?product_id=eq."+encodeURIComponent(id),{method:"DELETE"});msg.textContent="Produto atualizado."}else{const r=await api("/rest/v1/preco_products",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify(payload)});id=(Array.isArray(r)?r[0]:r).id;msg.textContent="Produto cadastrado."}await api("/rest/v1/preco_product_costs",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({product_id:id,purchase_freight:num("purchaseFreight"),label:num("labelCost"),packaging:num("packaging"),container:num("containerCost"),box:num("boxCost"),tag:num("tagCost"),other_costs:num("otherCost"),customer_freight:num("customerFreight"),vehicle_cost:num("vehicleCost"),travel_cost:num("travelCost"),taxes_percent:num("taxes"),commission_percent:num("commission"),financial_fee_percent:num("fee"),markup_percent:num("markup")})});msg.className="msg ok";await load();clearForm()}catch(e){msg.className="msg bad";msg.textContent="Erro: "+e.message}}
+$("#saveProduct").onclick=async()=>{const msg=$("#productMsg");try{const name=$("#name").value.trim();if(!name){msg.className="msg bad";msg.textContent="Informe o nome do produto.";return}const x=recalc(),payload={code:$("#code").value.trim()||null,name,category:$("#category").value.trim()||null,supplier:$("#supplier").value.trim()||null,cost:Number(num("baseCost").toFixed(2)),margin_percent:num("markup"),suggested_price:Number(x.p.toFixed(2)),current_price:Number(num("currentPrice").toFixed(2)),active:true};let id;if(editing){await api("/rest/v1/preco_products?id=eq."+encodeURIComponent(editing.id),{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(payload)});id=editing.id;await api("/rest/v1/preco_product_costs?product_id=eq."+encodeURIComponent(id),{method:"DELETE"});msg.textContent="Produto atualizado."}else{const r=await api("/rest/v1/preco_products",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify(payload)});id=(Array.isArray(r)?r[0]:r).id;msg.textContent="Produto cadastrado."}await api("/rest/v1/preco_product_costs",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({product_id:id,purchase_freight:num("purchaseFreight"),label:num("labelCost"),packaging:num("packaging"),container:num("containerCost"),box:num("boxCost"),tag:num("tagCost"),other_costs:num("otherCost"),customer_freight:num("customerFreight"),vehicle_cost:num("vehicleCost"),travel_cost:num("travelCost"),taxes_percent:num("taxes"),commission_percent:num("commission"),financial_fee_percent:num("fee"),markup_percent:num("markup")})});msg.className="msg ok";await load();clearForm()}catch(e){msg.className="msg bad";msg.textContent="Erro: "+e.message}}
 $("#mes").value=new Date().toISOString().slice(0,7);
 $("#mes").addEventListener("change",loadFixed);$("#fixo").addEventListener("input",()=>{$("#fixoDia").value=money(num("fixo")/30)});
 async function loadFixed(){const m=$("#mes").value+"-01";const r=await api("/rest/v1/preco_fixed_costs?select=amount&month=eq."+m+"&limit=1");$("#fixo").value=r?.[0]?.amount||0;$("#fixoDia").value=money(num("fixo")/30)}
