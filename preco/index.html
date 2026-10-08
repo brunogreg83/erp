@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="frontend-version" content="2026-10-08-04">
+<meta name="frontend-version" content="2026-10-08-05">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB Chemicals | Controle de Preços</title>
@@ -142,8 +142,12 @@ async function saveOrderDraft(){
     const customer=(document.getElementById('orderCustomer')?.value||'').trim();
     const total=items.reduce((s,x)=>s+(num(x.qty)*num(x.price)),0);
     const costTotal=items.reduce((s,x)=>s+(num(x.qty)*num(x.cost)),0);
-    const profit=total-costTotal;
-    const margin=costTotal?((profit/costTotal)*100):0;
+    const fixedAllocated=pricingContext.fixedCostDaily>0&&total>0
+      ? pricingContext.fixedCostDaily*(total/(pricingContext.dailySales+total))
+      : 0;
+    const adjustedCost=costTotal+fixedAllocated;
+    const profit=total-adjustedCost;
+    const margin=adjustedCost?((profit/adjustedCost)*100):0;
 
     msg.className='muted';
     msg.textContent=currentOrderId ? 'Atualizando pedido '+currentOrderId+'...' : 'Salvando pedido...';
@@ -151,10 +155,11 @@ async function saveOrderDraft(){
     const orderPayload={
       customer_name:customer,
       total:Number(total.toFixed(2)),
-      cost_total:Number(costTotal.toFixed(2)),
+      cost_total:Number(adjustedCost.toFixed(2)),
       profit:Number(profit.toFixed(2)),
-      margin_percent:Number(margin.toFixed(2)),
-      status:'Orçamento'
+      status:'Orçamento',
+      fixed_cost_allocated:Number(fixedAllocated.toFixed(2)),
+      total_with_fixed_cost:Number(adjustedCost.toFixed(2))
     };
 
     const itemRows=items.map(x=>({
