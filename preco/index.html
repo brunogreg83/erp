@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="frontend-version" content="2026-10-08-18">
+<meta name="frontend-version" content="2026-10-08-19">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB Chemicals | Precificação</title>
@@ -38,7 +38,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 <div class="grid">
 <div><label>Produto</label><select id="product"></select></div>
 <div><label>Quantidade</label><input id="qty" type="number" min="1" value="1"></div>
-<div><label>Preço de venda (un.)</label><input id="price" type="number" min="0" step="0.01"></div>
+<div><label>Preço de venda (un.)</label><input id="price" type="number" min="0" step="0.01"><div class="muted" style="margin-top:4px">Sugestão — o usuário define o preço.</div></div>
 <div><label>&nbsp;</label><button class="primary" onclick="addItem()">Adicionar ao pedido</button></div>
 </div>
 <div id="orderItemsBox" style="overflow:auto;margin-top:16px">
@@ -462,11 +462,11 @@ async function loadProducts(){
  products=(q||[]).map(p=>({...p,min_price:0}));
  const el=document.getElementById('product');
  el.innerHTML=products.length?products.map(p=>'<option value="'+p.id+'">'+escapeHtml(p.name)+'</option>').join(''):'<option value="">Nenhum produto cadastrado</option>';
- if(products.length) document.getElementById('price').value=products[0].current_price??'';
+ if(products.length) document.getElementById('price').value=products[0].suggested_price??'';
 }
 document.getElementById('product').addEventListener('change',()=>{
  const p=products.find(x=>String(x.id)===String(document.getElementById('product').value));
- document.getElementById('price').value=p?.current_price??'';
+ document.getElementById('price').value=p?.suggested_price??'';
 });
 function escapeHtml(v){return String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]))}
 async function addItem(){const p=products.find(x=>String(x.id)===String(document.getElementById('product').value));if(!p)return;const q=Math.max(1,num(document.getElementById('qty').value)),pr=num(document.getElementById('price').value);items.push({productId:p.id,name:p.name,cost:num(p.cost),suggested:num(p.suggested_price),min:num(p.min_price),qty:q,price:pr,basePrice:pr});try{await loadPricingContext(currentOrderId);const added=items[items.length-1];if(added)document.getElementById('price').value=num(added.price).toFixed(2);render()}catch(e){console.error(e);render()}}
