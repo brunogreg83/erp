@@ -58,45 +58,9 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 </section>
 
 
-<section id="savedOrders" class="card" style="margin-top:16px">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-    <div>
-      <h2 style="margin-bottom:4px">Pedidos salvos</h2>
-      <p class="muted" style="margin:0">Pedidos gravados no Supabase.</p>
-    </div>
-    <button id="btnRefreshOrders" class="secondary" type="button">Atualizar pedidos</button>
-  </div>
-  <div id="savedOrdersMsg" class="muted" style="margin-top:10px"></div>
-  <div style="overflow:auto;margin-top:10px">
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Cliente</th>
-          <th>Data</th>
-          <th>Total</th>
-          <th>Margem</th>
-          <th>Status</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody id="savedOrdersBody"></tbody>
-    </table>
-  </div>
-</section>
-
 <section id="admin" class="card hidden">
 <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2>Produtos</h2><button class="secondary" type="button" onclick="show('sales')">Voltar</button></div>
 <p class="muted">Cadastro direto no Supabase. A margem padrão é de <strong>100%</strong>. O preço sugerido é calculado automaticamente como custo × 2. Não existe preço mínimo automático.</p>
-    <div class="card" style="margin-top:14px;background:#f7fbff;border:1px solid #cfe8f6">
-      <h3 style="margin-top:0">Importar produtos do AB | ERP</h3>
-      <p class="muted">Selecione o Excel exportado do ERP. Produtos existentes pelo mesmo código serão atualizados; produtos sem código serão adicionados.</p>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <input id="erpFile" type="file" accept=".xlsx,.xls,.csv">
-        <button id="btnImportERP" class="primary" type="button">Importar produtos do ERP</button>
-      </div>
-      <p id="importMsg" class="muted"></p>
-    </div>
 
 <div class="grid">
 <div><label>Produto</label><input id="pName" placeholder="Nome do produto"></div>
