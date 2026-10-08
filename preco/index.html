@@ -61,19 +61,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 
 </main>
 
-<script>
-function show(id){
-  const sales=document.getElementById("sales");
-  const admin=document.getElementById("admin");
-  if(!sales || !admin) return;
-  sales.classList.toggle("hidden",id!=="sales");
-  admin.classList.toggle("hidden",id!=="admin");
-  if(id==="admin" && typeof window.loadAdmin === "function") window.loadAdmin();
-}
-window.show=show;
-document.getElementById("btnSales").addEventListener("click",()=>show("sales"));
-document.getElementById("btnAdmin").addEventListener("click",()=>show("admin"));
-</script>
+
 
 
 <script>
