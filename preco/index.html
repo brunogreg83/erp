@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="frontend-version" content="2026-10-08-34">
+<meta name="frontend-version" content="2026-10-08-35">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB Chemicals | Precificação</title>
@@ -197,7 +197,7 @@ async function rebalanceDailyOrders(referenceDate=null){
         cost_total:Number(newCostTotal.toFixed(2)),
         profit:Number(newProfit.toFixed(2)),
         fixed_cost_allocated:Number(fixed.toFixed(2)),
-        total_with_fixed_cost:Number(newCostTotal.toFixed(2))
+        total_with_fixed_cost:Number((newTotal+fixed).toFixed(2))
       })
     });
   }));
@@ -450,7 +450,7 @@ async function loadSavedOrders(){
         <td><strong>${escapeHtml(o.id)}</strong></td>
         <td>${escapeHtml(o.customer_name||'—')}</td>
         <td>${escapeHtml(date)}</td>
-        <td>${money(Number(o.total||0)+Number(o.fixed_cost_allocated||0))}</td>
+        <td>${money(o.total_with_fixed_cost ?? (Number(o.total||0)+Number(o.fixed_cost_allocated||0)))}</td>
         <td>${escapeHtml(o.status||'—')}</td>
         <td style="white-space:nowrap">
           <button class="secondary" type="button" onclick="editSavedOrder(${Number(o.id)})">Editar</button>
