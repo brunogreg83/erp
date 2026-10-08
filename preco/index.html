@@ -62,6 +62,38 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2>Produtos</h2><button class="secondary" type="button" onclick="show('sales')">Voltar</button></div>
 <p class="muted">Cadastro direto no Supabase. A margem padrão é de <strong>100%</strong>. O preço sugerido é calculado automaticamente como custo × 2. Não existe preço mínimo automático.</p>
 
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:16px 0">
+  <section class="card" style="margin:0;border:1px solid #dbe3eb">
+    <h3 style="margin-top:0">Custos Fixos</h3>
+    <p class="muted">Custos mensais que independem diretamente da quantidade vendida.</p>
+    <div class="grid" style="grid-template-columns:1fr 1fr">
+      <div><label>Custos fixos mensais (R$)</label><input id="fixedMonthlyCost" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div><label>Dias considerados</label><input id="fixedDays" type="number" min="1" step="1" value="30"></div>
+      <div class="full"><label>Custo fixo diário (R$)</label><input id="fixedDailyCost" type="number" step="0.01" value="0" readonly></div>
+    </div>
+  </section>
+
+  <section class="card" style="margin:0;border:1px solid #dbe3eb">
+    <h3 style="margin-top:0">Custos Variáveis</h3>
+    <p class="muted">Custos que variam conforme o produto, venda ou operação.</p>
+    <div class="grid" style="grid-template-columns:1fr 1fr">
+      <div><label>Frete de compra (R$)</label><input id="variablePurchaseFreight" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div><label>Rótulo (R$)</label><input id="variableLabel" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div><label>Embalagem (R$)</label><input id="variablePackaging" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div><label>Galão/recipiente (R$)</label><input id="variableContainer" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div><label>Caixa (R$)</label><input id="variableBox" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div><label>Etiqueta (R$)</label><input id="variableTag" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div><label>Outros custos (R$)</label><input id="variableOther" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div><label>Frete ao cliente (R$)</label><input id="variableCustomerFreight" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div><label>Custo do veículo (R$)</label><input id="variableVehicle" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div><label>Custos de viagem (R$)</label><input id="variableTravel" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div><label>Impostos (%)</label><input id="variableTaxes" type="number" min="0" step="0.01" value="4"></div>
+      <div><label>Comissão (%)</label><input id="variableCommission" type="number" min="0" step="0.01" value="0"></div>
+      <div><label>Taxa financeira (%)</label><input id="variableFee" type="number" min="0" step="0.01" value="1"></div>
+    </div>
+  </section>
+</div>
+
 <div class="grid">
 <div><label>Produto</label><input id="pName" placeholder="Nome do produto"></div>
 
