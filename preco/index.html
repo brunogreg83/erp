@@ -323,12 +323,16 @@ async function loadSavedOrders(){
 }
 
 async function loadProducts(){
- const q=await sb('/rest/v1/products?select=id,code,name,cost,margin_percent,suggested_price,current_price,active&active=eq.true&order=name.asc');
- products=q||[];
- if(products.length){ const ids=products.map(p=>p.id); const pricing=await sb('/rest/v1/product_pricing?select=product_id,min_price&product_id=in.('+ids.join(',')+')'); const pm=new Map((pricing||[]).map(x=>[String(x.product_id),num(x.min_price)])); products.forEach(p=>p.min_price=pm.get(String(p.id))||0);}
- const el=document.getElementById('product'); el.innerHTML=products.length?products.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join(''):'<option value="">Nenhum produto cadastrado</option>'; if(products.length) document.getElementById('price').value=products[0].current_price??products[0].suggested_price??'';
+ const q=await sb('/rest/v1/preco_products?select=id,code,name,cost,margin_percent,suggested_price,current_price,active&active=eq.true&order=name.asc');
+ products=(q||[]).map(p=>({...p,min_price:0}));
+ const el=document.getElementById('product');
+ el.innerHTML=products.length?products.map(p=>'<option value="'+p.id+'">'+escapeHtml(p.name)+'</option>').join(''):'<option value="">Nenhum produto cadastrado</option>';
+ if(products.length) document.getElementById('price').value=products[0].current_price??'';
 }
-document.getElementById('product').addEventListener('change',()=>{const p=products.find(x=>String(x.id)===String(document.getElementById('product').value));document.getElementById('price').value=p?.current_price??p?.suggested_price??''});
+document.getElementById('product').addEventListener('change',()=>{
+ const p=products.find(x=>String(x.id)===String(document.getElementById('product').value));
+ document.getElementById('price').value=p?.current_price??'';
+});
 function escapeHtml(v){return String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]))}
 function addItem(){const p=products.find(x=>String(x.id)===String(document.getElementById('product').value));if(!p)return;const q=Math.max(1,num(document.getElementById('qty').value)),pr=num(document.getElementById('price').value);items.push({productId:p.id,name:p.name,cost:num(p.cost),suggested:num(p.suggested_price),min:num(p.min_price),qty:q,price:pr});render()}
 window.addItem=addItem;window.removeItem=i=>{items.splice(i,1);render()};
