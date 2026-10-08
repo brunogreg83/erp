@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="frontend-version" content="2026-10-08-12">
+<meta name="frontend-version" content="2026-10-08-13">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB Chemicals | Precificação</title>
@@ -474,7 +474,26 @@ function escapeHtml(v){return String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;',
 async function addItem(){const p=products.find(x=>String(x.id)===String(document.getElementById('product').value));if(!p)return;const q=Math.max(1,num(document.getElementById('qty').value)),pr=num(document.getElementById('price').value);items.push({productId:p.id,name:p.name,cost:num(p.cost),suggested:num(p.suggested_price),min:num(p.min_price),qty:q,price:pr,basePrice:pr});try{await loadPricingContext(currentOrderId);repriceDraft();const added=items[items.length-1];if(added)document.getElementById('price').value=num(added.price).toFixed(2);render()}catch(e){console.error(e);render()}}
 window.addItem=addItem;window.removeItem=async i=>{items.splice(i,1);try{await loadPricingContext(currentOrderId);repriceDraft();render()}catch(e){console.error(e);render()}};
 function priceStatus(price,suggested,min){const p=num(price),s=num(suggested),m=num(min);if(m>0&&p<m)return ['red','🔴 VERMELHO'];if(s>0&&p<s)return ['yellow','🟡 AMARELO'];return ['green','🟢 VERDE']}
-function render(){const tbody=document.getElementById('items');let total=0,costTotal=0,suggestedTotal=0,minTotal=0;items.forEach(x=>{const t=num(x.qty)*num(x.price),cost=num(x.qty)*num(x.cost);total+=t;costTotal+=cost;suggestedTotal+=num(x.qty)*num(x.suggested);minTotal+=num(x.qty)*num(x.min)});if(tbody){tbody.innerHTML=items.map((x,i)=>{const t=num(x.qty)*num(x.price);return `<tr><td>${escapeHtml(x.name)}</td><td>${num(x.qty)}</td><td>${money(x.price)}</td><td>${money(t)}</td><td><button class="danger" type="button" onclick="removeItem(${i})">Excluir</button></td></tr>`}).join('');}const totalEl=document.getElementById('totalSale');if(totalEl)totalEl.textContent=money(total);const baseTotal=items.reduce((s,x)=>s+num(x.qty)*num(x.basePrice??x.price),0);const fixedAllocated=pricingContext.fixedCostDaily>0&&baseTotal>0?pricingContext.fixedCostDaily*(baseTotal/(pricingContext.dailySales+baseTotal)):0;const adjustedCost=costTotal+fixedAllocated;const productCostEl=document.getElementById('productCost');if(productCostEl)productCostEl.textContent=money(costTotal);const fixedEl=document.getElementById('fixedCostAllocated');if(fixedEl)fixedEl.textContent=money(fixedAllocated);const costEl=document.getElementById('totalCost');if(costEl)costEl.textContent=money(adjustedCost);const profit=total-adjustedCost;const profitEl=document.getElementById('totalProfit');if(profitEl)profitEl.textContent=money(profit);const itemsEl=document.getElementById('totalItems');if(itemsEl)itemsEl.textContent=String(items.reduce((s,x)=>s+num(x.qty),0));const marginEl=document.getElementById('totalMargin');if(marginEl)marginEl.textContent=adjustedCost?((profit/adjustedCost)*100).toFixed(1)+'%':'—';const statusEl=document.getElementById('totalStatus');if(statusEl){const overall=items.length?priceStatus(total,suggestedTotal,minTotal):['yellow','⚪ SEM PEDIDO'];statusEl.innerHTML=`<span class="badge ${overall[0]}">${overall[1]}</span>`}}
+function editItem(i){
+  const x=items[i];
+  if(!x) return;
+  const qtyInput=prompt('Quantidade:', String(num(x.qty)));
+  if(qtyInput===null) return;
+  const newQty=Math.max(1,num(qtyInput));
+  const priceInput=prompt('Preço de venda (un.):', String(num(x.basePrice??x.price).toFixed(2)));
+  if(priceInput===null) return;
+  const newBasePrice=Math.max(0,num(priceInput));
+  x.qty=newQty;
+  x.basePrice=newBasePrice;
+  x.price=newBasePrice;
+  loadPricingContext(currentOrderId).then(()=>{
+    repriceDraft();
+    render();
+  }).catch(e=>{console.error(e);render();});
+}
+window.editItem=editItem;
+
+function render(){const tbody=document.getElementById('items');let total=0,costTotal=0,suggestedTotal=0,minTotal=0;items.forEach(x=>{const t=num(x.qty)*num(x.price),cost=num(x.qty)*num(x.cost);total+=t;costTotal+=cost;suggestedTotal+=num(x.qty)*num(x.suggested);minTotal+=num(x.qty)*num(x.min)});if(tbody){tbody.innerHTML=items.map((x,i)=>{const t=num(x.qty)*num(x.price);return `<tr><td>${escapeHtml(x.name)}</td><td>${num(x.qty)}</td><td>${money(x.price)}</td><td>${money(t)}</td><td style="white-space:nowrap"><button class="secondary" type="button" onclick="editItem(${i})">Editar</button> <button class="danger" type="button" onclick="removeItem(${i})">Excluir</button></td></tr>`}).join('');}const totalEl=document.getElementById('totalSale');if(totalEl)totalEl.textContent=money(total);const baseTotal=items.reduce((s,x)=>s+num(x.qty)*num(x.basePrice??x.price),0);const fixedAllocated=pricingContext.fixedCostDaily>0&&baseTotal>0?pricingContext.fixedCostDaily*(baseTotal/(pricingContext.dailySales+baseTotal)):0;const adjustedCost=costTotal+fixedAllocated;const productCostEl=document.getElementById('productCost');if(productCostEl)productCostEl.textContent=money(costTotal);const fixedEl=document.getElementById('fixedCostAllocated');if(fixedEl)fixedEl.textContent=money(fixedAllocated);const costEl=document.getElementById('totalCost');if(costEl)costEl.textContent=money(adjustedCost);const profit=total-adjustedCost;const profitEl=document.getElementById('totalProfit');if(profitEl)profitEl.textContent=money(profit);const itemsEl=document.getElementById('totalItems');if(itemsEl)itemsEl.textContent=String(items.reduce((s,x)=>s+num(x.qty),0));const marginEl=document.getElementById('totalMargin');if(marginEl)marginEl.textContent=adjustedCost?((profit/adjustedCost)*100).toFixed(1)+'%':'—';const statusEl=document.getElementById('totalStatus');if(statusEl){const overall=items.length?priceStatus(total,suggestedTotal,minTotal):['yellow','⚪ SEM PEDIDO'];statusEl.innerHTML=`<span class="badge ${overall[0]}">${overall[1]}</span>`}}
 
 document.addEventListener('DOMContentLoaded',()=>{const saveBtn=document.getElementById('btnSaveOrder');const clearBtn=document.getElementById('btnClearOrder');if(saveBtn)saveBtn.addEventListener('click',saveOrderDraft);if(clearBtn)clearBtn.addEventListener('click',clearOrderDraft);loadPricingContext(null).then(()=>render()).catch(e=>console.error(e));const refreshOrders=document.getElementById('btnRefreshOrders');if(refreshOrders)refreshOrders.addEventListener('click',loadSavedOrders);loadSavedOrders();});
 
