@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="frontend-version" content="2026-10-08-14">
+<meta name="frontend-version" content="2026-10-08-15">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB Chemicals | Precificação</title>
@@ -114,22 +114,26 @@ async function loadPricingContext(excludeOrderId=null){
  pricingContext.fixedCostDaily=amount/daysInMonth;
  pricingContext.dailySales=(orders||[]).filter(o=>String(o.id)!==String(excludeOrderId)).reduce((s,o)=>s+Math.max(0,num(o.total)-num(o.fixed_cost_allocated)),0);
 }
-function targetOrderTotal(productCost,baseSales){
- const C=num(productCost),F=num(pricingContext.fixedCostDaily),B=num(baseSales),S=num(pricingContext.dailySales);
- if(!C)return 0;
- // A margem de 100% incide somente sobre o custo dos produtos.
- // O custo fixo é apenas somado ao preço, sem receber margem.
- if(F<=0)return C*2;
+function targetOrderTotal(baseSales){
+ const B=num(baseSales),F=num(pricingContext.fixedCostDaily),S=num(pricingContext.dailySales);
+ if(B<=0)return 0;
+ // O usuário define livremente o preço de venda.
+ // O preço só é alterado automaticamente quando existe custo fixo diário.
+ // Nesse caso, somente o custo fixo rateado é acrescentado ao preço informado.
+ if(F<=0)return B;
  const fixedAllocated=F*(B/(S+B));
- return C*2+fixedAllocated;
+ return B+fixedAllocated;
 }
 function repriceDraft(){
  if(!items.length)return;
  const baseTotal=items.reduce((s,x)=>s+num(x.qty)*num(x.basePrice??x.price),0);
- const costTotal=items.reduce((s,x)=>s+num(x.qty)*num(x.cost),0);
- const target=targetOrderTotal(costTotal,baseTotal);
+ if(baseTotal<=0)return;
+ const target=targetOrderTotal(baseTotal);
  const factor=baseTotal>0?target/baseTotal:1;
- items.forEach(x=>{x.price=Number((num(x.basePrice??x.price)*factor).toFixed(2));});
+ items.forEach(x=>{
+   const base=num(x.basePrice??x.price);
+   x.price=Number((base*factor).toFixed(2));
+ });
 }
 
 async function sb(path, options={}){
