@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="frontend-version" content="2026-10-08-07">
+<meta name="frontend-version" content="2026-10-08-08">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB Chemicals | Controle de Preços</title>
@@ -104,7 +104,7 @@ async function loadPricingContext(excludeOrderId=null){
  pricingContext.dailySales=(orders||[]).filter(o=>String(o.id)!==String(excludeOrderId)).reduce((s,o)=>s+num(o.total),0);
 }
 function targetOrderTotal(productCost,baseSales){
- const C=num(productCost),F=num(pricingContext.fixedCostDaily),S=num(baseSales)+num(pricingContext.dailySales);
+ const C=num(productCost),F=num(pricingContext.fixedCostDaily),S=num(pricingContext.dailySales);
  if(!C)return 0;
  if(F<=0)return C*2;
  const b=S-2*C-2*F;
