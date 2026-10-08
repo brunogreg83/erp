@@ -229,7 +229,7 @@ async function editSavedOrder(orderId){
     const order=Array.isArray(orders)?orders[0]:null;
     if(!order) throw new Error('Pedido não encontrado.');
 
-    const details=await sb('/rest/v1/preco_order_items?order_id=eq.'+encodeURIComponent(orderId)+'&select=product_id,product_name,quantity,cost,sale_price,total,margin_percent');
+    const details=await sb('/rest/v1/preco_order_items?order_id=eq.'+encodeURIComponent(orderId)+'&select=product_id,product_name,quantity,cost,sale_price,total');
     items=(details||[]).map(x=>({
       productId:x.product_id,
       name:x.product_name,
