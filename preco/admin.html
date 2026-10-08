@@ -46,6 +46,25 @@
 </section>
 </div>
 <script>
+(async function(){
+  const status=document.getElementById("runtimeStatus");
+  const tbody=document.getElementById("products");
+  status.textContent="BACKEND V4 — CONECTANDO AO SUPABASE…";
+  try{
+    const res=await fetch("https://divokbonqrmpindszoqv.supabase.co/rest/v1/preco_products?select=id,code,name,category,cost,margin_percent,suggested_price,current_price,active&active=eq.true&order=name.asc",{headers:{apikey:"sb_publishable_sCTeIxcTB-oUswA-QVP0Wg_LrlGgjhY",Accept:"application/json"},cache:"no-store"});
+    const text=await res.text();
+    if(!res.ok) throw new Error(text||("HTTP "+res.status));
+    const data=JSON.parse(text);
+    const money=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+    const esc=v=>String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+    tbody.innerHTML=(Array.isArray(data)?data:[]).map(p=>"<tr><td>"+esc(p.code||"")+"</td><td>"+esc(p.name||"")+"</td><td>"+esc(p.category||"")+"</td><td>"+money(p.cost)+"</td><td>"+Number(p.margin_percent||100).toFixed(2)+"%</td><td>"+money(p.suggested_price)+"</td><td>"+money(p.current_price)+"</td><td>—</td></tr>").join("")||'<tr><td colspan="8">Nenhum produto encontrado.</td></tr>';
+    status.textContent="BACKEND V4 — "+(Array.isArray(data)?data.length:0)+" PRODUTO(S) CARREGADO(S) DO SUPABASE.";
+  }catch(e){
+    status.textContent="BACKEND V4 — ERRO AO CONSULTAR SUPABASE: "+e.message;
+  }
+})();
+</script>
+<script>
 const URL="https://divokbonqrmpindszoqv.supabase.co",KEY="sb_publishable_sCTeIxcTB-oUswA-QVP0Wg_LrlGgjhY";
 let products=[],editing=null,costRows=new Map();
 const $=id=>document.getElementById(id),num=id=>Math.max(0,Number($(id).value)||0),money=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
