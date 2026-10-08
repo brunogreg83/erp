@@ -49,19 +49,63 @@
 (async function(){
   const status=document.getElementById("runtimeStatus");
   const tbody=document.getElementById("products");
-  status.textContent="BACKEND V4 — CONECTANDO AO SUPABASE…";
-  try{
-    const res=await fetch("https://divokbonqrmpindszoqv.supabase.co/rest/v1/preco_products?select=id,code,name,category,cost,margin_percent,suggested_price,current_price,active&active=eq.true&order=name.asc",{headers:{apikey:"sb_publishable_sCTeIxcTB-oUswA-QVP0Wg_LrlGgjhY",Accept:"application/json"},cache:"no-store"});
+  const KEY="sb_publishable_sCTeIxcTB-oUswA-QVP0Wg_LrlGgjhY";
+  const URL="https://divokbonqrmpindszoqv.supabase.co";
+  const headers={apikey:KEY,Accept:"application/json","Content-Type":"application/json"};
+  const money=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+  const esc=v=>String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  let data=[];
+  async function request(path,opt={}){
+    const res=await fetch(URL+path,{...opt,headers:{...headers,...(opt.headers||{})},cache:"no-store"});
     const text=await res.text();
     if(!res.ok) throw new Error(text||("HTTP "+res.status));
-    const data=JSON.parse(text);
-    const money=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-    const esc=v=>String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-    tbody.innerHTML=(Array.isArray(data)?data:[]).map(p=>"<tr><td>"+esc(p.code||"")+"</td><td>"+esc(p.name||"")+"</td><td>"+esc(p.category||"")+"</td><td>"+money(p.cost)+"</td><td>"+Number(p.margin_percent||100).toFixed(2)+"%</td><td>"+money(p.suggested_price)+"</td><td>"+money(p.current_price)+"</td><td>—</td></tr>").join("")||'<tr><td colspan="8">Nenhum produto encontrado.</td></tr>';
-    status.textContent="BACKEND V4 — "+(Array.isArray(data)?data.length:0)+" PRODUTO(S) CARREGADO(S) DO SUPABASE.";
-  }catch(e){
-    status.textContent="BACKEND V4 — ERRO AO CONSULTAR SUPABASE: "+e.message;
+    return text?JSON.parse(text):null;
   }
+  function render(){
+    tbody.innerHTML=data.map(p=>"<tr><td>"+esc(p.code||"")+"</td><td>"+esc(p.name||"")+"</td><td>"+esc(p.category||"")+"</td><td>"+money(p.cost)+"</td><td>"+Number(p.margin_percent||100).toFixed(2)+"%</td><td>"+money(p.suggested_price)+"</td><td>"+money(p.current_price)+"</td><td><button type='button' data-edit-product='"+esc(p.id)+"' style='background:#1268a8;color:#fff;margin-right:5px'>Editar</button><button type='button' data-delete-product='"+esc(p.id)+"' style='background:#b42318;color:#fff'>Deletar</button></td></tr>").join("")||'<tr><td colspan="8">Nenhum produto encontrado.</td></tr>';
+  }
+  async function load(){
+    status.textContent="BACKEND V5 — CONSULTANDO SUPABASE…";
+    try{
+      data=await request("/rest/v1/preco_products?select=id,code,name,category,cost,margin_percent,suggested_price,current_price,active&active=eq.true&order=name.asc");
+      data=Array.isArray(data)?data:[];
+      render();
+      status.textContent="BACKEND V5 — "+data.length+" PRODUTO(S) CARREGADO(S).";
+    }catch(e){status.textContent="BACKEND V5 — ERRO: "+e.message;}
+  }
+  tbody.addEventListener("click",async e=>{
+    const edit=e.target.closest("[data-edit-product]");
+    const del=e.target.closest("[data-delete-product]");
+    if(edit){
+      const p=data.find(x=>String(x.id)===String(edit.dataset.editProduct));
+      if(!p)return;
+      const name=prompt("Nome do produto:",p.name||"");
+      if(name===null)return;
+      const cost=prompt("Custo do produto (R$):",p.cost??0);
+      if(cost===null)return;
+      const margin=prompt("Markup (%):",p.margin_percent??100);
+      if(margin===null)return;
+      try{
+        const current=p.current_price??p.suggested_price??0;
+        const c=Number(String(cost).replace(",", "."))||0;
+        const m=Number(String(margin).replace(",", "."))||0;
+        const suggested=c*(1+m/100);
+        await request("/rest/v1/preco_products?id=eq."+encodeURIComponent(p.id),{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({name:name.trim()||p.name,cost:c,margin_percent:m,suggested_price:Number(suggested.toFixed(2)),current_price:current})});
+        await load();
+      }catch(err){alert("Erro ao editar produto: "+err.message);}
+    }
+    if(del){
+      const p=data.find(x=>String(x.id)===String(del.dataset.deleteProduct));
+      if(!p)return;
+      if(!confirm("Excluir o produto '"+p.name+"'? Esta ação não poderá ser desfeita."))return;
+      try{
+        await request("/rest/v1/preco_product_costs?product_id=eq."+encodeURIComponent(p.id),{method:"DELETE",headers:{Prefer:"return=minimal"}});
+        await request("/rest/v1/preco_products?id=eq."+encodeURIComponent(p.id),{method:"DELETE",headers:{Prefer:"return=minimal"}});
+        await load();
+      }catch(err){alert("Erro ao deletar produto: "+err.message);}
+    }
+  });
+  await load();
 })();
 </script>
 <script>
