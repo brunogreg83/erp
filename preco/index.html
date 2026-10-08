@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="frontend-version" content="2026-10-08-20">
+<meta name="frontend-version" content="2026-10-08-21">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB Chemicals | Precificação</title>
@@ -154,8 +154,6 @@ async function rebalanceDailyOrders(){
   if(!orders || !orders.length) return;
 
   const fixedDaily=num(pricingContext.fixedCostDaily);
-  if(fixedDaily<=0) return;
-
   const orderIds=orders.map(o=>o.id);
   const details=await sb('/rest/v1/preco_order_items?select=order_id,quantity,cost,sale_price&order_id=in.('+orderIds.join(',')+')');
   const byOrder={};
@@ -168,18 +166,29 @@ async function rebalanceDailyOrders(){
     baseByOrder[o.id]=base;
     baseGrandTotal+=base;
   }
+
   if(baseGrandTotal<=0) return;
 
-  for(const o of orders){
+  let allocatedRounded=0;
+  orders.forEach((o,index)=>{
     const base=baseByOrder[o.id];
-    const fixed=fixedDaily*(base/baseGrandTotal);
+    const rawFixed=fixedDaily>0 ? fixedDaily*(base/baseGrandTotal) : 0;
+    let fixed=Number(rawFixed.toFixed(2));
+
+    // Put the rounding remainder on the last order so the daily allocation
+    // totals exactly the configured daily fixed cost.
+    if(index===orders.length-1 && fixedDaily>0){
+      fixed=Number(Math.max(0,fixedDaily-allocatedRounded).toFixed(2));
+    }
+    allocatedRounded+=fixed;
+
     const orderItems=byOrder[o.id]||[];
     const productCost=orderItems.reduce((s,it)=>s+num(it.quantity)*num(it.cost),0);
     const newTotal=base;
     const newCostTotal=productCost+fixed;
     const newProfit=newTotal-newCostTotal;
 
-    await sb('/rest/v1/preco_orders?id=eq.'+encodeURIComponent(o.id),{
+    sb('/rest/v1/preco_orders?id=eq.'+encodeURIComponent(o.id),{
       method:'PATCH',
       headers:{Prefer:'return=minimal'},
       body:JSON.stringify({
@@ -190,7 +199,9 @@ async function rebalanceDailyOrders(){
         total_with_fixed_cost:Number(newCostTotal.toFixed(2))
       })
     });
-  }
+  });
+
+  await Promise.all([]);
 }
 
 async function saveOrderDraft(){
