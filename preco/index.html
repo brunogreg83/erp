@@ -44,12 +44,9 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 <p class="muted">Os dados de custo são usados somente para o cálculo interno de margem.</p>
 <div class="summary" style="margin-top:16px">
 <div class="metric">Venda total<b id="totalSale">R$ 0,00</b></div>
-<div class="metric">Margem<b id="totalMargin">—</b></div>
-<div class="metric">Margem padrão<b>100%</b></div>
-<div class="metric">Precificação do pedido<b id="totalStatus"><span class="badge yellow">⚪ SEM PEDIDO</span></b></div>
 </div>
 <div style="overflow:auto;margin-top:16px">
-<table><thead><tr><th>Produto</th><th>Qtd.</th><th>Preço</th><th>Total</th><th>Precificação</th><th>Margem</th><th></th></tr></thead><tbody id="items"></tbody></table>
+<table><thead><tr><th>Produto</th><th>Qtd.</th><th>Preço</th><th>Total</th><th></th></tr></thead><tbody id="items"></tbody></table>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px">
       <button id="btnSaveOrder" class="primary" type="button">Salvar pedido</button>
       <button id="btnClearOrder" class="secondary" type="button">Limpar pedido</button>
@@ -63,7 +60,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 <p id="savedOrdersMsg" class="muted">Carregando pedidos...</p>
 <div style="overflow:auto">
 <table>
-<thead><tr><th>ID</th><th>Cliente</th><th>Data</th><th>Total</th><th>Margem</th><th>Status</th><th>Ações</th></tr></thead>
+<thead><tr><th>ID</th><th>Cliente</th><th>Data</th><th>Total</th><th>Status</th><th>Ações</th></tr></thead>
 <tbody id="savedOrdersBody"></tbody>
 </table>
 </div>
@@ -316,7 +313,7 @@ async function loadSavedOrders(){
         <td>${escapeHtml(o.customer_name||'—')}</td>
         <td>${escapeHtml(date)}</td>
         <td>${money(o.total)}</td>
-        <td>${num(o.markup_percent).toFixed(2)}%</td>
+        
         <td>${escapeHtml(o.status||'—')}</td>
         <td style="white-space:nowrap">
           <button class="secondary" type="button" onclick="editSavedOrder(${Number(o.id)})">Editar</button>
@@ -347,7 +344,7 @@ function escapeHtml(v){return String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;',
 function addItem(){const p=products.find(x=>String(x.id)===String(document.getElementById('product').value));if(!p)return;const q=Math.max(1,num(document.getElementById('qty').value)),pr=num(document.getElementById('price').value);items.push({productId:p.id,name:p.name,cost:num(p.cost),suggested:num(p.suggested_price),min:num(p.min_price),qty:q,price:pr});render()}
 window.addItem=addItem;window.removeItem=i=>{items.splice(i,1);render()};
 function priceStatus(price,suggested,min){const p=num(price),s=num(suggested),m=num(min);if(m>0&&p<m)return ['red','🔴 VERMELHO'];if(s>0&&p<s)return ['yellow','🟡 AMARELO'];return ['green','🟢 VERDE']}
-function render(){const tbody=document.getElementById('items');tbody.innerHTML='';let total=0,costTotal=0,suggestedTotal=0,minTotal=0;items.forEach((x,i)=>{const t=x.qty*x.price,c=x.qty*x.cost;total+=t;costTotal+=c;suggestedTotal+=x.qty*x.suggested;minTotal+=x.qty*x.min;const margin=c?((t-c)/c)*100:0,st=priceStatus(x.price,x.suggested,x.min);tbody.insertAdjacentHTML('beforeend',`<tr><td>${escapeHtml(x.name)}</td><td>${x.qty}</td><td>${money(x.price)}</td><td>${money(t)}</td><td><span class="badge ${st[0]}">${st[1]}</span></td><td>${margin.toFixed(1)}%</td><td><button class="danger" onclick="removeItem(${i})">X</button></td></tr>`)});document.getElementById('totalSale').textContent=money(total);document.getElementById('totalMargin').textContent=costTotal?money(total-costTotal)+' ('+(((total-costTotal)/costTotal)*100).toFixed(1)+'%)':'—';const overall=items.length?priceStatus(total,suggestedTotal,minTotal):['yellow','⚪ SEM PEDIDO'];document.getElementById('totalStatus').innerHTML=`<span class="badge ${overall[0]}">${overall[1]}</span>`}
+function render(){const tbody=document.getElementById('items');tbody.innerHTML='';let total=0,costTotal=0,suggestedTotal=0,minTotal=0;items.forEach((x,i)=>{const t=x.qty*x.price,c=x.qty*x.cost;total+=t;costTotal+=c;suggestedTotal+=x.qty*x.suggested;minTotal+=x.qty*x.min;const margin=c?((t-c)/c)*100:0,st=priceStatus(x.price,x.suggested,x.min);tbody.insertAdjacentHTML('beforeend',`<tr><td>${escapeHtml(x.name)}</td><td>${x.qty}</td><td>${money(x.price)}</td><td>${money(t)}</td><td><span class="badge ${st[0]}">${st[1]}</span></td><td>${margin.toFixed(1)}%</td><td><button class="danger" onclick="removeItem(${i})">X</button></td></tr>`)});document.getElementById('totalSale').textContent=money(total);}
 
 document.addEventListener('DOMContentLoaded',()=>{const saveBtn=document.getElementById('btnSaveOrder');const clearBtn=document.getElementById('btnClearOrder');if(saveBtn)saveBtn.addEventListener('click',saveOrderDraft);if(clearBtn)clearBtn.addEventListener('click',clearOrderDraft);const refreshOrders=document.getElementById('btnRefreshOrders');if(refreshOrders)refreshOrders.addEventListener('click',loadSavedOrders);loadSavedOrders();});
 
