@@ -75,8 +75,15 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 
   <section class="card" style="margin:0;border:1px solid #dbe3eb">
     <h3 style="margin-top:0">Custos Variáveis</h3>
-    <p class="muted">Custos que variam conforme o produto, venda ou operação.</p>
+    <p class="muted">Informe o produto e todos os custos variáveis. O preço de venda é calculado automaticamente a partir do total dos custos variáveis e do markup.</p>
+
     <div class="grid" style="grid-template-columns:1fr 1fr">
+      <div class="full"><label>Produto</label><input id="pName" placeholder="Nome do produto"></div>
+      <div><label>Preço de Venda</label><input id="pSale" type="number" min="0" step="0.01" placeholder="Calculado automaticamente"></div>
+      <div><label>Custo do produto (R$)</label><input id="pCost" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div><label>Preço mínimo aceitável</label><input id="pMin" type="number" min="0" step="0.01" placeholder="Informado manualmente"></div>
+      <div><label>Markup (%)</label><input id="pMargin" type="number" min="0" step="0.01" value="100"></div>
+
       <div><label>Frete de compra (R$)</label><input id="variablePurchaseFreight" type="number" min="0" step="0.01" placeholder="0,00"></div>
       <div><label>Rótulo (R$)</label><input id="variableLabel" type="number" min="0" step="0.01" placeholder="0,00"></div>
       <div><label>Embalagem (R$)</label><input id="variablePackaging" type="number" min="0" step="0.01" placeholder="0,00"></div>
@@ -91,18 +98,16 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
       <div><label>Comissão (%)</label><input id="variableCommission" type="number" min="0" step="0.01" value="0"></div>
       <div><label>Taxa financeira (%)</label><input id="variableFee" type="number" min="0" step="0.01" value="1"></div>
     </div>
+
+    <div class="summary" style="margin-top:14px">
+      <div class="metric"><small>Total custos variáveis</small><b id="variableTotal">R$ 0,00</b></div>
+      <div class="metric"><small>Markup</small><b id="variableMarkupResult">100,00%</b></div>
+      <div class="metric"><small>Preço de venda calculado</small><b id="variableSaleResult">R$ 0,00</b></div>
+    </div>
   </section>
 </div>
 
-<div class="grid">
-<div><label>Produto</label><input id="pName" placeholder="Nome do produto"></div>
-
-<div><label>Preço de Venda</label><input id="pSale" type="number" min="0" step="0.01" placeholder="Ex.: 200,00"></div>
-<div><label>Custo</label><input id="pCost" type="number" min="0" step="0.01" placeholder="Informe o custo"></div>
-<div><label>Preço mínimo aceitável</label><input id="pMin" type="number" min="0" step="0.01" placeholder="Informado manualmente"></div>
-<div><label>Margem (%)</label><input id="pMargin" type="number" min="0" step="0.01" value="100" readonly></div>
-<div><label>&nbsp;</label><button id="btnSaveProduct" class="primary" type="button">Salvar produto</button></div>
-</div>
+<div class="actions"><button id="btnSaveProduct" class="primary" type="button">Salvar produto</button></div>
 <p id="saveMsg" class="muted"></p>
 <div style="overflow:auto;margin-top:18px"><table><thead><tr><th>Produto</th><th>Custo</th><th>Margem</th><th>Venda</th><th></th></tr></thead><tbody id="productsAdmin"></tbody></table></div>
 </section>
@@ -395,14 +400,22 @@ function priceStatus(price,suggested,min){const p=num(price),s=num(suggested),m=
 function render(){const tbody=document.getElementById('items');tbody.innerHTML='';let total=0,costTotal=0,suggestedTotal=0,minTotal=0;items.forEach((x,i)=>{const t=x.qty*x.price,c=x.qty*x.cost;total+=t;costTotal+=c;suggestedTotal+=x.qty*x.suggested;minTotal+=x.qty*x.min;const margin=c?((t-c)/c)*100:0,st=priceStatus(x.price,x.suggested,x.min);tbody.insertAdjacentHTML('beforeend',`<tr><td>${escapeHtml(x.name)}</td><td>${x.qty}</td><td>${money(x.price)}</td><td>${money(t)}</td><td><span class="badge ${st[0]}">${st[1]}</span></td><td>${margin.toFixed(1)}%</td><td><button class="danger" onclick="removeItem(${i})">X</button></td></tr>`)});document.getElementById('totalSale').textContent=money(total);document.getElementById('totalMargin').textContent=costTotal?money(total-costTotal)+' ('+(((total-costTotal)/costTotal)*100).toFixed(1)+'%)':'—';const overall=items.length?priceStatus(total,suggestedTotal,minTotal):['yellow','⚪ SEM PEDIDO'];document.getElementById('totalStatus').innerHTML=`<span class="badge ${overall[0]}">${overall[1]}</span>`}
 
 function updateProductMarginRealtime(){
-  const cost=num(document.getElementById('pCost').value);
-  const sale=num(document.getElementById('pSale').value);
-  const margin=cost>0?((sale-cost)/cost)*100:0;
-  document.getElementById('pMargin').value=margin.toFixed(2);
+  const ids=['pCost','variablePurchaseFreight','variableLabel','variablePackaging','variableContainer','variableBox','variableTag','variableOther','variableCustomerFreight','variableVehicle','variableTravel'];
+  const total=ids.reduce((s,id)=>s+num(document.getElementById(id)?.value),0);
+  const markup=num(document.getElementById('pMargin')?.value);
+  const sale=total*(1+markup/100);
+  const saleInput=document.getElementById('pSale');
+  if(saleInput) saleInput.value=sale>0?sale.toFixed(2):'';
+  const totalEl=document.getElementById('variableTotal');
+  const markupEl=document.getElementById('variableMarkupResult');
+  const saleEl=document.getElementById('variableSaleResult');
+  if(totalEl) totalEl.textContent=money(total);
+  if(markupEl) markupEl.textContent=markup.toFixed(2).replace('.',',')+'%';
+  if(saleEl) saleEl.textContent=money(sale);
 }
 let editingProductId=null;
 
-async function editProduct(id){try{const p=await sb('/rest/v1/products?id=eq.'+encodeURIComponent(id)+'&select=id,code,name,cost,margin_percent,suggested_price,current_price&limit=1'); if(!p.length) throw new Error('Produto não encontrado.'); const x=p[0]; const pr=await sb('/rest/v1/product_pricing?select=min_price&product_id=eq.'+encodeURIComponent(id)+'&limit=1'); document.getElementById('pName').value=x.name||'';document.getElementById('pSale').value=x.current_price??'';document.getElementById('pCost').value=x.cost??'';document.getElementById('pMin').value=pr?.[0]?.min_price??'';document.getElementById('pMargin').value=x.margin_percent??100; editingProductId=id; document.getElementById('btnSaveProduct').textContent='Atualizar produto'; document.getElementById('saveMsg').className='muted';document.getElementById('saveMsg').textContent='Editando produto. Altere os dados e clique em Atualizar produto.'; window.scrollTo({top:document.getElementById('admin').offsetTop-20,behavior:'smooth'});}catch(e){document.getElementById('saveMsg').className='error';document.getElementById('saveMsg').textContent='Erro ao carregar produto: '+e.message}}
+async function editProduct(id){try{const p=await sb('/rest/v1/products?id=eq.'+encodeURIComponent(id)+'&select=id,code,name,cost,margin_percent,suggested_price,current_price&limit=1'); if(!p.length) throw new Error('Produto não encontrado.'); const x=p[0]; const pr=await sb('/rest/v1/product_pricing?select=min_price&product_id=eq.'+encodeURIComponent(id)+'&limit=1'); document.getElementById('pName').value=x.name||'';document.getElementById('pSale').value=x.current_price??'';document.getElementById('pCost').value=x.cost??'';document.getElementById('pMin').value=pr?.[0]?.min_price??'';document.getElementById('pMargin').value=x.margin_percent??100; updateProductMarginRealtime(); editingProductId=id; document.getElementById('btnSaveProduct').textContent='Atualizar produto'; document.getElementById('saveMsg').className='muted';document.getElementById('saveMsg').textContent='Editando produto. Altere os dados e clique em Atualizar produto.'; window.scrollTo({top:document.getElementById('admin').offsetTop-20,behavior:'smooth'});}catch(e){document.getElementById('saveMsg').className='error';document.getElementById('saveMsg').textContent='Erro ao carregar produto: '+e.message}}
 window.editProduct=editProduct;
 function cancelEdit(){editingProductId=null;['pName','pSale','pCost','pMin'].forEach(id=>document.getElementById(id).value='');updateProductMarginRealtime();document.getElementById('btnSaveProduct').textContent='Salvar produto';document.getElementById('saveMsg').className='muted';document.getElementById('saveMsg').textContent='';}
 window.cancelEdit=cancelEdit;
@@ -433,14 +446,12 @@ async function delProduct(id){if(!confirm('Excluir este produto?'))return;try{aw
 document.addEventListener('DOMContentLoaded',()=>{
   const saveBtn=document.getElementById('btnSaveOrder');
   const clearBtn=document.getElementById('btnClearOrder');
-  const costInput=document.getElementById('pCost');
-  const saleInput=document.getElementById('pSale');
+  const variableInputs=['pCost','pMargin','variablePurchaseFreight','variableLabel','variablePackaging','variableContainer','variableBox','variableTag','variableOther','variableCustomerFreight','variableVehicle','variableTravel'];
   if(saveBtn) saveBtn.addEventListener('click',saveOrderDraft);
   if(clearBtn) clearBtn.addEventListener('click',clearOrderDraft);
   const refreshOrders=document.getElementById('btnRefreshOrders');
   if(refreshOrders) refreshOrders.addEventListener('click',loadSavedOrders);
-  if(costInput) costInput.addEventListener('input',updateProductMarginRealtime);
-  if(saleInput) saleInput.addEventListener('input',updateProductMarginRealtime);
+  variableInputs.forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',updateProductMarginRealtime)});
   updateProductMarginRealtime();
   loadSavedOrders();
 });
