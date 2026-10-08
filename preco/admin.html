@@ -89,7 +89,7 @@ async function saveProduct(){const msg=document.getElementById("saveMsg");try{co
 async function delProduct(id){if(!confirm("Excluir este produto?"))return;try{await sb("/rest/v1/preco_product_costs?product_id=eq."+encodeURIComponent(id),{method:"DELETE"});await sb("/rest/v1/preco_products?id=eq."+encodeURIComponent(id),{method:"DELETE"});await loadAdmin()}catch(e){alert("Não foi possível excluir: "+e.message)}}
 document.getElementById("fixedMonthlyCost").addEventListener("input",updateFixedCostDaily);
 document.getElementById("fixedDays").addEventListener("input",updateFixedCostDaily);
-document.getElementById("btnSaveFixedCost").addEventListener("click",saveFixedCost);
+document.getElementById("btnSaveFixedCost").addEventListener("click",saveFixedCost);\ndocument.getElementById("btnSaveProduct").addEventListener("click",saveProduct);
 [...document.querySelectorAll("#pCost,#pMargin,#variablePurchaseFreight,#variableLabel,#variablePackaging,#variableContainer,#variableBox,#variableTag,#variableOther,#variableCustomerFreight,#variableVehicle,#variableTravel,#variableTaxes,#variableCommission,#variableFee")].forEach(e=>e.addEventListener("input",calc));
 loadFixedCost();calc();loadAdmin();
 </script>
