@@ -85,7 +85,76 @@ let editingProductId=null;
 function clearForm(){editingProductId=null;["pName","pSale","pCost"].forEach(id=>document.getElementById(id).value="");Object.values(costFields).forEach(id=>{const e=document.getElementById(id);if(e)e.value=(id==="variableTaxes"?"4":id==="variableFee"?"1":id==="variableCommission"?"0":"0")});document.getElementById("pMargin").value="100";document.getElementById("btnSaveProduct").textContent="Salvar produto";document.getElementById("saveMsg").textContent="";calc()}
 async function loadAdmin(){const tbody=document.getElementById("productsAdmin");tbody.innerHTML='<tr><td colspan="5">Carregando...</td></tr>';try{const data=await sb("/rest/v1/preco_products?select=id,name,cost,margin_percent,current_price&active=eq.true&order=name.asc");tbody.innerHTML=(data||[]).map(p=>`<tr><td>${String(p.name||"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]))}</td><td>${money(p.cost)}</td><td>${Number(p.margin_percent||0).toFixed(2)}%</td><td>${money(p.current_price)}</td><td><button class="secondary" onclick="editProduct('${p.id}')">Editar</button> <button class="danger" onclick="delProduct('${p.id}')">Excluir</button></td></tr>`).join("")||'<tr><td colspan="5">Nenhum produto cadastrado.</td></tr>'}catch(e){tbody.innerHTML=`<tr><td colspan="5" class="error">${e.message}</td></tr>`}}
 async function editProduct(id){try{const p=await sb("/rest/v1/preco_products?id=eq."+encodeURIComponent(id)+"&select=*&limit=1");if(!p?.[0])throw new Error("Produto não encontrado.");const x=p[0],rows=await sb("/rest/v1/preco_product_costs?product_id=eq."+encodeURIComponent(id)+"&limit=1");document.getElementById("pName").value=x.name||"";document.getElementById("pCost").value=x.cost??0;document.getElementById("pSale").value=x.current_price??0;document.getElementById("pMargin").value=x.margin_percent??100;const row=rows?.[0];if(row)Object.entries(costFields).forEach(([k,id2])=>{if(document.getElementById(id2))document.getElementById(id2).value=row[k]??0});editingProductId=id;document.getElementById("btnSaveProduct").textContent="Atualizar produto";calc();window.scrollTo({top:0,behavior:"smooth"})}catch(e){document.getElementById("saveMsg").className="error";document.getElementById("saveMsg").textContent="Erro ao carregar: "+e.message}}
-async function saveProduct(){const msg=document.getElementById("saveMsg");try{const name=document.getElementById("pName").value.trim(),cost=num(document.getElementById("pCost").value),r=calc();if(!name){msg.className="error";msg.textContent="Informe o nome do produto.";return}if(cost<=0){msg.className="error";msg.textContent="Informe um custo maior que zero.";return}const payload={name,cost,margin_percent:r.markup,suggested_price:r.sale,current_price:r.sale,active:true};let id=editingProductId;if(id){await sb("/rest/v1/preco_products?id=eq."+encodeURIComponent(id),{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(payload)});const check=await sb("/rest/v1/preco_products?id=eq."+encodeURIComponent(id)+"&select=id,name,cost,current_price,margin_percent&limit=1");if(!check?.[0])throw new Error("O produto não foi atualizado no banco de dados.")}else{const created=await sb("/rest/v1/preco_products",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify(payload)});id=Array.isArray(created)?created[0]?.id:created?.id;if(!id)throw new Error("Supabase não retornou o ID do produto.")}const costs={product_id:id};Object.entries(costFields).forEach(([k,id2])=>costs[k]=num(document.getElementById(id2)?.value));const existingCosts=await sb("/rest/v1/preco_product_costs?product_id=eq."+encodeURIComponent(id)+"&select=product_id&limit=1");if(existingCosts?.[0]){await sb("/rest/v1/preco_product_costs?product_id=eq."+encodeURIComponent(id),{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(costs)})}else{await sb("/rest/v1/preco_product_costs",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify(costs)})}msg.className="ok";msg.textContent=editingProductId?"Produto atualizado com sucesso.":"Produto salvo com sucesso.";clearForm();await loadAdmin()}catch(e){msg.className="error";msg.textContent="Erro ao salvar produto: "+e.message}}
+async function saveProduct(){
+  const msg=document.getElementById("saveMsg");
+  try{
+    const name=document.getElementById("pName").value.trim();
+    const cost=num(document.getElementById("pCost").value);
+    const r=calc();
+    if(!name){msg.className="error";msg.textContent="Informe o nome do produto.";return}
+    if(cost<=0){msg.className="error";msg.textContent="Informe um custo maior que zero.";return}
+
+    let id=editingProductId;
+    const payload={
+      name,
+      cost,
+      margin_percent:r.markup,
+      suggested_price:r.sale,
+      current_price:r.sale,
+      active:true
+    };
+
+    if(id){
+      // Atualização explícita do registro existente.
+      await sb("/rest/v1/preco_products?id=eq."+encodeURIComponent(id),{
+        method:"PATCH",
+        headers:{Prefer:"return=representation"},
+        body:JSON.stringify(payload)
+      });
+    }else{
+      const created=await sb("/rest/v1/preco_products",{
+        method:"POST",
+        headers:{Prefer:"return=representation"},
+        body:JSON.stringify(payload)
+      });
+      id=Array.isArray(created)?created[0]?.id:created?.id;
+      if(!id)throw new Error("Supabase não retornou o ID do produto.");
+    }
+
+    // Confirma que o produto existe com os novos dados.
+    const verify=await sb("/rest/v1/preco_products?id=eq."+encodeURIComponent(id)+"&select=id,name,cost,current_price,margin_percent&limit=1");
+    if(!verify?.[0])throw new Error("O produto não foi localizado após a gravação.");
+
+    const costs={product_id:id};
+    Object.entries(costFields).forEach(([k,id2])=>{
+      costs[k]=num(document.getElementById(id2)?.value);
+    });
+
+    const existingCosts=await sb("/rest/v1/preco_product_costs?product_id=eq."+encodeURIComponent(id)+"&select=product_id&limit=1");
+    if(existingCosts?.[0]){
+      await sb("/rest/v1/preco_product_costs?product_id=eq."+encodeURIComponent(id),{
+        method:"PATCH",
+        headers:{Prefer:"return=minimal"},
+        body:JSON.stringify(costs)
+      });
+    }else{
+      await sb("/rest/v1/preco_product_costs",{
+        method:"POST",
+        headers:{Prefer:"return=minimal"},
+        body:JSON.stringify(costs)
+      });
+    }
+
+    msg.className="ok";
+    msg.textContent=editingProductId?"Produto atualizado com sucesso.":"Produto salvo com sucesso.";
+    clearForm();
+    await loadAdmin();
+  }catch(e){
+    console.error("saveProduct:",e);
+    msg.className="error";
+    msg.textContent="Erro ao salvar produto: "+e.message;
+  }
+}
 async function delProduct(id){if(!confirm("Excluir este produto?"))return;try{await sb("/rest/v1/preco_product_costs?product_id=eq."+encodeURIComponent(id),{method:"DELETE"});await sb("/rest/v1/preco_products?id=eq."+encodeURIComponent(id),{method:"DELETE"});await loadAdmin()}catch(e){alert("Não foi possível excluir: "+e.message)}}
 document.getElementById("fixedMonthlyCost").addEventListener("input",updateFixedCostDaily);
 document.getElementById("fixedDays").addEventListener("input",updateFixedCostDaily);
