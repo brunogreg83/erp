@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="frontend-version" content="2026-10-08-03">
+<meta name="frontend-version" content="2026-10-08-04">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB Chemicals | Controle de Preços</title>
@@ -205,33 +205,25 @@ async function saveOrderDraft(){
       msg.className='ok';
       msg.textContent='PEDIDO ATUALIZADO NO SUPABASE — ID: '+savedId;
     }else{
-      // NOVO PEDIDO: usa a RPC existente para criar um novo ID.
-      const rpcPayload={
-        p_customer_name:customer,
-        p_total:Number(total.toFixed(2)),
-        p_cost_total:Number(costTotal.toFixed(2)),
-        p_profit:Number(profit.toFixed(2)),
-        p_margin_percent:Number(margin.toFixed(2)),
-        p_status:'Orçamento',
-        p_items:items.map(x=>({
-          product_id:x.productId==null?null:String(x.productId),
-          product_name:String(x.name||''),
-          quantity:Number(num(x.qty)),
-          cost:Number(num(x.cost).toFixed(2)),
-          sale_price:Number(num(x.price).toFixed(2)),
-          total:Number((num(x.qty)*num(x.price)).toFixed(2)),
-          margin_percent:Number((num(x.cost)?(((num(x.price)-num(x.cost))/num(x.cost))*100):0).toFixed(2))
-        }))
-      };
-
-      const result=await sb('/rest/v1/rpc/ab_save_order',{
+      // NOVO PEDIDO: grava diretamente nas tabelas do frontend de preços.
+      // Não usa a RPC antiga, que grava em estruturas diferentes.
+      const created=await sb('/rest/v1/preco_orders',{
         method:'POST',
         headers:{Prefer:'return=representation'},
-        body:JSON.stringify(rpcPayload)
+        body:JSON.stringify(orderPayload)
       });
 
-      const saved=Array.isArray(result)?result[0]:result;
+      const saved=Array.isArray(created)?created[0]:created;
       if(!saved || !saved.id) throw new Error('O Supabase não retornou o ID do pedido.');
+
+      const rows=itemRows.map(x=>({...x,order_id:saved.id}));
+      if(rows.length){
+        await sb('/rest/v1/preco_order_items',{
+          method:'POST',
+          headers:{Prefer:'return=minimal'},
+          body:JSON.stringify(rows)
+        });
+      }
 
       savedId=saved.id;
       currentOrderId=saved.id;
