@@ -347,23 +347,7 @@ window.addItem=addItem;window.removeItem=i=>{items.splice(i,1);render()};
 function priceStatus(price,suggested,min){const p=num(price),s=num(suggested),m=num(min);if(m>0&&p<m)return ['red','🔴 VERMELHO'];if(s>0&&p<s)return ['yellow','🟡 AMARELO'];return ['green','🟢 VERDE']}
 function render(){const tbody=document.getElementById('items');tbody.innerHTML='';let total=0,costTotal=0,suggestedTotal=0,minTotal=0;items.forEach((x,i)=>{const t=x.qty*x.price,c=x.qty*x.cost;total+=t;costTotal+=c;suggestedTotal+=x.qty*x.suggested;minTotal+=x.qty*x.min;const margin=c?((t-c)/c)*100:0,st=priceStatus(x.price,x.suggested,x.min);tbody.insertAdjacentHTML('beforeend',`<tr><td>${escapeHtml(x.name)}</td><td>${x.qty}</td><td>${money(x.price)}</td><td>${money(t)}</td><td><span class="badge ${st[0]}">${st[1]}</span></td><td>${margin.toFixed(1)}%</td><td><button class="danger" onclick="removeItem(${i})">X</button></td></tr>`)});document.getElementById('totalSale').textContent=money(total);document.getElementById('totalMargin').textContent=costTotal?money(total-costTotal)+' ('+(((total-costTotal)/costTotal)*100).toFixed(1)+'%)':'—';const overall=items.length?priceStatus(total,suggestedTotal,minTotal):['yellow','⚪ SEM PEDIDO'];document.getElementById('totalStatus').innerHTML=`<span class="badge ${overall[0]}">${overall[1]}</span>`}
 
-document.addEventListener('DOMContentLoaded',()=>{
-  const saveBtn=document.getElementById('btnSaveOrder');
-  const clearBtn=document.getElementById('btnClearOrder');
-  const variableInputs=['pCost','pMargin','variablePurchaseFreight','variableLabel','variablePackaging','variableContainer','variableBox','variableTag','variableOther','variableCustomerFreight','variableVehicle','variableTravel'];
-  const fixedInputs=['fixedMonthlyCost','fixedDays'];
-  fixedInputs.forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',updateFixedCostDaily)});
-  const saveFixed=document.getElementById('btnSaveFixedCost');
-  if(saveFixed) saveFixed.addEventListener('click',saveFixedCost);
-  loadFixedCost();
-  if(saveBtn) saveBtn.addEventListener('click',saveOrderDraft);
-  if(clearBtn) clearBtn.addEventListener('click',clearOrderDraft);
-  const refreshOrders=document.getElementById('btnRefreshOrders');
-  if(refreshOrders) refreshOrders.addEventListener('click',loadSavedOrders);
-  variableInputs.forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',updateProductMarginRealtime)});
-  updateProductMarginRealtime();
-  loadSavedOrders();
-});
+document.addEventListener('DOMContentLoaded',()=>{const saveBtn=document.getElementById('btnSaveOrder');const clearBtn=document.getElementById('btnClearOrder');if(saveBtn)saveBtn.addEventListener('click',saveOrderDraft);if(clearBtn)clearBtn.addEventListener('click',clearOrderDraft);const refreshOrders=document.getElementById('btnRefreshOrders');if(refreshOrders)refreshOrders.addEventListener('click',loadSavedOrders);loadSavedOrders();});
 
 loadProducts().catch(e=>{console.error(e);document.getElementById('product').innerHTML='<option>Erro ao carregar produtos</option>'});
 
