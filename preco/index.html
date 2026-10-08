@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="frontend-version" content="2026-10-08-22">
+<meta name="frontend-version" content="2026-10-08-23">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB Chemicals | Precificação</title>
@@ -144,8 +144,8 @@ async function sb(path, options={}){
 
 let currentOrderId=null;
 
-async function rebalanceDailyOrders(){
-  const now=new Date();
+async function rebalanceDailyOrders(referenceDate=null){
+  const now=referenceDate ? new Date(referenceDate) : new Date();
   const y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0'),d=String(now.getDate()).padStart(2,'0');
   const dayStart=y+'-'+m+'-'+d+'T00:00:00';
   const dayEnd=y+'-'+m+'-'+d+'T23:59:59.999';
@@ -395,6 +395,9 @@ async function deleteSavedOrder(orderId){
 
   const msg=document.getElementById('savedOrdersMsg');
   try{
+    const existing=await sb('/rest/v1/preco_orders?id=eq.'+encodeURIComponent(orderId)+'&select=id,created_at');
+    const deletedOrderDate=Array.isArray(existing)&&existing[0]?.created_at ? existing[0].created_at : null;
+
     await sb('/rest/v1/preco_order_items?order_id=eq.'+encodeURIComponent(orderId),{
       method:'DELETE',
       headers:{Prefer:'return=minimal'}
@@ -415,7 +418,7 @@ async function deleteSavedOrder(orderId){
     msg.className='ok';
     msg.textContent='Pedido ID '+orderId+' excluído.';
     await loadPricingContext(null);
-    await rebalanceDailyOrders();
+    await rebalanceDailyOrders(deletedOrderDate);
     await loadSavedOrders();
   }catch(e){
     msg.className='error';
