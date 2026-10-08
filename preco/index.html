@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="frontend-version" content="2026-10-08-15">
+<meta name="frontend-version" content="2026-10-08-16">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB Chemicals | Precificação</title>
@@ -332,8 +332,8 @@ async function saveOrderDraft(){
     }
 
     await rebalanceDailyOrders();
-    await loadPricingContext(currentOrderId);
     await loadSavedOrders();
+    clearOrderDraft();
   }catch(e){
     console.error(e);
     msg.className='error';
@@ -344,19 +344,31 @@ async function saveOrderDraft(){
 function clearOrderDraft(){
   items=[];
   currentOrderId=null;
-  loadPricingContext(currentOrderId).then(()=>repriceDraft()).then(()=>render()).catch(e=>console.error(e));const saveBtn=document.getElementById('btnSaveOrder');
-  if(saveBtn) saveBtn.textContent='Salvar pedido';
+
   const customer=document.getElementById('orderCustomer');
   if(customer) customer.value='';
+
+  const qty=document.getElementById('qty');
+  if(qty) qty.value='1';
+
+  const price=document.getElementById('price');
+  if(price) price.value='';
+
+  const product=document.getElementById('product');
+  if(product && product.options.length) product.selectedIndex=0;
+
+  const saveBtn=document.getElementById('btnSaveOrder');
+  if(saveBtn) saveBtn.textContent='Salvar pedido';
+
+  pricingContext.dailySales=0;
   render();
+
   const msg=document.getElementById('orderSaveMsg');
   if(msg){
     msg.className='muted';
     msg.textContent='Novo pedido.';
   }
 }
-
-
 
 async function editSavedOrder(orderId){
   try{
