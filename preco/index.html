@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="frontend-version" content="2026-10-08-16">
+<meta name="frontend-version" content="2026-10-08-17">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB Chemicals | Precificação</title>
@@ -115,25 +115,14 @@ async function loadPricingContext(excludeOrderId=null){
  pricingContext.dailySales=(orders||[]).filter(o=>String(o.id)!==String(excludeOrderId)).reduce((s,o)=>s+Math.max(0,num(o.total)-num(o.fixed_cost_allocated)),0);
 }
 function targetOrderTotal(baseSales){
- const B=num(baseSales),F=num(pricingContext.fixedCostDaily),S=num(pricingContext.dailySales);
- if(B<=0)return 0;
- // O usuário define livremente o preço de venda.
- // O preço só é alterado automaticamente quando existe custo fixo diário.
- // Nesse caso, somente o custo fixo rateado é acrescentado ao preço informado.
- if(F<=0)return B;
- const fixedAllocated=F*(B/(S+B));
- return B+fixedAllocated;
+ const B=num(baseSales);
+ // O preço de venda é definido exclusivamente pelo usuário.
+ // O custo fixo nunca altera o preço unitário dos produtos.
+ return B;
 }
 function repriceDraft(){
- if(!items.length)return;
- const baseTotal=items.reduce((s,x)=>s+num(x.qty)*num(x.basePrice??x.price),0);
- if(baseTotal<=0)return;
- const target=targetOrderTotal(baseTotal);
- const factor=baseTotal>0?target/baseTotal:1;
- items.forEach(x=>{
-   const base=num(x.basePrice??x.price);
-   x.price=Number((base*factor).toFixed(2));
- });
+ // Intencionalmente sem alteração automática de preços.
+ // O custo fixo é tratado separadamente no pedido.
 }
 
 async function sb(path, options={}){
@@ -205,24 +194,8 @@ async function rebalanceDailyOrders(){
       })
     });
 
-    // Mantém a proporção dos preços dos itens e redistribui o custo fixo
-    // sem aplicar margem sobre ele.
-    if(orderItems.length && oldTotal>0){
-      const factor=newTotal/oldTotal;
-      for(const it of orderItems){
-        const newPrice=num(it.sale_price)*factor;
-        const newItemTotal=num(it.quantity)*newPrice;
-        await sb('/rest/v1/preco_order_items?id=eq.'+encodeURIComponent(it.id),{
-          method:'PATCH',
-          headers:{Prefer:'return=minimal'},
-          body:JSON.stringify({
-            sale_price:Number(newPrice.toFixed(2)),
-            total:Number(newItemTotal.toFixed(2))
-          })
-        });
-      }
-    }
   }
+}
 }
 
 async function saveOrderDraft(){
@@ -389,7 +362,6 @@ async function editSavedOrder(orderId){
     }));
     currentOrderId=order.id;
     await loadPricingContext(currentOrderId);
-    repriceDraft();
     const saveBtn=document.getElementById('btnSaveOrder');
     if(saveBtn) saveBtn.textContent='Atualizar pedido';
 
@@ -498,8 +470,8 @@ document.getElementById('product').addEventListener('change',()=>{
  document.getElementById('price').value=p?.current_price??'';
 });
 function escapeHtml(v){return String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]))}
-async function addItem(){const p=products.find(x=>String(x.id)===String(document.getElementById('product').value));if(!p)return;const q=Math.max(1,num(document.getElementById('qty').value)),pr=num(document.getElementById('price').value);items.push({productId:p.id,name:p.name,cost:num(p.cost),suggested:num(p.suggested_price),min:num(p.min_price),qty:q,price:pr,basePrice:pr});try{await loadPricingContext(currentOrderId);repriceDraft();const added=items[items.length-1];if(added)document.getElementById('price').value=num(added.price).toFixed(2);render()}catch(e){console.error(e);render()}}
-window.addItem=addItem;window.removeItem=async i=>{items.splice(i,1);try{await loadPricingContext(currentOrderId);repriceDraft();render()}catch(e){console.error(e);render()}};
+async function addItem(){const p=products.find(x=>String(x.id)===String(document.getElementById('product').value));if(!p)return;const q=Math.max(1,num(document.getElementById('qty').value)),pr=num(document.getElementById('price').value);items.push({productId:p.id,name:p.name,cost:num(p.cost),suggested:num(p.suggested_price),min:num(p.min_price),qty:q,price:pr,basePrice:pr});try{await loadPricingContext(currentOrderId);const added=items[items.length-1];if(added)document.getElementById('price').value=num(added.price).toFixed(2);render()}catch(e){console.error(e);render()}}
+window.addItem=addItem;window.removeItem=async i=>{items.splice(i,1);try{await loadPricingContext(currentOrderId);render()}catch(e){console.error(e);render()}};
 function priceStatus(price,suggested,min){const p=num(price),s=num(suggested),m=num(min);if(m>0&&p<m)return ['red','🔴 VERMELHO'];if(s>0&&p<s)return ['yellow','🟡 AMARELO'];return ['green','🟢 VERDE']}
 let editingItemIndex=null;
 
@@ -529,7 +501,6 @@ function confirmEditItem(){
   x.price=newBasePrice;
   cancelEditItem();
   loadPricingContext(currentOrderId).then(()=>{
-    repriceDraft();
     render();
   }).catch(e=>{console.error(e);render();});
 }
