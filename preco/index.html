@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="frontend-version" content="2026-10-08-27">
+<meta name="frontend-version" content="2026-10-08-28">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB Chemicals | Precificação</title>
@@ -111,8 +111,9 @@ async function loadPricingContext(excludeOrderId=null){
    sb('/rest/v1/preco_orders?select=id,created_at&created_at=gte.'+encodeURIComponent(dayStart)+'&created_at=lte.'+encodeURIComponent(dayEnd))
  ]);
  const amount=num(fc?.[0]?.amount);
- // O custo fixo mensal é distribuído por 30 dias, conforme a regra da precificação.
- pricingContext.fixedCostDaily=amount/30;
+ // Usa exatamente o mesmo valor diário calculado no Back-office:
+ // custo fixo mensal ÷ 30 dias.
+ pricingContext.fixedCostDaily=Number((amount/30).toFixed(2));
 
  const ids=(orders||[]).filter(o=>String(o.id)!==String(excludeOrderId)).map(o=>o.id);
  if(!ids.length){
