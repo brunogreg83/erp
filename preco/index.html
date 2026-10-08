@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="frontend-version" content="2026-10-08-09">
+<meta name="frontend-version" content="2026-10-08-10">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB Chemicals | Controle de Preços</title>
@@ -104,12 +104,13 @@ async function loadPricingContext(excludeOrderId=null){
  pricingContext.dailySales=(orders||[]).filter(o=>String(o.id)!==String(excludeOrderId)).reduce((s,o)=>s+num(o.total),0);
 }
 function targetOrderTotal(productCost,baseSales){
- const C=num(productCost),F=num(pricingContext.fixedCostDaily),S=num(pricingContext.dailySales);
+ const C=num(productCost),F=num(pricingContext.fixedCostDaily),B=num(baseSales),S=num(pricingContext.dailySales);
  if(!C)return 0;
+ // A margem de 100% incide somente sobre o custo dos produtos.
+ // O custo fixo é apenas somado ao preço, sem receber margem.
  if(F<=0)return C*2;
- const b=S-2*C-2*F;
- const disc=b*b+8*C*S;
- return Math.max(0,(-b+Math.sqrt(Math.max(0,disc)))/2);
+ const fixedAllocated=F*(B/(S+B));
+ return C*2+fixedAllocated;
 }
 function repriceDraft(){
  if(!items.length)return;
@@ -142,8 +143,9 @@ async function saveOrderDraft(){
     const customer=(document.getElementById('orderCustomer')?.value||'').trim();
     const total=items.reduce((s,x)=>s+(num(x.qty)*num(x.price)),0);
     const costTotal=items.reduce((s,x)=>s+(num(x.qty)*num(x.cost)),0);
-    const fixedAllocated=pricingContext.fixedCostDaily>0&&total>0
-      ? pricingContext.fixedCostDaily*(total/(pricingContext.dailySales+total))
+    const baseTotal=items.reduce((s,x)=>s+(num(x.qty)*num(x.basePrice??x.price)),0);
+    const fixedAllocated=pricingContext.fixedCostDaily>0&&baseTotal>0
+      ? pricingContext.fixedCostDaily*(baseTotal/(pricingContext.dailySales+baseTotal))
       : 0;
     const adjustedCost=costTotal+fixedAllocated;
     const profit=total-adjustedCost;
@@ -389,7 +391,7 @@ function escapeHtml(v){return String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;',
 async function addItem(){const p=products.find(x=>String(x.id)===String(document.getElementById('product').value));if(!p)return;const q=Math.max(1,num(document.getElementById('qty').value)),pr=num(document.getElementById('price').value);items.push({productId:p.id,name:p.name,cost:num(p.cost),suggested:num(p.suggested_price),min:num(p.min_price),qty:q,price:pr,basePrice:pr});try{await loadPricingContext(currentOrderId);repriceDraft();const added=items[items.length-1];if(added)document.getElementById('price').value=num(added.price).toFixed(2);render()}catch(e){console.error(e);render()}}
 window.addItem=addItem;window.removeItem=async i=>{items.splice(i,1);try{await loadPricingContext(currentOrderId);repriceDraft();render()}catch(e){console.error(e);render()}};
 function priceStatus(price,suggested,min){const p=num(price),s=num(suggested),m=num(min);if(m>0&&p<m)return ['red','🔴 VERMELHO'];if(s>0&&p<s)return ['yellow','🟡 AMARELO'];return ['green','🟢 VERDE']}
-function render(){const tbody=document.getElementById('items');let total=0,costTotal=0,suggestedTotal=0,minTotal=0;items.forEach(x=>{const t=num(x.qty)*num(x.price),cost=num(x.qty)*num(x.cost);total+=t;costTotal+=cost;suggestedTotal+=num(x.qty)*num(x.suggested);minTotal+=num(x.qty)*num(x.min)});if(tbody){tbody.innerHTML=items.map((x,i)=>{const t=num(x.qty)*num(x.price);return `<tr><td>${escapeHtml(x.name)}</td><td>${num(x.qty)}</td><td>${money(x.price)}</td><td>${money(t)}</td><td><button class="danger" type="button" onclick="removeItem(${i})">Excluir</button></td></tr>`}).join('');}const totalEl=document.getElementById('totalSale');if(totalEl)totalEl.textContent=money(total);const fixedAllocated=pricingContext.fixedCostDaily>0&&total>0?pricingContext.fixedCostDaily*(total/(pricingContext.dailySales+total)):0;const adjustedCost=costTotal+fixedAllocated;const productCostEl=document.getElementById('productCost');if(productCostEl)productCostEl.textContent=money(costTotal);const fixedEl=document.getElementById('fixedCostAllocated');if(fixedEl)fixedEl.textContent=money(fixedAllocated);const costEl=document.getElementById('totalCost');if(costEl)costEl.textContent=money(adjustedCost);const profit=total-adjustedCost;const profitEl=document.getElementById('totalProfit');if(profitEl)profitEl.textContent=money(profit);const itemsEl=document.getElementById('totalItems');if(itemsEl)itemsEl.textContent=String(items.reduce((s,x)=>s+num(x.qty),0));const marginEl=document.getElementById('totalMargin');if(marginEl)marginEl.textContent=adjustedCost?((profit/adjustedCost)*100).toFixed(1)+'%':'—';const statusEl=document.getElementById('totalStatus');if(statusEl){const overall=items.length?priceStatus(total,suggestedTotal,minTotal):['yellow','⚪ SEM PEDIDO'];statusEl.innerHTML=`<span class="badge ${overall[0]}">${overall[1]}</span>`}}
+function render(){const tbody=document.getElementById('items');let total=0,costTotal=0,suggestedTotal=0,minTotal=0;items.forEach(x=>{const t=num(x.qty)*num(x.price),cost=num(x.qty)*num(x.cost);total+=t;costTotal+=cost;suggestedTotal+=num(x.qty)*num(x.suggested);minTotal+=num(x.qty)*num(x.min)});if(tbody){tbody.innerHTML=items.map((x,i)=>{const t=num(x.qty)*num(x.price);return `<tr><td>${escapeHtml(x.name)}</td><td>${num(x.qty)}</td><td>${money(x.price)}</td><td>${money(t)}</td><td><button class="danger" type="button" onclick="removeItem(${i})">Excluir</button></td></tr>`}).join('');}const totalEl=document.getElementById('totalSale');if(totalEl)totalEl.textContent=money(total);const baseTotal=items.reduce((s,x)=>s+num(x.qty)*num(x.basePrice??x.price),0);const fixedAllocated=pricingContext.fixedCostDaily>0&&baseTotal>0?pricingContext.fixedCostDaily*(baseTotal/(pricingContext.dailySales+baseTotal)):0;const adjustedCost=costTotal+fixedAllocated;const productCostEl=document.getElementById('productCost');if(productCostEl)productCostEl.textContent=money(costTotal);const fixedEl=document.getElementById('fixedCostAllocated');if(fixedEl)fixedEl.textContent=money(fixedAllocated);const costEl=document.getElementById('totalCost');if(costEl)costEl.textContent=money(adjustedCost);const profit=total-adjustedCost;const profitEl=document.getElementById('totalProfit');if(profitEl)profitEl.textContent=money(profit);const itemsEl=document.getElementById('totalItems');if(itemsEl)itemsEl.textContent=String(items.reduce((s,x)=>s+num(x.qty),0));const marginEl=document.getElementById('totalMargin');if(marginEl)marginEl.textContent=adjustedCost?((profit/adjustedCost)*100).toFixed(1)+'%':'—';const statusEl=document.getElementById('totalStatus');if(statusEl){const overall=items.length?priceStatus(total,suggestedTotal,minTotal):['yellow','⚪ SEM PEDIDO'];statusEl.innerHTML=`<span class="badge ${overall[0]}">${overall[1]}</span>`}}
 
 document.addEventListener('DOMContentLoaded',()=>{const saveBtn=document.getElementById('btnSaveOrder');const clearBtn=document.getElementById('btnClearOrder');if(saveBtn)saveBtn.addEventListener('click',saveOrderDraft);if(clearBtn)clearBtn.addEventListener('click',clearOrderDraft);loadPricingContext(null).then(()=>render()).catch(e=>console.error(e));const refreshOrders=document.getElementById('btnRefreshOrders');if(refreshOrders)refreshOrders.addEventListener('click',loadSavedOrders);loadSavedOrders();});
 
