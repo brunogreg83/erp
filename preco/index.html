@@ -132,7 +132,7 @@ async function saveOrderDraft(){
     if(currentOrderId){
       // EDIÇÃO: altera o pedido existente, sem criar outro ID.
       const updated=await sb(
-        '/rest/v1/ab_orders?id=eq.'+encodeURIComponent(currentOrderId),
+        '/rest/v1/preco_orders?id=eq.'+encodeURIComponent(currentOrderId),
         {
           method:'PATCH',
           headers:{Prefer:'return=representation'},
@@ -147,13 +147,13 @@ async function saveOrderDraft(){
 
       // Remove os itens antigos e grava os itens atuais.
       await sb(
-        '/rest/v1/ab_order_items?order_id=eq.'+encodeURIComponent(currentOrderId),
+        '/rest/v1/preco_order_items?order_id=eq.'+encodeURIComponent(currentOrderId),
         {method:'DELETE',headers:{Prefer:'return=minimal'}}
       );
 
       const rows=itemRows.map(x=>({...x,order_id:currentOrderId}));
       if(rows.length){
-        await sb('/rest/v1/ab_order_items',{
+        await sb('/rest/v1/preco_order_items',{
           method:'POST',
           headers:{Prefer:'return=minimal'} ,
           body:JSON.stringify(rows)
@@ -225,11 +225,11 @@ function clearOrderDraft(){
 
 async function editSavedOrder(orderId){
   try{
-    const orders=await sb('/rest/v1/ab_orders?id=eq.'+encodeURIComponent(orderId)+'&select=id,customer_name');
+    const orders=await sb('/rest/v1/preco_orders?id=eq.'+encodeURIComponent(orderId)+'&select=id,customer_name');
     const order=Array.isArray(orders)?orders[0]:null;
     if(!order) throw new Error('Pedido não encontrado.');
 
-    const details=await sb('/rest/v1/ab_order_items?order_id=eq.'+encodeURIComponent(orderId)+'&select=product_id,product_name,quantity,cost,sale_price,total,margin_percent');
+    const details=await sb('/rest/v1/preco_order_items?order_id=eq.'+encodeURIComponent(orderId)+'&select=product_id,product_name,quantity,cost,sale_price,total,margin_percent');
     items=(details||[]).map(x=>({
       productId:x.product_id,
       name:x.product_name,
@@ -269,7 +269,11 @@ async function deleteSavedOrder(orderId){
 
   const msg=document.getElementById('savedOrdersMsg');
   try{
-    await sb('/rest/v1/ab_orders?id=eq.'+encodeURIComponent(orderId),{
+    await sb('/rest/v1/preco_order_items?order_id=eq.'+encodeURIComponent(orderId),{
+      method:'DELETE',
+      headers:{Prefer:'return=minimal'}
+    });
+    await sb('/rest/v1/preco_orders?id=eq.'+encodeURIComponent(orderId),{
       method:'DELETE',
       headers:{Prefer:'return=minimal'}
     });
