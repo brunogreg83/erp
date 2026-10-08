@@ -96,7 +96,16 @@
         Object.entries(map).forEach(([from,to])=>{if(x&&document.getElementById(to))document.getElementById(to).value=x[from]??0});
         document.getElementById("productMsg").className="msg ok";
         document.getElementById("productMsg").textContent="Todos os dados do produto foram carregados para edição.";
-        setTimeout(()=>{if(typeof recalc==="function")recalc()},0);
+        const n=id=>Math.max(0,Number(document.getElementById(id)?.value)||0), money2=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+        const directCost=n("baseCost")+n("purchaseFreight")+n("labelCost")+n("packaging")+n("containerCost")+n("boxCost")+n("tagCost")+n("otherCost")+n("customerFreight")+n("vehicleCost")+n("travelCost");
+        const rates=(n("taxes")+n("commission")+n("fee"))/100, mk=n("markup")/100;
+        const denominator=1-rates*(2+mk);
+        const suggested=denominator>0?(directCost*(1+mk))/denominator:0;
+        const profit=suggested-directCost-suggested*rates;
+        document.getElementById("totalCost").textContent=money2(directCost);
+        document.getElementById("suggested").textContent=money2(suggested);
+        document.getElementById("netMargin").textContent=(suggested?((profit/suggested)*100):0).toFixed(2).replace(".",",")+"%";
+        document.getElementById("current").textContent=money2(n("currentPrice")||suggested);
         document.getElementById("saveProduct").scrollIntoView({behavior:"smooth",block:"center"});
       }catch(err){alert("Erro ao carregar dados do produto: "+err.message);}
     }
