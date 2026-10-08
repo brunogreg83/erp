@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AB Chemicals | Back-office</title>
+<style>
+:root{--blue:#0b1d2d;--cyan:#159bd7;--bg:#f4f7fa}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#17212b}
+header{background:var(--blue);color:#fff;padding:18px 20px}header h1{margin:0;font-size:21px}header small{opacity:.8}
+nav{display:flex;gap:8px;padding:12px;background:#fff;border-bottom:1px solid #ddd;position:sticky;top:0;z-index:5}
+button{border:0;border-radius:8px;padding:10px 14px;cursor:pointer;font-weight:600}.primary{background:var(--cyan);color:white}.secondary{background:#e9eef2}.danger{background:#c62828;color:white}
+main{max-width:1100px;margin:20px auto;padding:0 14px}.card{background:white;border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:0 2px 10px #0000000d}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+label{font-size:13px;font-weight:700;display:block;margin-bottom:5px}input,select{width:100%;padding:10px;border:1px solid #cbd5df;border-radius:8px;font-size:15px}
+table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid #e6eaee;text-align:left}th{font-size:13px;background:#f7f9fb}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}.metric{background:#f7f9fb;border-radius:10px;padding:13px}.metric b{display:block;font-size:18px;margin-top:5px}
+.muted{color:#6d7780;font-size:13px}.ok{color:#087a35;font-weight:700}.error{color:#b00020;font-weight:700}
+</style>
+</head>
+<body>
+<header><h1>AB Chemicals — Back-office</h1><small>Cadastro e precificação</small></header>
+<nav><a href="index.html"><button class="secondary" type="button">Vendas / Pedido</button></a></nav>
+<main>
+<section class="card">
+<h2>Custos Fixos</h2>
+<p class="muted">Custos mensais que independem diretamente da quantidade vendida.</p>
+<div class="grid">
+<div><label>Custos fixos mensais (R$)</label><input id="fixedMonthlyCost" type="number" min="0" step="0.01" placeholder="0,00"></div>
+<div><label>Dias considerados</label><input id="fixedDays" type="number" min="1" step="1" value="30"></div>
+<div><label>Custo fixo diário (R$)</label><input id="fixedDailyCost" type="number" step="0.01" value="0" readonly></div>
+</div>
+<div style="margin-top:12px"><button id="btnSaveFixedCost" class="primary" type="button">Salvar custo fixo</button></div>
+<p id="fixedCostMsg" class="muted"></p>
+</section>
+
+<section class="card">
+<h2>Custos Variáveis</h2>
+<p class="muted">Informe o produto e os custos. O preço de venda é calculado automaticamente pelo total dos custos variáveis + markup.</p>
+<div class="grid">
+<div class="full"><label>Produto</label><input id="pName" placeholder="Nome do produto"></div>
+<div><label>Preço de Venda</label><input id="pSale" type="number" min="0" step="0.01" placeholder="Calculado automaticamente" readonly></div>
+<div><label>Custo do produto (R$)</label><input id="pCost" type="number" min="0" step="0.01" placeholder="0,00"></div>
+<div><label>Markup (%)</label><input id="pMargin" type="number" min="0" step="0.01" value="100"></div>
+<div><label>Frete de compra (R$)</label><input id="variablePurchaseFreight" type="number" min="0" step="0.01" placeholder="0,00"></div>
+<div><label>Rótulo (R$)</label><input id="variableLabel" type="number" min="0" step="0.01" placeholder="0,00"></div>
+<div><label>Embalagem (R$)</label><input id="variablePackaging" type="number" min="0" step="0.01" placeholder="0,00"></div>
+<div><label>Galão/recipiente (R$)</label><input id="variableContainer" type="number" min="0" step="0.01" placeholder="0,00"></div>
+<div><label>Caixa (R$)</label><input id="variableBox" type="number" min="0" step="0.01" placeholder="0,00"></div>
+<div><label>Etiqueta (R$)</label><input id="variableTag" type="number" min="0" step="0.01" placeholder="0,00"></div>
+<div><label>Outros custos (R$)</label><input id="variableOther" type="number" min="0" step="0.01" placeholder="0,00"></div>
+<div><label>Frete ao cliente (R$)</label><input id="variableCustomerFreight" type="number" min="0" step="0.01" placeholder="0,00"></div>
+<div><label>Custo do veículo (R$)</label><input id="variableVehicle" type="number" min="0" step="0.01" placeholder="0,00"></div>
+<div><label>Custos de viagem (R$)</label><input id="variableTravel" type="number" min="0" step="0.01" placeholder="0,00"></div>
+<div><label>Impostos (%)</label><input id="variableTaxes" type="number" min="0" step="0.01" value="4"></div>
+<div><label>Comissão (%)</label><input id="variableCommission" type="number" min="0" step="0.01" value="0"></div>
+<div><label>Taxa financeira (%)</label><input id="variableFee" type="number" min="0" step="0.01" value="1"></div>
+</div>
+<div class="summary" style="margin-top:14px">
+<div class="metric"><small>Total custos variáveis</small><b id="variableTotal">R$ 0,00</b></div>
+<div class="metric"><small>Markup</small><b id="variableMarkupResult">100,00%</b></div>
+<div class="metric"><small>Preço de venda calculado</small><b id="variableSaleResult">R$ 0,00</b></div>
+</div>
+<div style="margin-top:14px"><button id="btnSaveProduct" class="primary" type="button">Salvar produto</button></div>
+<p id="saveMsg" class="muted"></p>
+</section>
+
+<section class="card">
+<h2>Produtos cadastrados</h2>
+<div style="overflow:auto"><table><thead><tr><th>Produto</th><th>Custo</th><th>Markup</th><th>Venda</th><th>Ações</th></tr></thead><tbody id="productsAdmin"></tbody></table></div>
+</section>
+</main>
+<script>
+const SUPABASE_URL="https://divokbonqrmpindszoqv.supabase.co",SUPABASE_KEY="sb_publishable_sCTeIxcTB-oUswA-QVP0Wg_LrlGgjhY";
+const money=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const num=v=>Number(String(v??0).replace(",","."))||0;
+async function sb(path,options={}){const r=await fetch(SUPABASE_URL+path,{...options,headers:{"apikey":SUPABASE_KEY,"Authorization":"Bearer "+SUPABASE_KEY,"Content-Type":"application/json",...(options.headers||{})}});const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{d=t}if(!r.ok)throw new Error(d?.message||d?.hint||d?.error_description||t||("HTTP "+r.status));return d}
+function updateFixedCostDaily(){const monthly=num(document.getElementById("fixedMonthlyCost").value),days=Math.max(1,num(document.getElementById("fixedDays").value)||30);document.getElementById("fixedDailyCost").value=(monthly/days).toFixed(2)}
+async function loadFixedCost(){try{const d=new Date(),month=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-01",rows=await sb("/rest/v1/preco_fixed_costs?select=id,month,amount&month=eq."+month+"&limit=1");if(rows?.[0])document.getElementById("fixedMonthlyCost").value=rows[0].amount??0;updateFixedCostDaily()}catch(e){console.error(e)}}
+async function saveFixedCost(){const msg=document.getElementById("fixedCostMsg");try{const d=new Date(),month=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-01",amount=Number(num(document.getElementById("fixedMonthlyCost").value).toFixed(2));await sb("/rest/v1/preco_fixed_costs?on_conflict=month",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({month,amount})});updateFixedCostDaily();msg.className="ok";msg.textContent="Custo fixo salvo com sucesso."}catch(e){msg.className="error";msg.textContent="Erro ao salvar custo fixo: "+e.message}}
+const costIds=["pCost","variablePurchaseFreight","variableLabel","variablePackaging","variableContainer","variableBox","variableTag","variableOther","variableCustomerFreight","variableVehicle","variableTravel"];
+function calc(){const total=costIds.reduce((s,id)=>s+num(document.getElementById(id)?.value),0),markup=num(document.getElementById("pMargin").value),sale=total*(1+markup/100);document.getElementById("pSale").value=sale>0?sale.toFixed(2):"";document.getElementById("variableTotal").textContent=money(total);document.getElementById("variableMarkupResult").textContent=markup.toFixed(2).replace(".",",")+"%";document.getElementById("variableSaleResult").textContent=money(sale);return{total,markup,sale}}
+const costFields={purchase_freight:"variablePurchaseFreight",label:"variableLabel",packaging:"variablePackaging",container:"variableContainer",box:"variableBox",tag:"variableTag",other_costs:"variableOther",customer_freight:"variableCustomerFreight",vehicle_cost:"variableVehicle",travel_cost:"variableTravel",taxes_percent:"variableTaxes",commission_percent:"variableCommission",financial_fee_percent:"variableFee"};
+let editingProductId=null;
+function clearForm(){editingProductId=null;["pName","pSale","pCost"].forEach(id=>document.getElementById(id).value="");Object.values(costFields).forEach(id=>{const e=document.getElementById(id);if(e)e.value=(id==="variableTaxes"?"4":id==="variableFee"?"1":id==="variableCommission"?"0":"0")});document.getElementById("pMargin").value="100";document.getElementById("btnSaveProduct").textContent="Salvar produto";document.getElementById("saveMsg").textContent="";calc()}
+async function loadAdmin(){const tbody=document.getElementById("productsAdmin");tbody.innerHTML='<tr><td colspan="5">Carregando...</td></tr>';try{const data=await sb("/rest/v1/preco_products?select=id,name,cost,margin_percent,current_price&active=eq.true&order=name.asc");tbody.innerHTML=(data||[]).map(p=>`<tr><td>${String(p.name||"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]))}</td><td>${money(p.cost)}</td><td>${Number(p.margin_percent||0).toFixed(2)}%</td><td>${money(p.current_price)}</td><td><button class="secondary" onclick="editProduct('${p.id}')">Editar</button> <button class="danger" onclick="delProduct('${p.id}')">Excluir</button></td></tr>`).join("")||'<tr><td colspan="5">Nenhum produto cadastrado.</td></tr>'}catch(e){tbody.innerHTML=`<tr><td colspan="5" class="error">${e.message}</td></tr>`}}
+async function editProduct(id){try{const p=await sb("/rest/v1/preco_products?id=eq."+encodeURIComponent(id)+"&select=*&limit=1");if(!p?.[0])throw new Error("Produto não encontrado.");const x=p[0],rows=await sb("/rest/v1/preco_product_costs?product_id=eq."+encodeURIComponent(id)+"&limit=1");document.getElementById("pName").value=x.name||"";document.getElementById("pCost").value=x.cost??0;document.getElementById("pSale").value=x.current_price??0;document.getElementById("pMargin").value=x.margin_percent??100;const row=rows?.[0];if(row)Object.entries(costFields).forEach(([k,id2])=>{if(document.getElementById(id2))document.getElementById(id2).value=row[k]??0});editingProductId=id;document.getElementById("btnSaveProduct").textContent="Atualizar produto";calc();window.scrollTo({top:0,behavior:"smooth"})}catch(e){document.getElementById("saveMsg").className="error";document.getElementById("saveMsg").textContent="Erro ao carregar: "+e.message}}
+async function saveProduct(){const msg=document.getElementById("saveMsg");try{const name=document.getElementById("pName").value.trim(),cost=num(document.getElementById("pCost").value),r=calc();if(!name){msg.className="error";msg.textContent="Informe o nome do produto.";return}if(cost<=0){msg.className="error";msg.textContent="Informe um custo maior que zero.";return}const payload={name,cost,margin_percent:r.markup,suggested_price:r.sale,current_price:r.sale,active:true};let id=editingProductId;if(id){await sb("/rest/v1/preco_products?id=eq."+encodeURIComponent(id),{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(payload)});await sb("/rest/v1/preco_product_costs?product_id=eq."+encodeURIComponent(id),{method:"DELETE"})}else{const created=await sb("/rest/v1/preco_products",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify(payload)});id=Array.isArray(created)?created[0]?.id:created?.id;if(!id)throw new Error("Supabase não retornou o ID do produto.")}const costs={product_id:id};Object.entries(costFields).forEach(([k,id2])=>costs[k]=num(document.getElementById(id2)?.value));await sb("/rest/v1/preco_product_costs",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify(costs)});msg.className="ok";msg.textContent=editingProductId?"Produto atualizado com sucesso.":"Produto salvo com sucesso.";clearForm();await loadAdmin()}catch(e){msg.className="error";msg.textContent="Erro ao salvar produto: "+e.message}}
+async function delProduct(id){if(!confirm("Excluir este produto?"))return;try{await sb("/rest/v1/preco_product_costs?product_id=eq."+encodeURIComponent(id),{method:"DELETE"});await sb("/rest/v1/preco_products?id=eq."+encodeURIComponent(id),{method:"DELETE"});await loadAdmin()}catch(e){alert("Não foi possível excluir: "+e.message)}}
+document.getElementById("fixedMonthlyCost").addEventListener("input",updateFixedCostDaily);
+document.getElementById("fixedDays").addEventListener("input",updateFixedCostDaily);
+document.getElementById("btnSaveFixedCost").addEventListener("click",saveFixedCost);
+[...document.querySelectorAll("#pCost,#pMargin,#variablePurchaseFreight,#variableLabel,#variablePackaging,#variableContainer,#variableBox,#variableTag,#variableOther,#variableCustomerFreight,#variableVehicle,#variableTravel,#variableTaxes,#variableCommission,#variableFee")].forEach(e=>e.addEventListener("input",calc));
+loadFixedCost();calc();loadAdmin();
+</script>
+</body>
+</html>
