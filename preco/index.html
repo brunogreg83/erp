@@ -83,8 +83,41 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 const SUPABASE_URL = "https://divokbonqrmpindszoqv.supabase.co";
 const SUPABASE_KEY = "sb_publishable_sCTeIxcTB-oUswA-QVP0Wg_LrlGgjhY";
 let products=[], items=[];
+let pricingContext={fixedCostDaily:0,dailySales:0};
 const money=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const num=v=>Number(String(v??0).replace(",","."))||0;
+async function loadPricingContext(excludeOrderId=null){
+ const now=new Date();
+ const y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0'),d=String(now.getDate()).padStart(2,'0');
+ const month=y+'-'+m+'-01';
+ const nextMonth=new Date(y,now.getMonth()+1,1); const nextMonthStr=nextMonth.getFullYear()+'-'+String(nextMonth.getMonth()+1).padStart(2,'0')+'-01';
+ const dayStart=y+'-'+m+'-'+d+'T00:00:00';
+ const dayEnd=y+'-'+m+'-'+d+'T23:59:59.999';
+ const [fc,orders]=await Promise.all([
+   sb('/rest/v1/preco_fixed_costs?select=amount&month=eq.'+encodeURIComponent(month)+'&limit=1'),
+   sb('/rest/v1/preco_orders?select=id,total,created_at&created_at=gte.'+encodeURIComponent(dayStart)+'&created_at=lte.'+encodeURIComponent(dayEnd))
+ ]);
+ const amount=num(fc?.[0]?.amount); const daysInMonth=new Date(y,now.getMonth()+1,0).getDate();
+ pricingContext.fixedCostDaily=amount/daysInMonth;
+ pricingContext.dailySales=(orders||[]).filter(o=>String(o.id)!==String(excludeOrderId)).reduce((s,o)=>s+num(o.total),0);
+}
+function targetOrderTotal(productCost,baseSales){
+ const C=num(productCost),F=num(pricingContext.fixedCostDaily),S=num(baseSales)+num(pricingContext.dailySales);
+ if(!C)return 0;
+ if(F<=0)return C*2;
+ const b=S-2*C-2*F;
+ const disc=b*b+8*C*S;
+ return Math.max(0,(-b+Math.sqrt(Math.max(0,disc)))/2);
+}
+function repriceDraft(){
+ if(!items.length)return;
+ const baseTotal=items.reduce((s,x)=>s+num(x.qty)*num(x.basePrice??x.price),0);
+ const costTotal=items.reduce((s,x)=>s+num(x.qty)*num(x.cost),0);
+ const target=targetOrderTotal(costTotal,baseTotal);
+ const factor=baseTotal>0?target/baseTotal:1;
+ items.forEach(x=>{x.price=Number((num(x.basePrice??x.price)*factor).toFixed(2));});
+}
+
 async function sb(path, options={}){
  const r=await fetch(SUPABASE_URL+path,{...options,headers:{"apikey":SUPABASE_KEY,"Authorization":"Bearer "+SUPABASE_KEY,"Content-Type":"application/json",...(options.headers||{})}});
  const text=await r.text(); let data; try{data=text?JSON.parse(text):null}catch{data=text}
@@ -215,7 +248,7 @@ async function saveOrderDraft(){
 function clearOrderDraft(){
   items=[];
   currentOrderId=null;
-  const saveBtn=document.getElementById('btnSaveOrder');
+  loadPricingContext(currentOrderId).then(()=>repriceDraft()).then(()=>render()).catch(e=>console.error(e));const saveBtn=document.getElementById('btnSaveOrder');
   if(saveBtn) saveBtn.textContent='Salvar pedido';
   const customer=document.getElementById('orderCustomer');
   if(customer) customer.value='';
@@ -242,6 +275,7 @@ async function editSavedOrder(orderId){
       cost:num(x.cost),
       qty:num(x.quantity),
       price:num(x.sale_price),
+      basePrice:num(x.sale_price),
       suggested:0,
       min:0
     }));
@@ -352,7 +386,7 @@ document.getElementById('product').addEventListener('change',()=>{
  document.getElementById('price').value=p?.current_price??'';
 });
 function escapeHtml(v){return String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]))}
-function addItem(){const p=products.find(x=>String(x.id)===String(document.getElementById('product').value));if(!p)return;const q=Math.max(1,num(document.getElementById('qty').value)),pr=num(document.getElementById('price').value);items.push({productId:p.id,name:p.name,cost:num(p.cost),suggested:num(p.suggested_price),min:num(p.min_price),qty:q,price:pr});render()}
+function addItem(){const p=products.find(x=>String(x.id)===String(document.getElementById('product').value));if(!p)return;const q=Math.max(1,num(document.getElementById('qty').value)),pr=num(document.getElementById('price').value);items.push({productId:p.id,name:p.name,cost:num(p.cost),suggested:num(p.suggested_price),min:num(p.min_price),qty:q,price:pr,basePrice:pr});repriceDraft();render()}
 window.addItem=addItem;window.removeItem=i=>{items.splice(i,1);render()};
 function priceStatus(price,suggested,min){const p=num(price),s=num(suggested),m=num(min);if(m>0&&p<m)return ['red','🔴 VERMELHO'];if(s>0&&p<s)return ['yellow','🟡 AMARELO'];return ['green','🟢 VERDE']}
 function render(){const tbody=document.getElementById('items');let total=0,costTotal=0,suggestedTotal=0,minTotal=0;items.forEach(x=>{const t=num(x.qty)*num(x.price),cost=num(x.qty)*num(x.cost);total+=t;costTotal+=cost;suggestedTotal+=num(x.qty)*num(x.suggested);minTotal+=num(x.qty)*num(x.min)});if(tbody){tbody.innerHTML=items.map((x,i)=>{const t=num(x.qty)*num(x.price);return `<tr><td>${escapeHtml(x.name)}</td><td>${num(x.qty)}</td><td>${money(x.price)}</td><td>${money(t)}</td><td><button class="danger" type="button" onclick="removeItem(${i})">Excluir</button></td></tr>`}).join('');}const totalEl=document.getElementById('totalSale');if(totalEl)totalEl.textContent=money(total);const costEl=document.getElementById('totalCost');if(costEl)costEl.textContent=money(costTotal);const profit=total-costTotal;const profitEl=document.getElementById('totalProfit');if(profitEl)profitEl.textContent=money(profit);const itemsEl=document.getElementById('totalItems');if(itemsEl)itemsEl.textContent=String(items.reduce((s,x)=>s+num(x.qty),0));const marginEl=document.getElementById('totalMargin');if(marginEl)marginEl.textContent=costTotal?((profit/costTotal)*100).toFixed(1)+'%':'—';const statusEl=document.getElementById('totalStatus');if(statusEl){const overall=items.length?priceStatus(total,suggestedTotal,minTotal):['yellow','⚪ SEM PEDIDO'];statusEl.innerHTML=`<span class="badge ${overall[0]}">${overall[1]}</span>`}}
