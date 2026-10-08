@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AB | Precificação — Backend</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f6fa;color:#172033;font-family:Arial,Helvetica,sans-serif}.wrap{max-width:1200px;margin:auto;padding:14px}.head{background:#0b1d2d;color:#fff;padding:20px;border-radius:14px;margin-bottom:14px}.head h1{margin:0 0 5px}.head p{margin:0;color:#c9d6e1}.card{background:#fff;border:1px solid #dbe3eb;border-radius:13px;padding:17px;margin-bottom:14px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.full{grid-column:1/-1}label{display:block;font-size:12px;font-weight:700;margin-bottom:5px}input,select{width:100%;padding:10px;border:1px solid #cbd6e0;border-radius:8px;font-size:15px;background:#fff}button{border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer}.primary{background:#1268a8;color:#fff}.secondary{background:#e8eef4;color:#17324b}.danger{background:#fde5e5;color:#ad2424}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:12px}.metric{background:#f6f9fc;border:1px solid #e1e7ed;border-radius:9px;padding:11px}.metric small{display:block;color:#68788a}.metric b{display:block;font-size:17px;margin-top:4px}.muted{font-size:12px;color:#68788a;margin-top:8px}.msg{font-size:13px;margin-top:8px}.ok{color:#087443}.bad{color:#b42318}.scroll{overflow:auto}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 7px;border-bottom:1px solid #e5eaf0;text-align:left}th{background:#f7f9fb}.right{text-align:right}.search{max-width:420px}@media(max-width:800px){.grid{grid-template-columns:1fr 1fr}.summary{grid-template-columns:1fr 1fr}}@media(max-width:500px){.grid{grid-template-columns:1fr}.wrap{padding:9px}}
+</style></head><body><div class="wrap">
+<header class="head"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><h1>AB | Precificação — Backend</h1><p>Cadastro central de produtos, custos e parâmetros de precificação</p></div><a href="index.html" style="display:inline-block;background:#fff;color:#0b1d2d;text-decoration:none;padding:10px 14px;border-radius:8px;font-weight:700">← Voltar ao Novo Pedido</a></div></header><div id="runtimeStatus" style="padding:12px 14px;margin:0 0 14px;background:#fff3cd;border:1px solid #ffe69c;border-radius:9px;color:#664d03;font-weight:700">BACKEND V3 — ARQUIVO ATUAL DO GITHUB</div>
+
+<section class="card">
+<h2>Custos fixos mensais</h2>
+<div class="grid">
+<div><label>Mês</label><input id="mes" type="month"></div>
+<div><label>Total de custos fixos (R$)</label><input id="fixo" type="number" min="0" step="0.01" placeholder="0,00"></div>
+<div><label>Custo fixo diário</label><input id="fixoDia" disabled></div>
+</div>
+<div class="actions"><button class="primary" id="saveFixed">Salvar custo fixo</button></div><div id="fixedMsg" class="msg"></div>
+</section>
+
+<section class="card">
+<h2 id="formTitle">Cadastro de produto</h2>
+<div class="grid">
+<div><label>Código</label><input id="code" placeholder="Código do produto"></div><div><label>Produto</label><input id="name" placeholder="Nome do produto"></div><div><label>Categoria</label><input id="category" placeholder="Categoria"></div><div><label>Fornecedor</label><input id="supplier" placeholder="Fornecedor"></div>
+<div><label>Custo do produto (R$)</label><input id="baseCost" type="number" min="0" step="0.01"></div>
+<div><label>Frete de compra (R$)</label><input id="purchaseFreight" type="number" min="0" step="0.01"></div>
+<div><label>Rótulo (R$)</label><input id="labelCost" type="number" min="0" step="0.01"></div>
+<div><label>Embalagem (R$)</label><input id="packaging" type="number" min="0" step="0.01"></div>
+<div><label>Galão/recipiente (R$)</label><input id="containerCost" type="number" min="0" step="0.01"></div>
+<div><label>Caixa (R$)</label><input id="boxCost" type="number" min="0" step="0.01"></div>
+<div><label>Etiqueta (R$)</label><input id="tagCost" type="number" min="0" step="0.01"></div>
+<div><label>Outros custos (R$)</label><input id="otherCost" type="number" min="0" step="0.01"></div>
+<div><label>Frete ao cliente (R$)</label><input id="customerFreight" type="number" min="0" step="0.01"></div>
+<div><label>Custo do veículo (R$)</label><input id="vehicleCost" type="number" min="0" step="0.01" placeholder="0,00"></div>
+<div><label>Custos de viagem (R$)</label><input id="travelCost" type="number" min="0" step="0.01" placeholder="0,00"></div>
+<div><label>Impostos (%)</label><input id="taxes" type="number" min="0" step="0.01" value="4"></div>
+<div><label>Comissão (%)</label><input id="commission" type="number" min="0" step="0.01"></div>
+<div><label>Taxa financeira (%)</label><input id="fee" type="number" min="0" step="0.01" value="1"></div>
+<div><label>Markup desejado (%)</label><input id="markup" type="number" min="0" step="0.01" value="100"></div><div><label>Preço atual (R$)</label><input id="currentPrice" type="number" min="0" step="0.01" value="0"></div>
+</div>
+<div class="summary"><div class="metric"><small>Custo direto total</small><b id="totalCost">R$ 0,00</b></div><div class="metric"><small>Preço sugerido</small><b id="suggested">R$ 0,00</b></div><div class="metric"><small>Margem líquida estimada</small><b id="netMargin">0,00%</b></div><div class="metric"><small>Preço atual</small><b id="current">R$ 0,00</b></div></div>
+<div class="actions"><button class="primary" id="saveProduct">Cadastrar produto</button><button class="secondary" id="cancelEdit">Limpar</button></div><div id="productMsg" class="msg"></div>
+</section>
+
+<section class="card">
+<div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap"><div><h2 style="margin:0">Produtos cadastrados</h2><div class="muted">Os produtos existentes da empresa aparecem aqui. O cadastro é centralizado neste backend.</div></div><input class="search" id="search" placeholder="Pesquisar produto, código ou categoria"></div>
+<div class="scroll" style="margin-top:12px"><table><thead><tr><th>Código</th><th>Produto</th><th>Categoria</th><th>Custo</th><th>Markup</th><th>Preço sugerido</th><th>Preço atual</th><th>Ações</th></tr></thead><tbody id="products"></tbody></table></div>
+</section>
+</div>
+<script>
+(async function(){
+  const status=document.getElementById("runtimeStatus");
+  const tbody=document.getElementById("products");
+  const KEY="sb_publishable_sCTeIxcTB-oUswA-QVP0Wg_LrlGgjhY";
+  const URL="https://divokbonqrmpindszoqv.supabase.co";
+  const headers={apikey:KEY,Accept:"application/json","Content-Type":"application/json"};
+  const money=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+  const esc=v=>String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  let data=[];
+  async function request(path,opt={}){
+    const res=await fetch(URL+path,{...opt,headers:{...headers,...(opt.headers||{})},cache:"no-store"});
+    const text=await res.text();
+    if(!res.ok) throw new Error(text||("HTTP "+res.status));
+    return text?JSON.parse(text):null;
+  }
+  function render(){
+    tbody.innerHTML=data.map(p=>"<tr><td>"+esc(p.code||"")+"</td><td>"+esc(p.name||"")+"</td><td>"+esc(p.category||"")+"</td><td>"+money(p.cost)+"</td><td>"+Number(p.margin_percent||100).toFixed(2)+"%</td><td>"+money(p.suggested_price)+"</td><td>"+money(p.current_price)+"</td><td><button type='button' data-edit-product='"+esc(p.id)+"' style='background:#1268a8;color:#fff;margin-right:5px'>Editar</button><button type='button' data-delete-product='"+esc(p.id)+"' style='background:#b42318;color:#fff'>Deletar</button></td></tr>").join("")||'<tr><td colspan="8">Nenhum produto encontrado.</td></tr>';
+  }
+  async function load(){
+    status.textContent="BACKEND V5 — CONSULTANDO SUPABASE…";
+    try{
+      data=await request("/rest/v1/preco_products?select=id,code,name,category,cost,margin_percent,suggested_price,current_price,active&active=eq.true&order=name.asc");
+      data=Array.isArray(data)?data:[];
+      render();
+      status.textContent="BACKEND V5 — "+data.length+" PRODUTO(S) CARREGADO(S).";
+    }catch(e){status.textContent="BACKEND V5 — ERRO: "+e.message;}
+  }
+  tbody.addEventListener("click",async e=>{
+    const edit=e.target.closest("[data-edit-product]");
+    const del=e.target.closest("[data-delete-product]");
+    if(edit){
+      const p=data.find(x=>String(x.id)===String(edit.dataset.editProduct));
+      if(!p)return;
+      try{
+        editing=p;
+        document.getElementById("formTitle").textContent="Editar produto";
+        document.getElementById("saveProduct").textContent="Atualizar produto";
+        document.getElementById("code").value=p.code||"";
+        document.getElementById("name").value=p.name||"";
+        document.getElementById("category").value=p.category||"";
+        document.getElementById("supplier").value=p.supplier||"";
+        document.getElementById("baseCost").value=p.cost??0;
+        document.getElementById("markup").value=p.margin_percent??100;
+        document.getElementById("currentPrice").value=p.current_price??p.suggested_price??0;
+        const rows=await request("/rest/v1/preco_product_costs?select=product_id,purchase_freight,label,packaging,container,box,tag,other_costs,customer_freight,vehicle_cost,travel_cost,taxes_percent,commission_percent,financial_fee_percent,markup_percent&product_id=eq."+encodeURIComponent(p.id));
+        const x=Array.isArray(rows)?rows[0]:null;
+        const map={purchase_freight:"purchaseFreight",label:"labelCost",packaging:"packaging",container:"containerCost",box:"boxCost",tag:"tagCost",other_costs:"otherCost",customer_freight:"customerFreight",vehicle_cost:"vehicleCost",travel_cost:"travelCost",taxes_percent:"taxes",commission_percent:"commission",financial_fee_percent:"fee",markup_percent:"markup"};
+        Object.entries(map).forEach(([from,to])=>{if(x&&document.getElementById(to))document.getElementById(to).value=x[from]??0});
+        document.getElementById("productMsg").className="msg ok";
+        document.getElementById("productMsg").textContent="Todos os dados do produto foram carregados para edição.";
+        const n=id=>Math.max(0,Number(document.getElementById(id)?.value)||0), money2=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+        const directCost=n("baseCost")+n("purchaseFreight")+n("labelCost")+n("packaging")+n("containerCost")+n("boxCost")+n("tagCost")+n("otherCost")+n("customerFreight")+n("vehicleCost")+n("travelCost");
+        const rates=(n("taxes")+n("commission")+n("fee"))/100, mk=n("markup")/100;
+        const denominator=1-rates*(2+mk);
+        const suggested=denominator>0?(directCost*(1+mk))/denominator:0;
+        const profit=suggested-directCost-suggested*rates;
+        document.getElementById("totalCost").textContent=money2(directCost);
+        document.getElementById("suggested").textContent=money2(suggested);
+        document.getElementById("netMargin").textContent=(suggested?((profit/suggested)*100):0).toFixed(2).replace(".",",")+"%";
+        document.getElementById("current").textContent=money2(n("currentPrice")||suggested);
+        document.getElementById("saveProduct").scrollIntoView({behavior:"smooth",block:"center"});
+      }catch(err){alert("Erro ao carregar dados do produto: "+err.message);}
+    }
+    if(del){
+      const p=data.find(x=>String(x.id)===String(del.dataset.deleteProduct));
+      if(!p)return;
+      if(!confirm("Excluir o produto '"+p.name+"'? Esta ação não poderá ser desfeita."))return;
+      try{
+        await request("/rest/v1/preco_product_costs?product_id=eq."+encodeURIComponent(p.id),{method:"DELETE",headers:{Prefer:"return=minimal"}});
+        await request("/rest/v1/preco_products?id=eq."+encodeURIComponent(p.id),{method:"DELETE",headers:{Prefer:"return=minimal"}});
+        await load();
+      }catch(err){alert("Erro ao deletar produto: "+err.message);}
+    }
+  });
+  await load();
+})();
+</script>
+<script>
+const URL="https://divokbonqrmpindszoqv.supabase.co",KEY="sb_publishable_sCTeIxcTB-oUswA-QVP0Wg_LrlGgjhY";
+let products=[],editing=null,costRows=new Map();
+const $=id=>document.getElementById(id),num=id=>Math.max(0,Number($(id).value)||0),money=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+$("runtimeStatus").textContent="BACKEND — CARREGANDO DADOS";
+async function api(path,opt={}){const method=String(opt.method||"GET").toUpperCase();const target=URL+path;const headers={apikey:KEY,Accept:"application/json",...(opt.headers||{})};if(method!=="GET"&&method!=="HEAD")headers["Content-Type"]="application/json";const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),10000);try{const r=await fetch(target,{...opt,headers,signal:controller.signal});const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{d=t}if(!r.ok)throw new Error(d?.message||d?.hint||t||("HTTP "+r.status));return d}catch(e){if(e?.name==="AbortError")throw new Error("Tempo esgotado ao acessar o banco Supabase (10s).");throw e}finally{clearTimeout(timer)}}
+function escape(v){return String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+async function loadProducts(){
+ try{
+  const data=await api("/rest/v1/preco_products?select=id,code,name,cost,current_price,suggested_price&active=eq.true&order=name.asc");
+  products=(data||[]).map(p=>({...p,costs:{},markup_percent:100}));
+  $("produto").innerHTML=products.length?products.map(p=>'<option value="'+p.id+'">'+escape(p.name)+'</option>').join(""):'<option value="">Nenhum produto cadastrado</option>';
+  setPrice();
+  $("msg").className="msg ok";
+  $("msg").textContent=products.length+" produto(s) carregado(s) do banco.";
+  try{
+   const costs=await api("/rest/v1/preco_product_costs?select=product_id,purchase_freight,label,packaging,container,box,tag,other_costs,customer_freight,vehicle_cost,travel_cost,taxes_percent,commission_percent,financial_fee_percent,markup_percent");
+   const cm={};(costs||[]).forEach(x=>cm[String(x.product_id)]=x);
+   products=products.map(p=>({...p,costs:cm[String(p.id)]||{},markup_percent:num(cm[String(p.id)]?.markup_percent)||100}));
+   setPrice();
+  }catch(costErr){
+   console.warn("Custos dos produtos não carregaram; produtos continuam disponíveis:",costErr);
+  }
+ }catch(e){
+  console.error("Produtos:",e);
+  $("produto").innerHTML='<option value="">Erro ao carregar produtos</option>';
+  $("msg").className="msg bad";
+  $("msg").textContent="ERRO AO CARREGAR PRODUTOS: "+e.message;
+  throw e;
+ }
+}
+function costs(){return num("baseCost")+num("purchaseFreight")+num("labelCost")+num("packaging")+num("containerCost")+num("boxCost")+num("tagCost")+num("otherCost")+num("customerFreight")+num("vehicleCost")+num("travelCost")}
+function priceFromMarkupBackend(m){const fixed=costs(),tax=num("taxes")/100,com=num("commission")/100,fee=num("fee")/100,rates=tax+com+fee;const markup=m/100;const denominator=1-rates*(2+markup);return denominator>0?(fixed*(1+markup))/denominator:0}
+function recalc(){const c=costs(),m=num("markup"),tax=num("taxes")/100,com=num("commission")/100,fee=num("fee")/100,r=tax+com+fee,p=priceFromMarkupBackend(m),current=num("currentPrice");const profit=p-c-p*r;$("#totalCost").textContent=money(c);$("#suggested").textContent=money(p);$("#netMargin").textContent=(p?((profit/p)*100):0).toFixed(2).replace(".",",")+"%";$("#current").textContent=money(current||p);return{c,p,current}}
+function fillCost(row){const map={purchaseFreight:"purchaseFreight",label:"labelCost",packaging:"packaging",container:"containerCost",box:"boxCost",tag:"tagCost",other_costs:"otherCost",customer_freight:"customerFreight",vehicle_cost:"vehicleCost",travel_cost:"travelCost",taxes_percent:"taxes",commission_percent:"commission",financial_fee_percent:"fee",markup_percent:"markup"};Object.entries(map).forEach(([k,id])=>{const el=$(id);if(!el)return;el.value=row?.[k]??(k==="taxes_percent"?4:k==="financial_fee_percent"?1:k==="markup_percent"?100:0)})}
+async function load(){
+ const msg=$("productMsg"),status=$("runtimeStatus");
+ status.textContent="Consultando produtos…";
+ try{
+  const data=await api("/rest/v1/preco_products?select=id,code,name,category,supplier,cost,margin_percent,suggested_price,current_price,active&active=eq.true&order=name.asc");
+  products=Array.isArray(data)?data:[];
+  costRows.clear();
+  render();
+  msg.className="msg ok";
+  msg.textContent=products.length+" produto(s) carregado(s) no backend.";
+  status.textContent=products.length+" produto(s) carregado(s) no backend.";
+  // Custos são carregados depois, sem bloquear a lista de produtos.
+  if(products.length){
+   const ids=products.map(p=>p.id);
+   api("/rest/v1/preco_product_costs?select=product_id,purchase_freight,label,packaging,container,box,tag,other_costs,customer_freight,vehicle_cost,travel_cost,taxes_percent,commission_percent,financial_fee_percent,markup_percent&product_id=in.("+ids.join(",")+")")
+    .then(rows=>{(rows||[]).forEach(x=>costRows.set(String(x.product_id),x));render()})
+    .catch(e=>console.warn("Custos não carregados:",e));
+  }
+ }catch(e){
+  products=[];
+  render();
+  msg.className="msg bad";
+  msg.textContent="ERRO AO CARREGAR PRODUTOS: "+e.message;
+  status.textContent="ERRO AO CARREGAR PRODUTOS: "+e.message;
+  console.error(e);
+ }
+}
+function render(){const q=$("#search").value.trim().toLowerCase();const list=products.filter(p=>(p.name+" "+(p.code||"")+" "+(p.category||"")).toLowerCase().includes(q));$("#products").innerHTML=list.map(p=>'<tr><td>'+esc(p.code||"")+'</td><td>'+esc(p.name)+'</td><td>'+esc(p.category||"")+'</td><td>'+money(p.cost)+'</td><td>'+Number(p.margin_percent||100).toFixed(2)+'%</td><td>'+money(p.suggested_price)+'</td><td>'+money(p.current_price)+'</td><td><button class="secondary" data-edit="'+p.id+'">Editar</button></td></tr>').join("")||'<tr><td colspan="8">Nenhum produto encontrado.</td></tr>'}
+function esc(v){return String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function clearForm(){editing=null;$("#formTitle").textContent="Cadastro de produto";$("#saveProduct").textContent="Cadastrar produto";["code","name","category","supplier","baseCost","purchaseFreight","labelCost","packaging","containerCost","boxCost","tagCost","otherCost","customerFreight","vehicleCost","travelCost","taxes","commission","fee","currentPrice"].forEach(id=>$(id).value="");$("#markup").value=100;$("#taxes").value=4;$("#fee").value=1;recalc();$("#productMsg").textContent=""}
+async function edit(id){const p=products.find(x=>String(x.id)===String(id));if(!p)return;editing=p;$("#formTitle").textContent="Editar produto";$("#saveProduct").textContent="Atualizar produto";$("#name").value=p.name||"";$("#baseCost").value=p.cost??0;const row=costRows.get(String(id));fillCost(row);recalc();window.scrollTo({top:0,behavior:"smooth"})}
+$("#products").addEventListener("click",e=>{const b=e.target.closest("[data-edit]");if(b)edit(b.dataset.edit)});
+$("#search").addEventListener("input",render);document.querySelectorAll("input").forEach(e=>e.addEventListener("input",recalc));$("#cancelEdit").onclick=clearForm;
+$("#saveProduct").onclick=async()=>{const msg=$("#productMsg");try{const name=$("#name").value.trim();if(!name){msg.className="msg bad";msg.textContent="Informe o nome do produto.";return}const x=recalc(),payload={code:$("#code").value.trim()||null,name,category:$("#category").value.trim()||null,supplier:$("#supplier").value.trim()||null,cost:Number(num("baseCost").toFixed(2)),margin_percent:num("markup"),suggested_price:Number(x.p.toFixed(2)),current_price:Number(num("currentPrice").toFixed(2)),active:true};let id;if(editing){await api("/rest/v1/preco_products?id=eq."+encodeURIComponent(editing.id),{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(payload)});id=editing.id;await api("/rest/v1/preco_product_costs?product_id=eq."+encodeURIComponent(id),{method:"DELETE"});msg.textContent="Produto atualizado."}else{const r=await api("/rest/v1/preco_products",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify(payload)});id=(Array.isArray(r)?r[0]:r).id;msg.textContent="Produto cadastrado."}await api("/rest/v1/preco_product_costs",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({product_id:id,purchase_freight:num("purchaseFreight"),label:num("labelCost"),packaging:num("packaging"),container:num("containerCost"),box:num("boxCost"),tag:num("tagCost"),other_costs:num("otherCost"),customer_freight:num("customerFreight"),vehicle_cost:num("vehicleCost"),travel_cost:num("travelCost"),taxes_percent:num("taxes"),commission_percent:num("commission"),financial_fee_percent:num("fee"),markup_percent:num("markup")})});msg.className="msg ok";await load();clearForm()}catch(e){msg.className="msg bad";msg.textContent="Erro: "+e.message}}
+$("#mes").value=new Date().toISOString().slice(0,7);
+$("#mes").addEventListener("change",loadFixed);$("#fixo").addEventListener("input",()=>{$("#fixoDia").value=money(num("fixo")/30)});
+async function loadFixed(){const m=$("#mes").value+"-01";const r=await api("/rest/v1/preco_fixed_costs?select=amount&month=eq."+m+"&limit=1");$("#fixo").value=r?.[0]?.amount||0;$("#fixoDia").value=money(num("fixo")/30)}
+$("#saveFixed").onclick=async()=>{const msg=$("#fixedMsg"),m=$("#mes").value+"-01";try{await api("/rest/v1/preco_fixed_costs?month=eq."+m,{method:"DELETE"});await api("/rest/v1/preco_fixed_costs",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({month:m,amount:num("fixo")})});msg.className="msg ok";msg.textContent="Custo fixo salvo.";await loadFixed()}catch(e){msg.className="msg bad";msg.textContent="Erro: "+e.message}};
+async function backendBoot(){
+ const status=$("runtimeStatus"), body=$("products");
+ status.textContent="BACKEND — CONSULTANDO BANCO AGORA…";
+ try{
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),7000);
+  const r=await fetch(URL+"/rest/v1/preco_products?select=id,code,name,category,cost,margin_percent,suggested_price,current_price,active&active=eq.true&order=name.asc",{headers:{apikey:KEY,Accept:"application/json"},signal:controller.signal});
+  clearTimeout(timer);
+  const txt=await r.text();
+  if(!r.ok) throw new Error(txt||("HTTP "+r.status));
+  const data=JSON.parse(txt);
+  products=Array.isArray(data)?data:[];
+  render();
+  status.textContent="BACKEND — "+products.length+" PRODUTO(S) CARREGADO(S).";
+  $("productMsg").className="msg ok";
+  $("productMsg").textContent=products.length+" produto(s) carregado(s) no backend.";
+ }catch(e){
+  status.textContent="BACKEND — ERRO: "+(e.name==="AbortError"?"tempo esgotado":e.message);
+  $("productMsg").className="msg bad";
+  $("productMsg").textContent="Erro ao carregar produtos: "+e.message;
+ }
+}
+backendBoot();
+</script></body></html>

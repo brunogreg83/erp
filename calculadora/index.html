@@ -62,7 +62,7 @@
 <div><div class="result-title">RESULTADO</div><div class="result-grid">
 <div class="result-box"><div class="label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#1a4fa0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v5.5L4.5 18a2 2 0 001.7 3h11.6a2 2 0 001.7-3L14 8.5V3"/></svg>PRODUTO</div><div id="dc-result-product" class="value">0</div><div class="unit">mL</div></div>
 <div class="result-box"><div class="label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#1a4fa0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg>ÁGUA</div><div id="dc-result-water" class="value">0</div><div class="unit">mL</div></div>
-<div class="concentration-box"><div class="circle"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1a4fa0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg></div><div><div class="label">CONCENTRAÇÃO FINAL</div><div id="dc-result-concentration" class="value">0%</div></div></div>
+<div class="concentration-box"><div class="circle"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1a4fa0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg></div><div><div class="label">CONCENTRAÇÃO FINAL</div><div id="dc-result-concentration" class="value">0,00%</div></div></div>
 <div class="concentration-box"><div class="circle"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1a4fa0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12h6M12 9v6"/></svg></div><div><div class="label">PPM</div><div id="dc-result-ppm" class="value">0</div></div></div>
 <div class="concentration-box"><div class="circle"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1a4fa0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"/></svg></div><div><div class="label">SUBSTÂNCIA ATIVA FINAL</div><div id="dc-result-active-final" class="value">0%</div></div></div>
 <div class="concentration-box"><div class="circle"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1a4fa0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg></div><div><div class="label">ATIVO FINAL</div><div id="dc-result-active-ppm" class="value">0 ppm</div></div></div>
@@ -76,6 +76,7 @@ var RATIO_PRESETS=[50,100,200,500],VOLUME_PRESETS=[1,2,5,10];
 var ratioInput=document.getElementById('dc-ratio-input'),volumeInput=document.getElementById('dc-volume-input'),activeInput=document.getElementById('dc-active-input'),ratioPresetsEl=document.getElementById('dc-ratio-presets'),volumePresetsEl=document.getElementById('dc-volume-presets'),resultProduct=document.getElementById('dc-result-product'),resultWater=document.getElementById('dc-result-water'),resultConcentration=document.getElementById('dc-result-concentration'),resultPpm=document.getElementById('dc-result-ppm'),resultActiveFinal=document.getElementById('dc-result-active-final'),resultActivePpm=document.getElementById('dc-result-active-ppm');
 function buildPresets(container,values,suffix,getCurrent,onSelect){container.innerHTML='';values.forEach(function(v){var btn=document.createElement('button');btn.type='button';btn.textContent=(suffix===':'?'1:'+v:v+suffix);btn.className=(getCurrent()===v?'active':'');btn.addEventListener('click',function(){onSelect(v)});container.appendChild(btn);});}
 function fmt(n){return n.toLocaleString('pt-BR',{maximumFractionDigits:1});}
+function fmt2(n){return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function parseNum(val){return parseFloat(String(val).replace(',','.'));}
 function render(){
 var ratioNum=parseNum(ratioInput.value),volumeNum=parseNum(volumeInput.value);
@@ -100,16 +101,16 @@ if(valid){
   var activeFinalPpm=hasActive ? activeFinal*10000 : 0;
   resultProduct.textContent=fmt(productML);
   resultWater.textContent=fmt(waterML);
-  resultConcentration.textContent=fmt(concentration)+'%';
+  resultConcentration.textContent=fmt2(concentration)+'%';
   resultPpm.textContent=fmt(ppm);
-  resultActiveFinal.textContent=hasActive ? fmt(activeFinal)+'%' : '0%';
+  resultActiveFinal.textContent=hasActive ? fmt2(activeFinal)+'%' : '0,00%';
   resultActivePpm.textContent=hasActive ? fmt(activeFinalPpm)+' ppm' : '0 ppm';
 }else{
   resultProduct.textContent='0';
   resultWater.textContent='0';
-  resultConcentration.textContent='0%';
+  resultConcentration.textContent='0,00%';
   resultPpm.textContent='0';
-  resultActiveFinal.textContent='0%';
+  resultActiveFinal.textContent='0,00%';
   resultActivePpm.textContent='0 ppm';
 }
 }
