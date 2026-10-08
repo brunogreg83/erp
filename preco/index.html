@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="frontend-version" content="2026-10-08-25">
+<meta name="frontend-version" content="2026-10-08-26">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB Chemicals | Precificação</title>
@@ -449,7 +449,7 @@ async function loadSavedOrders(){
         <td><strong>${escapeHtml(o.id)}</strong></td>
         <td>${escapeHtml(o.customer_name||'—')}</td>
         <td>${escapeHtml(date)}</td>
-        <td>${money(o.total)}</td>
+        <td>${money(Number(o.total||0)+Number(o.fixed_cost_allocated||0))}</td>
         <td>${escapeHtml(o.status||'—')}</td>
         <td style="white-space:nowrap">
           <button class="secondary" type="button" onclick="editSavedOrder(${Number(o.id)})">Editar</button>
