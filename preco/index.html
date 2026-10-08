@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="frontend-version" content="2026-10-08-05">
+<meta name="frontend-version" content="2026-10-08-06">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB Chemicals | Controle de Preços</title>
@@ -169,8 +169,7 @@ async function saveOrderDraft(){
       quantity:Number(num(x.qty)),
       cost:Number(num(x.cost).toFixed(2)),
       sale_price:Number(num(x.price).toFixed(2)),
-      total:Number((num(x.qty)*num(x.price)).toFixed(2)),
-      margin_percent:Number((num(x.cost)?(((num(x.price)-num(x.cost))/num(x.cost))*100):0).toFixed(2))
+      total:Number((num(x.qty)*num(x.price)).toFixed(2))
     }));
 
     let savedId;
