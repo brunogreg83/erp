@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="frontend-version" content="2026-10-08-21">
+<meta name="frontend-version" content="2026-10-08-22">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB Chemicals | Precificação</title>
@@ -170,7 +170,7 @@ async function rebalanceDailyOrders(){
   if(baseGrandTotal<=0) return;
 
   let allocatedRounded=0;
-  orders.forEach((o,index)=>{
+  await Promise.all(orders.map(async (o,index)=>{
     const base=baseByOrder[o.id];
     const rawFixed=fixedDaily>0 ? fixedDaily*(base/baseGrandTotal) : 0;
     let fixed=Number(rawFixed.toFixed(2));
@@ -199,9 +199,7 @@ async function rebalanceDailyOrders(){
         total_with_fixed_cost:Number(newCostTotal.toFixed(2))
       })
     });
-  });
-
-  await Promise.all([]);
+  }));
 }
 
 async function saveOrderDraft(){
