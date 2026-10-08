@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="frontend-version" content="2026-10-08-26">
+<meta name="frontend-version" content="2026-10-08-27">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB Chemicals | Precificação</title>
@@ -111,8 +111,8 @@ async function loadPricingContext(excludeOrderId=null){
    sb('/rest/v1/preco_orders?select=id,created_at&created_at=gte.'+encodeURIComponent(dayStart)+'&created_at=lte.'+encodeURIComponent(dayEnd))
  ]);
  const amount=num(fc?.[0]?.amount);
- const daysInMonth=new Date(y,now.getMonth()+1,0).getDate();
- pricingContext.fixedCostDaily=amount/daysInMonth;
+ // O custo fixo mensal é distribuído por 30 dias, conforme a regra da precificação.
+ pricingContext.fixedCostDaily=amount/30;
 
  const ids=(orders||[]).filter(o=>String(o.id)!==String(excludeOrderId)).map(o=>o.id);
  if(!ids.length){
@@ -188,7 +188,7 @@ async function rebalanceDailyOrders(referenceDate=null){
     const newCostTotal=productCost+fixed;
     const newProfit=newTotal-newCostTotal;
 
-    sb('/rest/v1/preco_orders?id=eq.'+encodeURIComponent(o.id),{
+    await sb('/rest/v1/preco_orders?id=eq.'+encodeURIComponent(o.id),{
       method:'PATCH',
       headers:{Prefer:'return=minimal'},
       body:JSON.stringify({
@@ -517,7 +517,7 @@ window.confirmEditItem=confirmEditItem;
 
 function render(){const tbody=document.getElementById('items');let total=0,costTotal=0,suggestedTotal=0,minTotal=0;items.forEach(x=>{const t=num(x.qty)*num(x.price),cost=num(x.qty)*num(x.cost);total+=t;costTotal+=cost;suggestedTotal+=num(x.qty)*num(x.suggested);minTotal+=num(x.qty)*num(x.min)});if(tbody){tbody.innerHTML=items.map((x,i)=>{const t=num(x.qty)*num(x.price);return `<tr><td>${escapeHtml(x.name)}</td><td>${num(x.qty)}</td><td>${money(x.price)}</td><td>${money(t)}</td><td style="white-space:nowrap"><button class="secondary" type="button" onclick="editItem(${i})">Editar</button> <button class="danger" type="button" onclick="removeItem(${i})">Excluir</button></td></tr>`}).join('');}const totalEl=document.getElementById('totalSale');if(totalEl)totalEl.textContent=money(total);const baseTotal=items.reduce((s,x)=>s+num(x.qty)*num(x.basePrice??x.price),0);const fixedAllocated=pricingContext.fixedCostDaily>0&&baseTotal>0?pricingContext.fixedCostDaily*(baseTotal/(pricingContext.dailySales+baseTotal)):0;const adjustedCost=costTotal+fixedAllocated;const productCostEl=document.getElementById('productCost');if(productCostEl)productCostEl.textContent=money(costTotal);const fixedEl=document.getElementById('fixedCostAllocated');if(fixedEl)fixedEl.textContent=money(fixedAllocated);const costEl=document.getElementById('totalCost');if(costEl)costEl.textContent=money(adjustedCost);const profit=total-adjustedCost;const profitEl=document.getElementById('totalProfit');if(profitEl)profitEl.textContent=money(profit);const itemsEl=document.getElementById('totalItems');if(itemsEl)itemsEl.textContent=String(items.reduce((s,x)=>s+num(x.qty),0));const marginEl=document.getElementById('totalMargin');if(marginEl)marginEl.textContent=adjustedCost?((profit/adjustedCost)*100).toFixed(1)+'%':'—';const statusEl=document.getElementById('totalStatus');if(statusEl){const overall=items.length?priceStatus(total,suggestedTotal,minTotal):['yellow','⚪ SEM PEDIDO'];statusEl.innerHTML=`<span class="badge ${overall[0]}">${overall[1]}</span>`}}
 
-document.addEventListener('DOMContentLoaded',()=>{const saveBtn=document.getElementById('btnSaveOrder');const clearBtn=document.getElementById('btnClearOrder');if(saveBtn)saveBtn.addEventListener('click',saveOrderDraft);if(clearBtn)clearBtn.addEventListener('click',clearOrderDraft);loadPricingContext(null).then(()=>render()).catch(e=>console.error(e));const refreshOrders=document.getElementById('btnRefreshOrders');if(refreshOrders)refreshOrders.addEventListener('click',loadSavedOrders);loadSavedOrders();});
+document.addEventListener('DOMContentLoaded',async()=>{const saveBtn=document.getElementById('btnSaveOrder');const clearBtn=document.getElementById('btnClearOrder');if(saveBtn)saveBtn.addEventListener('click',saveOrderDraft);if(clearBtn)clearBtn.addEventListener('click',clearOrderDraft);try{await loadPricingContext(null);await rebalanceDailyOrders();await loadPricingContext(null);render();await loadSavedOrders();}catch(e){console.error(e);render();loadSavedOrders();}const refreshOrders=document.getElementById('btnRefreshOrders');if(refreshOrders)refreshOrders.addEventListener('click',loadSavedOrders);});
 
 loadProducts().catch(e=>{console.error(e);document.getElementById('product').innerHTML='<option>Erro ao carregar produtos</option>'});
 
