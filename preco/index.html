@@ -57,7 +57,16 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 </div>
 </section>
 
-
+<section class="card" id="savedOrders">
+<h2>Pedidos salvos</h2>
+<p id="savedOrdersMsg" class="muted">Carregando pedidos...</p>
+<div style="overflow:auto">
+<table>
+<thead><tr><th>ID</th><th>Cliente</th><th>Data</th><th>Total</th><th>Margem</th><th>Status</th><th>Ações</th></tr></thead>
+<tbody id="savedOrdersBody"></tbody>
+</table>
+</div>
+</section>
 
 </main>
 
@@ -294,7 +303,7 @@ async function loadSavedOrders(){
   msg.textContent='Carregando pedidos...';
   body.innerHTML='';
   try{
-    const rows=await sb('/rest/v1/ab_orders?select=id,customer_name,total,margin_percent,status,created_at&order=id.desc');
+    const rows=await sb('/rest/v1/preco_orders?select=id,customer_name,total,margin_percent,status,created_at&order=id.desc');
     if(!rows || !rows.length){
       msg.textContent='Nenhum pedido salvo encontrado.';
       return;
