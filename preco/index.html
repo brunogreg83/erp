@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="frontend-version" content="2026-10-08-13">
+<meta name="frontend-version" content="2026-10-08-14">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB Chemicals | Precificação</title>
@@ -17,7 +17,7 @@ label{font-size:13px;font-weight:700;display:block;margin-bottom:5px}input,selec
 table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid #e6eaee;text-align:left}th{font-size:13px;background:#f7f9fb}
 .badge{display:inline-block;padding:7px 10px;border-radius:999px;font-weight:800;font-size:12px}.green{background:var(--green)}.yellow{background:var(--yellow)}.red{background:var(--red)}
 .summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric{background:#f7f9fb;border-radius:10px;padding:13px}.metric b{display:block;font-size:18px;margin-top:5px}
-.hidden{display:none!important}.muted{color:#6d7780;font-size:13px}.right{text-align:right}.ok{color:#087a35;font-weight:700}.error{color:#b00020;font-weight:700}
+.edit-modal{position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;z-index:100}.edit-modal.hidden{display:none!important}.edit-box{background:#fff;border-radius:14px;padding:20px;width:min(420px,calc(100% - 32px));box-shadow:0 8px 30px #0004}.edit-box h3{margin:0 0 16px}.edit-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.hidden{display:none!important}.muted{color:#6d7780;font-size:13px}.right{text-align:right}.ok{color:#087a35;font-weight:700}.error{color:#b00020;font-weight:700}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -78,8 +78,19 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 
 </main>
 
-
-
+<div id="editModal" class="edit-modal hidden">
+  <div class="edit-box">
+    <h3>Editar item</h3>
+    <div class="grid">
+      <div><label>Quantidade</label><input id="editQty" type="number" min="1" step="1"></div>
+      <div><label>Preço de venda (un.)</label><input id="editPrice" type="number" min="0" step="0.01"></div>
+    </div>
+    <div class="edit-actions">
+      <button class="secondary" type="button" onclick="cancelEditItem()">Cancelar</button>
+      <button class="primary" type="button" onclick="confirmEditItem()">Salvar</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const SUPABASE_URL = "https://divokbonqrmpindszoqv.supabase.co";
@@ -474,24 +485,41 @@ function escapeHtml(v){return String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;',
 async function addItem(){const p=products.find(x=>String(x.id)===String(document.getElementById('product').value));if(!p)return;const q=Math.max(1,num(document.getElementById('qty').value)),pr=num(document.getElementById('price').value);items.push({productId:p.id,name:p.name,cost:num(p.cost),suggested:num(p.suggested_price),min:num(p.min_price),qty:q,price:pr,basePrice:pr});try{await loadPricingContext(currentOrderId);repriceDraft();const added=items[items.length-1];if(added)document.getElementById('price').value=num(added.price).toFixed(2);render()}catch(e){console.error(e);render()}}
 window.addItem=addItem;window.removeItem=async i=>{items.splice(i,1);try{await loadPricingContext(currentOrderId);repriceDraft();render()}catch(e){console.error(e);render()}};
 function priceStatus(price,suggested,min){const p=num(price),s=num(suggested),m=num(min);if(m>0&&p<m)return ['red','🔴 VERMELHO'];if(s>0&&p<s)return ['yellow','🟡 AMARELO'];return ['green','🟢 VERDE']}
+let editingItemIndex=null;
+
 function editItem(i){
   const x=items[i];
   if(!x) return;
-  const qtyInput=prompt('Quantidade:', String(num(x.qty)));
-  if(qtyInput===null) return;
-  const newQty=Math.max(1,num(qtyInput));
-  const priceInput=prompt('Preço de venda (un.):', String(num(x.basePrice??x.price).toFixed(2)));
-  if(priceInput===null) return;
-  const newBasePrice=Math.max(0,num(priceInput));
+  editingItemIndex=i;
+  document.getElementById('editQty').value=num(x.qty);
+  document.getElementById('editPrice').value=num(x.basePrice??x.price).toFixed(2);
+  document.getElementById('editModal').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('editQty')?.focus(),50);
+}
+
+function cancelEditItem(){
+  editingItemIndex=null;
+  document.getElementById('editModal').classList.add('hidden');
+}
+
+function confirmEditItem(){
+  if(editingItemIndex===null) return;
+  const x=items[editingItemIndex];
+  if(!x) return;
+  const newQty=Math.max(1,num(document.getElementById('editQty').value));
+  const newBasePrice=Math.max(0,num(document.getElementById('editPrice').value));
   x.qty=newQty;
   x.basePrice=newBasePrice;
   x.price=newBasePrice;
+  cancelEditItem();
   loadPricingContext(currentOrderId).then(()=>{
     repriceDraft();
     render();
   }).catch(e=>{console.error(e);render();});
 }
 window.editItem=editItem;
+window.cancelEditItem=cancelEditItem;
+window.confirmEditItem=confirmEditItem;
 
 function render(){const tbody=document.getElementById('items');let total=0,costTotal=0,suggestedTotal=0,minTotal=0;items.forEach(x=>{const t=num(x.qty)*num(x.price),cost=num(x.qty)*num(x.cost);total+=t;costTotal+=cost;suggestedTotal+=num(x.qty)*num(x.suggested);minTotal+=num(x.qty)*num(x.min)});if(tbody){tbody.innerHTML=items.map((x,i)=>{const t=num(x.qty)*num(x.price);return `<tr><td>${escapeHtml(x.name)}</td><td>${num(x.qty)}</td><td>${money(x.price)}</td><td>${money(t)}</td><td style="white-space:nowrap"><button class="secondary" type="button" onclick="editItem(${i})">Editar</button> <button class="danger" type="button" onclick="removeItem(${i})">Excluir</button></td></tr>`}).join('');}const totalEl=document.getElementById('totalSale');if(totalEl)totalEl.textContent=money(total);const baseTotal=items.reduce((s,x)=>s+num(x.qty)*num(x.basePrice??x.price),0);const fixedAllocated=pricingContext.fixedCostDaily>0&&baseTotal>0?pricingContext.fixedCostDaily*(baseTotal/(pricingContext.dailySales+baseTotal)):0;const adjustedCost=costTotal+fixedAllocated;const productCostEl=document.getElementById('productCost');if(productCostEl)productCostEl.textContent=money(costTotal);const fixedEl=document.getElementById('fixedCostAllocated');if(fixedEl)fixedEl.textContent=money(fixedAllocated);const costEl=document.getElementById('totalCost');if(costEl)costEl.textContent=money(adjustedCost);const profit=total-adjustedCost;const profitEl=document.getElementById('totalProfit');if(profitEl)profitEl.textContent=money(profit);const itemsEl=document.getElementById('totalItems');if(itemsEl)itemsEl.textContent=String(items.reduce((s,x)=>s+num(x.qty),0));const marginEl=document.getElementById('totalMargin');if(marginEl)marginEl.textContent=adjustedCost?((profit/adjustedCost)*100).toFixed(1)+'%':'—';const statusEl=document.getElementById('totalStatus');if(statusEl){const overall=items.length?priceStatus(total,suggestedTotal,minTotal):['yellow','⚪ SEM PEDIDO'];statusEl.innerHTML=`<span class="badge ${overall[0]}">${overall[1]}</span>`}}
 
