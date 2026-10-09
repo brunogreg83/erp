@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="frontend-version" content="2026-10-08-35">
+<meta name="frontend-version" content="2026-10-08-36">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AB Chemicals | Precificação</title>
@@ -57,6 +57,11 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 <div class="metric">Margem padrão<b>100%</b></div>
 <div class="metric">Quantidade de itens<b id="totalItems">0</b></div>
 <div class="metric">Precificação do pedido<b id="totalStatus"><span class="badge yellow">⚪ SEM PEDIDO</span></b></div>
+<div class="metric"><span>Lógica dos faróis</span><b style="font-size:13px;line-height:1.7">
+<span class="badge red">🔴 Abaixo de 50%</span><br>
+<span class="badge yellow">🟡 Acima de 50%</span><br>
+<span class="badge green">🟢 Acima de 100%</span>
+</b></div>
 </div>
 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px">
   <button id="btnSaveOrder" class="primary" type="button">Salvar pedido</button>
@@ -480,7 +485,15 @@ document.getElementById('product').addEventListener('change',()=>{
 function escapeHtml(v){return String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]))}
 async function addItem(){const p=products.find(x=>String(x.id)===String(document.getElementById('product').value));if(!p)return;const q=Math.max(1,num(document.getElementById('qty').value)),pr=num(document.getElementById('price').value);items.push({productId:p.id,name:p.name,cost:num(p.cost),suggested:num(p.suggested_price),min:num(p.min_price),qty:q,price:pr,basePrice:pr});try{await loadPricingContext(currentOrderId);const added=items[items.length-1];if(added)document.getElementById('price').value=num(added.price).toFixed(2);render()}catch(e){console.error(e);render()}}
 window.addItem=addItem;window.removeItem=async i=>{items.splice(i,1);try{await loadPricingContext(currentOrderId);render()}catch(e){console.error(e);render()}};
-function priceStatus(price,suggested,min){const p=num(price),s=num(suggested),m=num(min);if(m>0&&p<m)return ['red','🔴 VERMELHO'];if(s>0&&p<s)return ['yellow','🟡 AMARELO'];return ['green','🟢 VERDE']}
+function priceStatus(price,suggested,min){
+ const p=num(price),s=num(suggested),m=num(min);
+ if(!s && !m) return ['yellow','🟡 AMARELO'];
+ const reference=s>0?s:m;
+ const pct=reference>0?(p/reference)*100:0;
+ if(pct<50) return ['red','🔴 VERMELHO'];
+ if(pct<=100) return ['yellow','🟡 AMARELO'];
+ return ['green','🟢 VERDE'];
+}
 let editingItemIndex=null;
 
 function editItem(i){
