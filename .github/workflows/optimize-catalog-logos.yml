@@ -1,0 +1,125 @@
+name: Optimize catalog logos losslessly
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'catálogo/index.html'
+      - '.github/workflows/optimize-catalog-logos.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  optimize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Convert PNG logos to lossless WebP only when exact and smaller
+        run: |
+          python -m pip install --quiet Pillow
+          cat > /tmp/optimize.py <<'PY'
+          import base64, re, sys
+          from io import BytesIO
+          from pathlib import Path
+          from PIL import Image, ImageChops
+
+          path = Path('catálogo/index.html')
+          html = path.read_text(encoding='utf-8')
+          report = []
+
+          def convert_png(data, label):
+              raw = base64.b64decode(data)
+              source = Image.open(BytesIO(raw)).convert('RGBA')
+              out = BytesIO()
+              source.save(out, format='WEBP', lossless=True, exact=True, method=6)
+              webp = out.getvalue()
+              check = Image.open(BytesIO(webp)).convert('RGBA')
+              if source.size != check.size or ImageChops.difference(source, check).getbbox() is not None:
+                  raise SystemExit(f'{label}: WebP pixel/dimension check failed; no changes committed')
+              # Difference.getbbox() can ignore alpha-only differences, so compare every channel.
+              if source.tobytes() != check.tobytes():
+                  raise SystemExit(f'{label}: RGBA bytes differ; no changes committed')
+              report.append(f'{label}: PNG={len(raw)} bytes, lossless WebP={len(webp)} bytes, dimensions={source.width}x{source.height}, exact RGBA match=yes')
+              if len(webp) >= len(raw):
+                  report.append(f'{label}: no size reduction; keeping original PNG')
+                  return None
+              return base64.b64encode(webp).decode('ascii')
+
+          header_match = re.search(r'<nav>\s*<img src="data:image/png;base64,([^"]+)"', html)
+          if not header_match:
+              raise SystemExit('Could not identify header logo safely; no changes made')
+          header_webp = convert_png(header_match.group(1), 'Header logo')
+          if header_webp:
+              html = html[:header_match.start(1)] + header_webp + html[header_match.end(1):]
+              html = html.replace('<img src="data:image/png;base64,' + header_webp, '<img src="data:image/webp;base64,' + header_webp, 1)
+
+          pdf_match = re.search(r'const LOGO_B64\s*=\s*"([^"]+)"\s*;', html)
+          if not pdf_match:
+              raise SystemExit('Could not identify PDF logo safely; no changes made')
+          pdf_webp = convert_png(pdf_match.group(1), 'PDF logo')
+          if pdf_webp:
+              html = html[:pdf_match.start(1)] + pdf_webp + html[pdf_match.end(1):]
+              html = html.replace('const logoData = "data:image/png;base64," + LOGO_B64;', 'const logoData = "data:image/webp;base64," + LOGO_B64;', 1)
+              html = html.replace('doc.addImage(logoData, "PNG",', 'doc.addImage(logoData, "WEBP",', 1)
+
+          path.write_text(html, encoding='utf-8')
+          Path('/tmp/optimization-report.txt').write_text('\n'.join(report) + '\n', encoding='utf-8')
+          print('\n'.join(report))
+          print(f'HTML chars after changes: {len(html)}')
+          PY
+          python /tmp/optimize.py
+
+      - name: Test header image and PDF logo generation in jsPDF
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+          cat > /tmp/test.cjs <<'JS'
+          const fs = require('fs');
+          const { chromium } = require('playwright');
+          (async () => {
+            const html = fs.readFileSync('catálogo/index.html', 'utf8');
+            const head = html.match(/<nav>\s*<img src="(data:image\/(?:png|webp);base64,[^"]+)"/);
+            const logo = html.match(/const LOGO_B64\s*=\s*"([^"]+)"\s*;/);
+            const type = html.match(/const logoData = "data:image\/(png|webp);base64," \+ LOGO_B64;/);
+            const add = html.match(/doc\.addImage\(logoData, "(PNG|WEBP)",/);
+            if (!head || !logo || !type || !add) throw new Error('Expected logo references missing in catalog HTML');
+            const browser = await chromium.launch({headless:true});
+            try {
+              const page = await browser.newPage();
+              await page.setContent('<!doctype html><html><head><script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script></head><body><img id="header" src="' + head[1] + '"></body></html>', {waitUntil:'load', timeout:60000});
+              await page.waitForFunction(() => !!window.jspdf && !!window.jspdf.jsPDF, null, {timeout:60000});
+              const result = await page.evaluate(({logoB64, format}) => {
+                const img = document.getElementById('header');
+                const headerOk = img.complete && img.naturalWidth > 0 && img.naturalHeight > 0;
+                const doc = new window.jspdf.jsPDF();
+                const data = 'data:image/' + format.toLowerCase() + ';base64,' + logoB64;
+                doc.addImage(data, format, 15, 15, 40, 30);
+                const pdf = doc.output('arraybuffer');
+                return {headerOk, headerDimensions: [img.naturalWidth, img.naturalHeight], pdfBytes: pdf.byteLength, pdfHeader: new TextDecoder().decode(pdf.slice(0,5))};
+              }, {logoB64:logo[1], format:add[1]});
+              if (!result.headerOk) throw new Error('Header image failed to render');
+              if (!result.pdfHeader.startsWith('%PDF-') || result.pdfBytes < 1000) throw new Error('jsPDF image test did not produce a valid PDF');
+              console.log('Header image renders:', JSON.stringify(result.headerDimensions));
+              console.log('jsPDF logo test passed:', JSON.stringify({format:add[1], pdfBytes:result.pdfBytes, pdfHeader:result.pdfHeader}));
+            } finally { await browser.close(); }
+          })().catch(e => { console.error(e); process.exit(1); });
+          JS
+          npm_config_cache=/tmp/npm-cache node /tmp/test.cjs
+
+      - name: Commit optimized catalog only and remove temporary workflow
+        run: |
+          cat /tmp/optimization-report.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f .github/workflows/optimize-catalog-logos.yml
+          git add 'catálogo/index.html' .github/workflows/optimize-catalog-logos.yml
+          if git diff --cached --quiet; then
+            echo "No optimization changes to commit."
+            exit 0
+          fi
+          git commit -m "Otimiza logotipos do catálogo sem perda de qualidade"
+          git push origin main
