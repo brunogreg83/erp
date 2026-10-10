@@ -1133,6 +1133,28 @@ window._fb = {
     return await fb.analyzeReceipt(dataUrl);
   }
 
+  function normalizeDateInput(value){
+    if(value === null || value === undefined || value === '') return '';
+    const s = String(value).trim();
+    let m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T)/);
+    let year, month, day;
+    if(m){
+      year = Number(m[1]); month = Number(m[2]); day = Number(m[3]);
+    } else {
+      m = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
+      if(m){
+        day = Number(m[1]); month = Number(m[2]); year = Number(m[3]);
+      } else {
+        m = s.match(/^(\d{4})[\/.-](\d{1,2})[\/.-](\d{1,2})$/);
+        if(!m) return '';
+        year = Number(m[1]); month = Number(m[2]); day = Number(m[3]);
+      }
+    }
+    const d = new Date(year, month - 1, day);
+    if(!year || d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) return '';
+    return String(year).padStart(4,'0')+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+  }
+
   function compressImageDataUrl(dataUrl, maxDim, quality){
     return new Promise(function(resolve, reject){
       const img = new Image();
@@ -1187,8 +1209,14 @@ window._fb = {
       try{
         const extraido = await analyzeReceipt(pendingPhotoDataUrl);
         if(sequence !== receiptAnalysisSequence) return;
+        let dataDaIaInvalida = false;
         if(extraido && extraido.data){
-          document.getElementById('fData').value = extraido.data;
+          const dataNormalizada = normalizeDateInput(extraido.data);
+          if(dataNormalizada){
+            document.getElementById('fData').value = dataNormalizada;
+          } else {
+            dataDaIaInvalida = true;
+          }
         }
         if(extraido && extraido.valor !== null && extraido.valor !== undefined && extraido.valor !== ''){
           const valorExtraido = typeof extraido.valor === 'number'
@@ -1204,7 +1232,8 @@ window._fb = {
         if(extraido && extraido.descricao){
           document.getElementById('fDescricao').value = extraido.descricao;
         }
-        fotoStatus.textContent = file.name + ' · dados preenchidos automaticamente (confira antes de salvar)';
+        fotoStatus.textContent = file.name + ' · dados preenchidos automaticamente (confira antes de salvar)' +
+          (dataDaIaInvalida ? ' · confira/preencha a data: formato retornado pela IA inválido' : '');
       }catch(err){
         if(sequence !== receiptAnalysisSequence) return;
         console.error('Falha ao analisar recibo com IA:', err);
@@ -1456,28 +1485,34 @@ window._fb = {
     saveStatus.className = 'photo-status';
     saveStatus.textContent = 'Conectando ao banco de dados…';
 
+    let photoUploadFailed = false;
     try{
       const fb = await waitForFb();
       saveStatus.textContent = 'Salvando lançamento…';
       if(editingId){
+        const currentEditingId = editingId;
         const updates = { data, colaborador, categoria, descricao, valor };
         if(pendingPhotoDataUrl){
           try{
-            const existing = expenses.find(x=>x.id===editingId);
-            if(existing && existing.reciboPath) await fb.deleteReceipt(existing.reciboPath);
-            const { url, path } = await fb.uploadReceipt(editingId, pendingPhotoDataUrl);
+            // Envia a nova foto antes de remover a anterior, para não perder o recibo existente.
+            const existing = expenses.find(x=>x.id===currentEditingId);
+            const { url, path } = await fb.uploadReceipt(currentEditingId, pendingPhotoDataUrl);
             updates.reciboUrl = url;
             updates.reciboPath = path;
+            if(existing && existing.reciboPath && existing.reciboPath !== path){
+              await fb.deleteReceipt(existing.reciboPath);
+            }
           }catch(photoErr){
+            photoUploadFailed = true;
             console.error('Falha no upload da foto:', photoErr);
-            saveStatus.className = 'photo-status danger';
-            saveStatus.textContent = 'Despesa salva, mas a foto falhou: ' + (photoErr.code || photoErr.message || photoErr);
           }
         }
-        await fb.update(editingId, updates);
-        editingId = null;
-        cancelEditBtn.style.display = 'none';
-        submitBtn.textContent = 'Adicionar despesa';
+        await fb.update(currentEditingId, updates);
+        if(!photoUploadFailed){
+          editingId = null;
+          cancelEditBtn.style.display = 'none';
+          submitBtn.textContent = 'Adicionar despesa';
+        }
       } else {
         const docRef = await fb.add({ data, colaborador, categoria, descricao, valor, reciboUrl: null, reciboPath: null });
         if(pendingPhotoDataUrl){
@@ -1485,17 +1520,22 @@ window._fb = {
             const { url, path } = await fb.uploadReceipt(docRef.id, pendingPhotoDataUrl);
             await fb.update(docRef.id, { reciboUrl: url, reciboPath: path });
           }catch(photoErr){
+            photoUploadFailed = true;
+            editingId = docRef.id;
+            cancelEditBtn.style.display = 'inline-block';
+            submitBtn.textContent = 'Salvar alterações';
             console.error('Falha no upload da foto:', photoErr);
-            saveStatus.className = 'photo-status danger';
-            saveStatus.textContent = 'Despesa salva, mas a foto falhou: ' + (photoErr.code || photoErr.message || photoErr);
           }
         }
       }
-      form.reset();
-      resetPhotoField();
-      restoreColaborador();
-      document.getElementById('fData').valueAsDate = new Date();
-      if(saveStatus.className !== 'photo-status danger'){
+      if(photoUploadFailed){
+        saveStatus.className = 'photo-status danger';
+        saveStatus.textContent = 'Despesa salva, mas a foto não foi enviada. Os dados e a foto continuam na tela; toque em “Salvar alterações” para tentar enviar a foto novamente.';
+      } else {
+        form.reset();
+        resetPhotoField();
+        restoreColaborador();
+        document.getElementById('fData').valueAsDate = new Date();
         saveStatus.className = 'photo-status ok';
         saveStatus.textContent = 'Lançamento salvo com sucesso.';
         setTimeout(()=>{ if(saveStatus.className === 'photo-status ok'){ saveStatus.textContent=''; saveStatus.className='photo-status'; } }, 3500);
@@ -1670,9 +1710,8 @@ window._fb = {
   const IDLE_LIMIT_MS = 10 * 60 * 1000;
 
   function resetIdleTimer(){
-    if(!isLoggedIn) return;
+    // O RDV não encerra mais a sessão automaticamente por inatividade.
     clearTimeout(idleTimer);
-    idleTimer = setTimeout(handleIdleLogout, IDLE_LIMIT_MS);
   }
 
   async function handleIdleLogout(){
