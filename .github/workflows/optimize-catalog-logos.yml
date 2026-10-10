@@ -108,7 +108,7 @@ jobs:
             } finally { await browser.close(); }
           })().catch(e => { console.error(e); process.exit(1); });
           JS
-          npm_config_cache=/tmp/npm-cache node /tmp/test.cjs
+          NODE_PATH="$GITHUB_WORKSPACE/node_modules" node /tmp/test.cjs
 
       - name: Commit optimized catalog only and remove temporary workflow
         run: |
