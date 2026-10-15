@@ -290,6 +290,9 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
       <input class="form-input" type="password" id="inp-senha" placeholder="Digite sua senha" onkeydown="if(event.key==='Enter')fazerLogin()">
     </div>
     <button class="login-btn" onclick="fazerLogin()">Entrar</button>
+    <div style="text-align:center;margin-top:14px;">
+      <button type="button" onclick="mostrarAjudaSenha()" style="background:none;border:none;color:#185FA5;font-size:12px;cursor:pointer;text-decoration:underline;">Esqueceu sua senha?</button>
+    </div>
   </div>
 </div>
 
@@ -1224,6 +1227,10 @@ function tentarLogin(login, senha) {
   // usuários do Firebase
   const u = window._usuariosDB.find(u => u.login === login && u.senha === senha && u.status === 'Ativo');
   return u || null;
+}
+
+function mostrarAjudaSenha() {
+  alert('Para redefinir sua senha, solicite ajuda ao administrador do sistema.');
 }
 
 function fazerLogin() {
