@@ -1120,7 +1120,7 @@ const SESSION_KEY = 'abc_auth';
 const SESSION_TTL = Infinity;
 
 // usuário admin fixo + usuários do Firebase
-const ADMIN_FIXO = { login: '__desativado__', senha: '', nome: 'Administrador', perfil: 'admin' };
+const ADMIN_FIXO = { login: 'admin', senha: '#Algo2023', nome: 'Administrador', perfil: 'admin' };
 
 function verificarSessao() {
   try {
@@ -1446,220 +1446,96 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <script type="module">
-import { createClient } from "https://esm.sh/@neondatabase/neon-js@0.8.0-beta";
+import { initializeApp }       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, deleteDoc, doc, setDoc, updateDoc, onSnapshot, enableNetwork, disableNetwork }
+                                from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// ── Neon (login + banco) ──────────────────────────────────────────────────
-const neon = createClient({
-  auth:    { url: "https://ep-bitter-tooth-b6lxbyzv.neonauth.c-2.sa-east-1.aws.neon.tech/neondb/auth" },
-  dataApi: { url: "https://ep-bitter-tooth-b6lxbyzv.apirest.c-2.sa-east-1.aws.neon.tech/neondb/rest/v1" }
-});
-window.neon = neon;
+// ── Firebase init ──────────────────────────────────────────────────────────
+const cfg = {
+  apiKey:            "AIzaSyAlOXxe7Hthply4YwWlHC0Ov9OvFnW6qJY",
+  authDomain:        "ab-clean-1f6a3.firebaseapp.com",
+  projectId:         "ab-clean-1f6a3",
+  storageBucket:     "ab-clean-1f6a3.firebasestorage.app",
+  messagingSenderId: "520953502156",
+  appId:             "1:520953502156:web:ed5cfcd87aba70fffca569"
+};
+const app = initializeApp(cfg);
+const db  = getFirestore(app);
+window.db = db;
+window._cfoDoc = (db,path)=>doc(db,...path.split('/'));
+window._cfoOnSnapshot = onSnapshot;
+window._cfoSetDoc = setDoc;
+window._cfoDocRef = doc;
 
-// ── Cache local ───────────────────────────────────────────────────────────
+// ── Cache local ────────────────────────────────────────────────────────────
 const D = { pedidos:[], produtos:[], clientes:[], receber:[], pagar:[], ordens:[], usuarios:[], fornecedores:[] };
 window.D = D;
+
+// window.pitens precisa ser global pois é referenciado em onchange de HTML dinâmico
 window.pitens = [];
 
-// ── Indicador de conexão ──────────────────────────────────────────────────
-const dot = document.getElementById('sync-dot');
-const lbl = document.getElementById('fb-label');
-function syncOk() {
-  dot.className = 'sync-dot ok'; lbl.textContent = 'Neon conectado';
-  const ind = document.getElementById('sync-indicator'); if (ind) ind.className = 'sync-indicator';
-  const ms = document.getElementById('mob-sync'); if (ms) ms.className = 'm-sync ok';
-  const side = document.getElementById('fb-label-side'); if (side) side.textContent = 'conectado';
+// ── Sync indicator ─────────────────────────────────────────────────────────
+const dot  = document.getElementById('sync-dot');
+const lbl  = document.getElementById('fb-label');
+function syncOk()  {
+  dot.className='sync-dot ok'; lbl.textContent='Firebase conectado';
+  const ind=document.getElementById('sync-indicator'); if(ind){ind.className='sync-indicator';}
+  const ms=document.getElementById('mob-sync'); if(ms) ms.className='m-sync ok';
+  const side=document.getElementById('fb-label-side'); if(side) side.textContent='conectado';
 }
 function syncErr() {
-  dot.className = 'sync-dot err'; lbl.textContent = 'Erro de conexão';
-  const ind = document.getElementById('sync-indicator'); if (ind) ind.className = 'sync-indicator err';
-  const ms = document.getElementById('mob-sync'); if (ms) ms.className = 'm-sync err';
-  const side = document.getElementById('fb-label-side'); if (side) side.textContent = 'erro';
+  dot.className='sync-dot err'; lbl.textContent='Erro de conexão';
+  const ind=document.getElementById('sync-indicator'); if(ind){ind.className='sync-indicator err';}
+  const ms=document.getElementById('mob-sync'); if(ms) ms.className='m-sync err';
+  const side=document.getElementById('fb-label-side'); if(side) side.textContent='erro';
 }
-window.addEventListener('online',  () => { if (window._syncTimer) carregarTudo(); });
+window.addEventListener('online',  () => enableNetwork(db).then(syncOk).catch(syncErr));
 window.addEventListener('offline', () => syncErr());
 
-// ── Leitura (atualiza sozinho a cada 15 segundos) ─────────────────────────
+// ── Real-time listeners ────────────────────────────────────────────────────
 let loaded = {};
 let fbReady = false;
-const COLS = ['pedidos','produtos','clientes','receber','pagar','ordens','usuarios','fornecedores'];
-const assinatura = {};
-let falhou = false;
+['pedidos','produtos','clientes','receber','pagar','ordens','usuarios','fornecedores'].forEach(col => {
+  onSnapshot(
+    collection(db, col),
+    snap => {
+      D[col] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      loaded[col] = true;
+      if (col === 'usuarios') window._usuariosDB = D.usuarios;
+      fbReady = true;
+      syncOk();
+      renderAll();
+    },
+    err => { console.error(col, err); syncErr(); }
+  );
+});
 
-async function buscar(col) {
-  const rows = []; let ini = 0; const passo = 1000;
-  while (true) {
-    const { data, error } = await neon.from(col).select('id,data').order('id').range(ini, ini + passo - 1);
-    if (error) return { error };
-    rows.push(...data);
-    if (data.length < passo) break;
-    ini += passo;
-  }
-  return { rows };
-}
-async function carregar(col) {
-  const r = await buscar(col);
-  if (r.error) { console.error(col, r.error); falhou = true; return false; }
-  const novo = r.rows.map(x => ({ id: x.id, ...x.data }));
-  const sig = JSON.stringify(novo);
-  loaded[col] = true; fbReady = true;
-  if (sig === assinatura[col]) return false;
-  assinatura[col] = sig; D[col] = novo;
-  if (col === 'usuarios') window._usuariosDB = D.usuarios;
-  return true;
-}
-let carregando = false;
-async function carregarTudo() {
-  if (carregando) return;
-  carregando = true; falhou = false;
-  try {
-    const r = await Promise.all(COLS.map(carregar));
-    if (falhou) syncErr(); else syncOk();
-    if (r.some(Boolean)) renderAll();
-  } catch (e) { console.error(e); syncErr(); }
-  finally { carregando = false; }
-}
-
-// ── Gravação ──────────────────────────────────────────────────────────────
+// ── CRUD helpers ───────────────────────────────────────────────────────────
 async function add(col, data) {
-  const id = crypto.randomUUID();
-  const { error } = await neon.from(col).insert({ id, data });
-  if (error) { console.error(error); syncErr(); toast('Erro ao salvar: ' + error.message); return; }
-  D[col].push({ id, ...data });
-  assinatura[col] = null;
-  renderAll();
-  return { id };
+  try { return await addDoc(collection(db, col), data); }
+  catch(e) { syncErr(); toast('Erro ao salvar: ' + e.message); }
 }
 async function del(col, id) {
-  const { error } = await neon.from(col).delete().eq('id', id);
-  if (error) { console.error(error); syncErr(); toast('Erro ao excluir.'); return; }
-  D[col] = D[col].filter(x => x.id !== id);
-  assinatura[col] = null;
-  renderAll();
+  try { await deleteDoc(doc(db, col, id)); }
+  catch(e) { syncErr(); toast('Erro ao excluir.'); }
 }
 async function upd(col, id, data) {
   try {
-    const atual = (D[col] || []).find(x => x.id === id);
-    let base;
-    if (atual) { const { id: _i, ...resto } = atual; base = resto; }
-    else {
-      const r = await neon.from(col).select('data').eq('id', id).single();
-      if (r.error) throw r.error;
-      base = r.data.data;
+    await updateDoc(doc(db, col, id), data);
+    // Mantém a interface sincronizada imediatamente, sem depender do onSnapshot.
+    if (D[col]) {
+      const idx = D[col].findIndex(x => x.id === id);
+      if (idx >= 0) D[col][idx] = { ...D[col][idx], ...data };
     }
-    const novo = { ...base, ...data };
-    const { error } = await neon.from(col).update({ data: novo, updated_at: new Date().toISOString() }).eq('id', id);
-    if (error) throw error;
-    if (atual) D[col][D[col].indexOf(atual)] = { id, ...novo };
-    assinatura[col] = null;
-    renderAll();
     return true;
-  } catch (e) {
+  } catch(e) {
     console.error('Erro ao atualizar', col, id, e);
     syncErr();
-    toast('Não foi possível salvar a alteração.');
+    toast('Não foi possível salvar a alteração no Firebase.');
     return false;
   }
 }
 
-// ── Login com Neon Auth ───────────────────────────────────────────────────
-async function entrar(email, user) {
-  const erro = document.getElementById('login-error');
-  const { data: permitido, error: e1 } = await neon.rpc('acesso_ok');
-  if (e1 || permitido !== true) {
-    await neon.auth.signOut();
-    erro.textContent = 'Este e-mail não tem acesso ao sistema.';
-    erro.classList.add('show');
-    return false;
-  }
-  await carregarTudo();
-  const reg = (D.usuarios || []).find(x => (x.login || '').toLowerCase() === email);
-  if (reg && reg.status && reg.status !== 'Ativo') {
-    await neon.auth.signOut();
-    erro.textContent = 'Usuário inativo.';
-    erro.classList.add('show');
-    return false;
-  }
-  const perfil = reg ? reg.perfil : 'admin';
-  const nome = (reg && reg.nome) || (user && user.name) || email;
-  salvarSessao({ login: email, nome, perfil });
-  aplicarPerfil(perfil, nome);
-  const ultimaTela = sessionStorage.getItem('abc_tela');
-  if (ultimaTela && perfil === 'admin') restaurarTela(ultimaTela);
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('erp-shell').style.display = 'flex';
-  erro.classList.remove('show');
-  if (!window._syncTimer) window._syncTimer = setInterval(carregarTudo, 15000);
-  return true;
-}
-
-window.fazerLogin = async function () {
-  const email = document.getElementById('inp-login').value.trim().toLowerCase();
-  const senha = document.getElementById('inp-senha').value;
-  const erro = document.getElementById('login-error');
-  if (!email || !senha) return;
-  const { data, error } = await neon.auth.signIn.email({ email, password: senha });
-  if (error) {
-    erro.textContent = 'E-mail ou senha incorretos.';
-    erro.classList.add('show');
-    document.getElementById('inp-senha').value = '';
-    return;
-  }
-  await entrar(email, data && data.user);
-};
-
-window.fazerLogout = async function () {
-  try { await neon.auth.signOut(); } catch (e) {}
-  localStorage.removeItem('abc_auth');
-  location.reload();
-};
-
-// Tela de login: campo de e-mail e link "Esqueci / definir senha"
-(function ajustarTelaLogin() {
-  const inp = document.getElementById('inp-login');
-  inp.placeholder = 'Digite seu e-mail';
-  inp.setAttribute('autocomplete', 'username');
-  const lab = inp.closest('.form-group').querySelector('label');
-  if (lab) lab.textContent = 'E-mail';
-  const btn = document.querySelector('#login-screen .login-btn');
-  const a = document.createElement('a');
-  a.href = '#';
-  a.textContent = 'Esqueci / definir minha senha';
-  a.style.cssText = 'display:block;text-align:center;margin-top:14px;font-size:12px;color:#185FA5;';
-  a.onclick = async (ev) => {
-    ev.preventDefault();
-    const email = inp.value.trim().toLowerCase();
-    if (!email) { alert('Digite seu e-mail no campo acima.'); return; }
-    const { error } = await neon.auth.requestPasswordReset({ email, redirectTo: location.origin + location.pathname });
-    alert(error ? 'Não foi possível enviar: ' + error.message : 'Se o e-mail existir, enviamos um link para definir a senha.');
-  };
-  btn.after(a);
-})();
-
-// Link do e-mail de recuperação: ?token=...
-async function tratarResetSenha() {
-  const token = new URLSearchParams(location.search).get('token');
-  if (!token) return;
-  const nova = prompt('Digite sua nova senha (mínimo 8 caracteres):');
-  if (nova && nova.length >= 8) {
-    const { error } = await neon.auth.resetPassword({ newPassword: nova, token });
-    alert(error ? 'Não foi possível definir a senha: ' + error.message : 'Senha definida! Agora entre com seu e-mail e senha.');
-  }
-  history.replaceState(null, '', location.pathname);
-}
-
-// Ao abrir a página: só entra se existir sessão real no Neon
-(async function iniciar() {
-  await tratarResetSenha();
-  let s = null;
-  try { const r = await neon.auth.getSession(); s = r && r.data; } catch (e) {}
-  if (s && s.user && s.user.email) {
-    const ok = await entrar(s.user.email.toLowerCase(), s.user);
-    if (ok) return;
-  }
-  localStorage.removeItem('abc_auth');
-  document.getElementById('erp-shell').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-})();
 // ── Utils ──────────────────────────────────────────────────────────────────
 const getSessao = () => { try { return JSON.parse(sessionStorage.getItem('abc_auth')); } catch(e){ return null; } };
 const R$     = v => { const n = Number(v); return 'R$ ' + (isNaN(n) ? '0,00' : n.toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2})); };
@@ -2458,8 +2334,7 @@ window.atualizarProduto = async id => {
   };
 
   try {
-    const ok = await upd('produtos', id, dados);
-if (!ok) return;
+    await updateDoc(doc(db, 'produtos', id), dados);
     document.getElementById('modal-produto').classList.remove('open');
     document.querySelector('#modal-produto .modal-footer').innerHTML =
       '<button class="btn-ghost" onclick="closeModal(\'modal-produto\')">Cancelar</button>' +
