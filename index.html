@@ -3495,15 +3495,23 @@ function desenharReceitasDespesasDiarias() {
   const pad = { top: 24, right: 18, bottom: 38, left: 66 };
   const plotW = W - pad.left - pad.right;
   const plotH = H - pad.top - pad.bottom;
-  const maxValor = Math.max(...receitas, ...despesas, 1);
-  const maxY = maxValor;
+  // Saldo acumulado do mês: entradas previstas menos saídas previstas até cada dia.
+  // O ERP não possui saldo inicial de caixa configurado; por isso a série começa em zero.
+  const saldoCaixa = receitas.map((_, i) =>
+    receitas.slice(0, i + 1).reduce((s, v) => s + v, 0) -
+    despesas.slice(0, i + 1).reduce((s, v) => s + v, 0)
+  );
+  const todosValores = [...receitas, ...despesas, ...saldoCaixa, 0];
+  const minValor = Math.min(...todosValores);
+  const maxValor = Math.max(...todosValores, 1);
+  const amplitude = maxValor - minValor || 1;
   const x = i => pad.left + (diasNoMes === 1 ? plotW / 2 : i * plotW / (diasNoMes - 1));
-  const y = v => pad.top + plotH - (v / maxY) * plotH;
+  const y = v => pad.top + plotH - ((v - minValor) / amplitude) * plotH;
   const formatar = v => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v);
   const path = vals => vals.map((v, i) => (i === 0 ? 'M ' : 'L ') + x(i).toFixed(2) + ' ' + y(v).toFixed(2)).join(' ');
   const grids = [0, 1, 2, 3, 4].map(i => {
-    const valor = maxY * i / 4, yy = y(valor);
-    return '<line x1="' + pad.left + '" y1="' + yy + '" x2="' + (W - pad.right) + '" y2="' + yy + '" stroke="#e8e7e0" stroke-width="1"/>' +
+    const valor = maxValor - amplitude * i / 4, yy = y(valor);
+    return '<line x1="' + pad.left + '" y1="' + yy + '" x2="' + (W - pad.right) + '" y2="' + yy + '" stroke="' + (Math.abs(valor) < amplitude * 0.005 ? '#aaa' : '#e8e7e0') + '" stroke-width="' + (Math.abs(valor) < amplitude * 0.005 ? '1.5' : '1') + '"/>' +
       '<text x="' + (pad.left - 9) + '" y="' + (yy + 4) + '" text-anchor="end" font-size="10" fill="#888">' + formatar(valor) + '</text>';
   }).join('');
   const labelsDias = Array.from({ length: diasNoMes }, (_, i) =>
@@ -3518,10 +3526,12 @@ function desenharReceitasDespesasDiarias() {
     '<line x1="' + pad.left + '" y1="' + (H - pad.bottom) + '" x2="' + (W - pad.right) + '" y2="' + (H - pad.bottom) + '" stroke="#ccc"/>' +
     '<path d="' + path(receitas) + '" fill="none" stroke="#185FA5" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' +
     '<path d="' + path(despesas) + '" fill="none" stroke="#D85A30" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' +
-    pontos(receitas, '#185FA5', 'Receitas agendadas') + pontos(despesas, '#D85A30', 'Despesas agendadas') + labelsDias + '</svg>';
-  if (periodo) periodo.textContent = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date(ano, mes, 1)).replace(/^./, c => c.toUpperCase()) + ' · dia 1 ao dia ' + diasNoMes;
+    '<path d="' + path(saldoCaixa) + '" fill="none" stroke="#16856B" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>' +
+    pontos(receitas, '#185FA5', 'Receitas agendadas') + pontos(despesas, '#D85A30', 'Despesas agendadas') + pontos(saldoCaixa, '#16856B', 'Saldo de caixa acumulado') + labelsDias + '</svg>';
+  if (periodo) periodo.textContent = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date(ano, mes, 1)).replace(/^./, c => c.toUpperCase()) + ' · dia 1 ao dia ' + diasNoMes + ' · saldo acumulado calculado a partir de R$ 0,00';
   if (legenda) legenda.innerHTML = '<span><i style="background:#185FA5"></i>Receitas agendadas · ' + formatar(receitas.reduce((a, b) => a + b, 0)) + '</span>' +
-    '<span><i style="background:#D85A30"></i>Despesas agendadas · ' + formatar(despesas.reduce((a, b) => a + b, 0)) + '</span>';
+    '<span><i style="background:#D85A30"></i>Despesas agendadas · ' + formatar(despesas.reduce((a, b) => a + b, 0)) + '</span>' +
+    '<span><i style="background:#16856B"></i>Saldo de caixa acumulado · ' + formatar(saldoCaixa[saldoCaixa.length - 1] || 0) + '</span>';
 }
 
 function desenharRxD(containerId, legendaId, badgeId, receitas, despesas, ym) {
