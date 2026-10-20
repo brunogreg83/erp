@@ -75,6 +75,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .dashboard-charts-row { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:22px; align-items:stretch; }
 .dashboard-chart-card { min-width:0; padding:16px; margin:0; }
 .dashboard-chart-card #bar-chart, .dashboard-chart-card #rxd-chart { min-height:220px; }
+.daily-rxd-card { margin-bottom:22px; min-width:0; }
+#daily-rxd-chart { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+#daily-rxd-chart svg { display:block; min-width:760px; width:100%; height:auto; }
+.daily-rxd-legend { display:flex; gap:18px; justify-content:center; flex-wrap:wrap; margin-top:10px; font-size:11px; color:#777; }
+.daily-rxd-legend span { display:inline-flex; align-items:center; gap:6px; }
+.daily-rxd-legend i { display:inline-block; width:18px; height:3px; border-radius:3px; }
+@media (max-width:768px) { .daily-rxd-card { padding:14px; } #daily-rxd-chart svg { min-width:900px; } }
 @media (max-width: 1050px) and (min-width: 769px) {
   .dashboard-charts-row { gap:12px; }
   .dashboard-chart-card { padding:14px; }
@@ -439,6 +446,17 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
             <div id="rxd-chart" style="width:100%;"></div>
             <div id="rxd-legenda" style="display:flex;gap:14px;margin-top:8px;justify-content:center;font-size:10px;color:#888;flex-wrap:wrap;"></div>
           </div>
+        </div>
+
+        <div class="card daily-rxd-card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <div>
+              <div class="section-title" style="margin-bottom:4px;">Receitas e despesas agendadas por dia</div>
+              <div id="daily-rxd-period" style="font-size:11px;color:#888;">Valores previstos para o mês atual</div>
+            </div>
+          </div>
+          <div id="daily-rxd-chart" aria-label="Gráfico de linhas com receitas e despesas agendadas por dia do mês" role="img"></div>
+          <div id="daily-rxd-legend" class="daily-rxd-legend"></div>
         </div>
 
       </div>
@@ -3450,6 +3468,62 @@ function calcRxDMes(ym) {
   return { tR, tP };
 }
 
+function desenharReceitasDespesasDiarias() {
+  const container = document.getElementById('daily-rxd-chart');
+  const legenda = document.getElementById('daily-rxd-legend');
+  const periodo = document.getElementById('daily-rxd-period');
+  if (!container) return;
+
+  const agora = new Date();
+  const ano = agora.getFullYear();
+  const mes = agora.getMonth();
+  const ym = ano + '-' + String(mes + 1).padStart(2, '0');
+  const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+  const receitas = Array(diasNoMes).fill(0);
+  const despesas = Array(diasNoMes).fill(0);
+  (D.receber || []).forEach(r => {
+    const data = String(r.vencimento || '').slice(0, 10);
+    if (data.slice(0, 7) === ym) { const dia = Number(data.slice(8, 10)); if (dia >= 1 && dia <= diasNoMes) receitas[dia - 1] += Number(r.valor) || 0; }
+  });
+  (D.pagar || []).forEach(p => {
+    const data = String(p.vencimento || '').slice(0, 10);
+    if (data.slice(0, 7) === ym) { const dia = Number(data.slice(8, 10)); if (dia >= 1 && dia <= diasNoMes) despesas[dia - 1] += Number(p.valor) || 0; }
+  });
+
+  const W = Math.max(760, diasNoMes * 30);
+  const H = 270;
+  const pad = { top: 24, right: 18, bottom: 38, left: 66 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+  const maxValor = Math.max(...receitas, ...despesas, 1);
+  const maxY = maxValor;
+  const x = i => pad.left + (diasNoMes === 1 ? plotW / 2 : i * plotW / (diasNoMes - 1));
+  const y = v => pad.top + plotH - (v / maxY) * plotH;
+  const formatar = v => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v);
+  const path = vals => vals.map((v, i) => (i === 0 ? 'M ' : 'L ') + x(i).toFixed(2) + ' ' + y(v).toFixed(2)).join(' ');
+  const grids = [0, 1, 2, 3, 4].map(i => {
+    const valor = maxY * i / 4, yy = y(valor);
+    return '<line x1="' + pad.left + '" y1="' + yy + '" x2="' + (W - pad.right) + '" y2="' + yy + '" stroke="#e8e7e0" stroke-width="1"/>' +
+      '<text x="' + (pad.left - 9) + '" y="' + (yy + 4) + '" text-anchor="end" font-size="10" fill="#888">' + formatar(valor) + '</text>';
+  }).join('');
+  const labelsDias = Array.from({ length: diasNoMes }, (_, i) =>
+    '<text x="' + x(i) + '" y="' + (H - 14) + '" text-anchor="middle" font-size="10" fill="#777">' + (i + 1) + '</text>'
+  ).join('');
+  const pontos = (vals, cor, nome) => vals.map((v, i) =>
+    '<circle cx="' + x(i) + '" cy="' + y(v) + '" r="3" fill="#fff" stroke="' + cor + '" stroke-width="2"><title>Dia ' + (i + 1) + ' — ' + nome + ': ' + formatar(v) + '</title></circle>'
+  ).join('');
+
+  container.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Receitas e despesas previstas por dia">' +
+    grids +
+    '<line x1="' + pad.left + '" y1="' + (H - pad.bottom) + '" x2="' + (W - pad.right) + '" y2="' + (H - pad.bottom) + '" stroke="#ccc"/>' +
+    '<path d="' + path(receitas) + '" fill="none" stroke="#185FA5" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '<path d="' + path(despesas) + '" fill="none" stroke="#D85A30" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' +
+    pontos(receitas, '#185FA5', 'Receitas agendadas') + pontos(despesas, '#D85A30', 'Despesas agendadas') + labelsDias + '</svg>';
+  if (periodo) periodo.textContent = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date(ano, mes, 1)).replace(/^./, c => c.toUpperCase()) + ' · dia 1 ao dia ' + diasNoMes;
+  if (legenda) legenda.innerHTML = '<span><i style="background:#185FA5"></i>Receitas agendadas · ' + formatar(receitas.reduce((a, b) => a + b, 0)) + '</span>' +
+    '<span><i style="background:#D85A30"></i>Despesas agendadas · ' + formatar(despesas.reduce((a, b) => a + b, 0)) + '</span>';
+}
+
 function desenharRxD(containerId, legendaId, badgeId, receitas, despesas, ym) {
   const container = document.getElementById(containerId);
   const legenda   = document.getElementById(legendaId);
@@ -3687,6 +3761,7 @@ function renderDashboard() {
   // Gráfico Receitas × Despesas no Dashboard
   const { tR: tRec, tP: tPag } = calcRxDMesAtual();
   setTimeout(() => desenharRxD('rxd-chart','rxd-legenda','dash-saldo-badge', tRec, tPag), 0);
+  setTimeout(desenharReceitasDespesasDiarias, 0);
 }
 
 // ── Relatórios ─────────────────────────────────────────────────────────────
