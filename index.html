@@ -3497,13 +3497,28 @@ window.desenharReceitasDespesasDiarias = function(mesSelecionado) {
   const diasNoMes = new Date(ano, mes + 1, 0).getDate();
   const receitas = Array(diasNoMes).fill(0);
   const despesas = Array(diasNoMes).fill(0);
+  // Saldo de abertura estimado: saldo líquido dos lançamentos com vencimento
+  // anterior ao mês selecionado. Não existe saldo bancário inicial configurado.
+  let saldoAnterior = 0;
   (D.receber || []).forEach(r => {
     const data = String(r.vencimento || '').slice(0, 10);
-    if (data.slice(0, 7) === ym) { const dia = Number(data.slice(8, 10)); if (dia >= 1 && dia <= diasNoMes) receitas[dia - 1] += Number(r.valor) || 0; }
+    const mesLancamento = data.slice(0, 7);
+    const valor = Number(r.valor) || 0;
+    if (mesLancamento && mesLancamento < ym) saldoAnterior += valor;
+    else if (mesLancamento === ym) {
+      const dia = Number(data.slice(8, 10));
+      if (dia >= 1 && dia <= diasNoMes) receitas[dia - 1] += valor;
+    }
   });
   (D.pagar || []).forEach(p => {
     const data = String(p.vencimento || '').slice(0, 10);
-    if (data.slice(0, 7) === ym) { const dia = Number(data.slice(8, 10)); if (dia >= 1 && dia <= diasNoMes) despesas[dia - 1] += Number(p.valor) || 0; }
+    const mesLancamento = data.slice(0, 7);
+    const valor = Number(p.valor) || 0;
+    if (mesLancamento && mesLancamento < ym) saldoAnterior -= valor;
+    else if (mesLancamento === ym) {
+      const dia = Number(data.slice(8, 10));
+      if (dia >= 1 && dia <= diasNoMes) despesas[dia - 1] += valor;
+    }
   });
 
   const W = Math.max(760, diasNoMes * 30);
@@ -3511,13 +3526,14 @@ window.desenharReceitasDespesasDiarias = function(mesSelecionado) {
   const pad = { top: 24, right: 18, bottom: 38, left: 66 };
   const plotW = W - pad.left - pad.right;
   const plotH = H - pad.top - pad.bottom;
-  // Saldo acumulado do mês: entradas previstas menos saídas previstas até cada dia.
-  // O ERP não possui saldo inicial de caixa configurado; por isso a série começa em zero.
-  const saldoCaixa = receitas.map((_, i) =>
-    receitas.slice(0, i + 1).reduce((s, v) => s + v, 0) -
-    despesas.slice(0, i + 1).reduce((s, v) => s + v, 0)
-  );
-  const todosValores = [...receitas, ...despesas, ...saldoCaixa, 0];
+  // Saldo acumulado: saldo líquido dos meses anteriores + movimentos do mês selecionado.
+  // O saldo anterior é estimado pelos lançamentos cadastrados; saldo bancário inicial não configurado.
+  let saldoCorrente = saldoAnterior;
+  const saldoCaixa = receitas.map((valorReceita, i) => {
+    saldoCorrente += valorReceita - despesas[i];
+    return saldoCorrente;
+  });
+  const todosValores = [...receitas, ...despesas, ...saldoCaixa, saldoAnterior, 0];
   const minValor = Math.min(...todosValores);
   const maxValor = Math.max(...todosValores, 1);
   const amplitude = maxValor - minValor || 1;
@@ -3544,7 +3560,7 @@ window.desenharReceitasDespesasDiarias = function(mesSelecionado) {
     '<path d="' + path(despesas) + '" fill="none" stroke="#D85A30" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' +
     '<path d="' + path(saldoCaixa) + '" fill="none" stroke="#16856B" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>' +
     pontos(receitas, '#185FA5', 'Receitas agendadas') + pontos(despesas, '#D85A30', 'Despesas agendadas') + pontos(saldoCaixa, '#16856B', 'Saldo de caixa acumulado') + labelsDias + '</svg>';
-  if (periodo) periodo.textContent = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date(ano, mes, 1)).replace(/^./, c => c.toUpperCase()) + ' · dia 1 ao dia ' + diasNoMes + ' · saldo acumulado calculado a partir de R$ 0,00';
+  if (periodo) periodo.textContent = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date(ano, mes, 1)).replace(/^./, c => c.toUpperCase()) + ' · dia 1 ao dia ' + diasNoMes + ' · saldo inicial estimado dos lançamentos anteriores: ' + formatar(saldoAnterior);
   if (legenda) legenda.innerHTML = '<span><i style="background:#185FA5"></i>Receitas agendadas · ' + formatar(receitas.reduce((a, b) => a + b, 0)) + '</span>' +
     '<span><i style="background:#D85A30"></i>Despesas agendadas · ' + formatar(despesas.reduce((a, b) => a + b, 0)) + '</span>' +
     '<span><i style="background:#16856B"></i>Saldo de caixa acumulado · ' + formatar(saldoCaixa[saldoCaixa.length - 1] || 0) + '</span>';
