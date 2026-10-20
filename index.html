@@ -454,7 +454,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
               <div class="section-title" style="margin-bottom:4px;">Receitas e despesas agendadas por dia</div>
               <div id="daily-rxd-period" style="font-size:11px;color:#888;">Valores previstos para o mês atual</div>
             </div>
-            <select id="daily-rxd-month" onchange="desenharReceitasDespesasDiarias()" aria-label="Selecionar mês do gráfico de receitas e despesas" style="border:1px solid #e8e7e0;border-radius:8px;padding:7px 10px;font-size:12px;color:#555;background:#fff;cursor:pointer;outline:none;max-width:100%;"></select>
+            <select id="daily-rxd-month" onchange="desenharReceitasDespesasDiarias(this.value)" aria-label="Selecionar mês do gráfico de receitas e despesas" style="border:1px solid #e8e7e0;border-radius:8px;padding:7px 10px;font-size:12px;color:#555;background:#fff;cursor:pointer;outline:none;max-width:100%;"></select>
           </div>
           <div id="daily-rxd-chart" aria-label="Gráfico de linhas com receitas e despesas agendadas por dia do mês" role="img"></div>
           <div id="daily-rxd-legend" class="daily-rxd-legend"></div>
@@ -3469,7 +3469,7 @@ function calcRxDMes(ym) {
   return { tR, tP };
 }
 
-function desenharReceitasDespesasDiarias() {
+function desenharReceitasDespesasDiarias(mesSelecionado) {
   const container = document.getElementById('daily-rxd-chart');
   const legenda = document.getElementById('daily-rxd-legend');
   const periodo = document.getElementById('daily-rxd-period');
@@ -3479,21 +3479,18 @@ function desenharReceitasDespesasDiarias() {
   const anoAtual = agora.getFullYear();
   const mesAtual = agora.getMonth();
   const seletorMes = document.getElementById('daily-rxd-month');
-  if (seletorMes) {
-    const valorAnterior = seletorMes.value;
-    const opcoes = Array.from({ length: 4 }, (_, i) => {
+  if (seletorMes && seletorMes.options.length === 0) {
+    seletorMes.innerHTML = Array.from({ length: 4 }, (_, i) => {
       const dataOpcao = new Date(anoAtual, mesAtual + i, 1);
       const valor = dataOpcao.getFullYear() + '-' + String(dataOpcao.getMonth() + 1).padStart(2, '0');
       const nome = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(dataOpcao);
       return '<option value="' + valor + '">' + nome.replace(/^./, letra => letra.toUpperCase()) + '</option>';
     }).join('');
-    seletorMes.innerHTML = opcoes;
-    const valorValido = Array.from(seletorMes.options).some(opcao => opcao.value === valorAnterior);
-    seletorMes.value = valorValido ? valorAnterior : (anoAtual + '-' + String(mesAtual + 1).padStart(2, '0'));
+    seletorMes.value = anoAtual + '-' + String(mesAtual + 1).padStart(2, '0');
   }
-  const ym = seletorMes && seletorMes.value
-    ? seletorMes.value
-    : anoAtual + '-' + String(mesAtual + 1).padStart(2, '0');
+  const ym = mesSelecionado || (seletorMes && seletorMes.value) ||
+    (anoAtual + '-' + String(mesAtual + 1).padStart(2, '0'));
+  if (seletorMes && seletorMes.value !== ym) seletorMes.value = ym;
   const partesMes = ym.split('-').map(Number);
   const ano = partesMes[0];
   const mes = partesMes[1] - 1;
