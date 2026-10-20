@@ -454,7 +454,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
               <div class="section-title" style="margin-bottom:4px;">Receitas e despesas agendadas por dia</div>
               <div id="daily-rxd-period" style="font-size:11px;color:#888;">Valores previstos para o mês atual</div>
             </div>
-            <select id="daily-rxd-month" onchange="desenharReceitasDespesasDiarias(this.value)" aria-label="Selecionar mês do gráfico de receitas e despesas" style="border:1px solid #e8e7e0;border-radius:8px;padding:7px 10px;font-size:12px;color:#555;background:#fff;cursor:pointer;outline:none;max-width:100%;"></select>
+            <select id="daily-rxd-month" onchange="window.desenharReceitasDespesasDiarias(this.value)" aria-label="Selecionar mês do gráfico de receitas e despesas" style="border:1px solid #e8e7e0;border-radius:8px;padding:7px 10px;font-size:12px;color:#555;background:#fff;cursor:pointer;outline:none;max-width:100%;"></select>
           </div>
           <div id="daily-rxd-chart" aria-label="Gráfico de linhas com receitas e despesas agendadas por dia do mês" role="img"></div>
           <div id="daily-rxd-legend" class="daily-rxd-legend"></div>
@@ -3469,7 +3469,7 @@ function calcRxDMes(ym) {
   return { tR, tP };
 }
 
-function desenharReceitasDespesasDiarias(mesSelecionado) {
+window.desenharReceitasDespesasDiarias = function(mesSelecionado) {
   const container = document.getElementById('daily-rxd-chart');
   const legenda = document.getElementById('daily-rxd-legend');
   const periodo = document.getElementById('daily-rxd-period');
@@ -3548,7 +3548,7 @@ function desenharReceitasDespesasDiarias(mesSelecionado) {
   if (legenda) legenda.innerHTML = '<span><i style="background:#185FA5"></i>Receitas agendadas · ' + formatar(receitas.reduce((a, b) => a + b, 0)) + '</span>' +
     '<span><i style="background:#D85A30"></i>Despesas agendadas · ' + formatar(despesas.reduce((a, b) => a + b, 0)) + '</span>' +
     '<span><i style="background:#16856B"></i>Saldo de caixa acumulado · ' + formatar(saldoCaixa[saldoCaixa.length - 1] || 0) + '</span>';
-}
+};
 
 function desenharRxD(containerId, legendaId, badgeId, receitas, despesas, ym) {
   const container = document.getElementById(containerId);
@@ -3787,7 +3787,7 @@ function renderDashboard() {
   // Gráfico Receitas × Despesas no Dashboard
   const { tR: tRec, tP: tPag } = calcRxDMesAtual();
   setTimeout(() => desenharRxD('rxd-chart','rxd-legenda','dash-saldo-badge', tRec, tPag), 0);
-  setTimeout(desenharReceitasDespesasDiarias, 0);
+  setTimeout(() => window.desenharReceitasDespesasDiarias(), 0);
 }
 
 // ── Relatórios ─────────────────────────────────────────────────────────────
