@@ -454,6 +454,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
               <div class="section-title" style="margin-bottom:4px;">Receitas e despesas agendadas por dia</div>
               <div id="daily-rxd-period" style="font-size:11px;color:#888;">Valores previstos para o mês atual</div>
             </div>
+            <select id="daily-rxd-month" onchange="desenharReceitasDespesasDiarias()" aria-label="Selecionar mês do gráfico de receitas e despesas" style="border:1px solid #e8e7e0;border-radius:8px;padding:7px 10px;font-size:12px;color:#555;background:#fff;cursor:pointer;outline:none;max-width:100%;"></select>
           </div>
           <div id="daily-rxd-chart" aria-label="Gráfico de linhas com receitas e despesas agendadas por dia do mês" role="img"></div>
           <div id="daily-rxd-legend" class="daily-rxd-legend"></div>
@@ -3475,9 +3476,27 @@ function desenharReceitasDespesasDiarias() {
   if (!container) return;
 
   const agora = new Date();
-  const ano = agora.getFullYear();
-  const mes = agora.getMonth();
-  const ym = ano + '-' + String(mes + 1).padStart(2, '0');
+  const anoAtual = agora.getFullYear();
+  const mesAtual = agora.getMonth();
+  const seletorMes = document.getElementById('daily-rxd-month');
+  if (seletorMes) {
+    const valorAnterior = seletorMes.value;
+    const opcoes = Array.from({ length: 4 }, (_, i) => {
+      const dataOpcao = new Date(anoAtual, mesAtual + i, 1);
+      const valor = dataOpcao.getFullYear() + '-' + String(dataOpcao.getMonth() + 1).padStart(2, '0');
+      const nome = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(dataOpcao);
+      return '<option value="' + valor + '">' + nome.replace(/^./, letra => letra.toUpperCase()) + '</option>';
+    }).join('');
+    seletorMes.innerHTML = opcoes;
+    const valorValido = Array.from(seletorMes.options).some(opcao => opcao.value === valorAnterior);
+    seletorMes.value = valorValido ? valorAnterior : (anoAtual + '-' + String(mesAtual + 1).padStart(2, '0'));
+  }
+  const ym = seletorMes && seletorMes.value
+    ? seletorMes.value
+    : anoAtual + '-' + String(mesAtual + 1).padStart(2, '0');
+  const partesMes = ym.split('-').map(Number);
+  const ano = partesMes[0];
+  const mes = partesMes[1] - 1;
   const diasNoMes = new Date(ano, mes + 1, 0).getDate();
   const receitas = Array(diasNoMes).fill(0);
   const despesas = Array(diasNoMes).fill(0);
