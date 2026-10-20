@@ -3497,42 +3497,65 @@ window.desenharReceitasDespesasDiarias = function(mesSelecionado) {
   const diasNoMes = new Date(ano, mes + 1, 0).getDate();
   const receitas = Array(diasNoMes).fill(0);
   const despesas = Array(diasNoMes).fill(0);
-  // Saldo de abertura estimado: saldo líquido dos lançamentos com vencimento
-  // anterior ao mês selecionado. Não existe saldo bancário inicial configurado.
-  let saldoAnterior = 0;
+  // Saldo real informado pelo usuário na data atual; projeções futuras partem deste valor.
+  const SALDO_CAIXA_HOJE = 160.23;
+  const hoje = new Date(anoAtual, mesAtual, agora.getDate());
+  const hojeISO = anoAtual + '-' + String(mesAtual + 1).padStart(2, '0') + '-' + String(agora.getDate()).padStart(2, '0');
   (D.receber || []).forEach(r => {
     const data = String(r.vencimento || '').slice(0, 10);
-    const mesLancamento = data.slice(0, 7);
-    const valor = Number(r.valor) || 0;
-    if (mesLancamento && mesLancamento < ym) saldoAnterior += valor;
-    else if (mesLancamento === ym) {
+    if (data.slice(0, 7) === ym) {
       const dia = Number(data.slice(8, 10));
-      if (dia >= 1 && dia <= diasNoMes) receitas[dia - 1] += valor;
+      if (dia >= 1 && dia <= diasNoMes) receitas[dia - 1] += Number(r.valor) || 0;
     }
   });
   (D.pagar || []).forEach(p => {
     const data = String(p.vencimento || '').slice(0, 10);
-    const mesLancamento = data.slice(0, 7);
-    const valor = Number(p.valor) || 0;
-    if (mesLancamento && mesLancamento < ym) saldoAnterior -= valor;
-    else if (mesLancamento === ym) {
+    if (data.slice(0, 7) === ym) {
       const dia = Number(data.slice(8, 10));
-      if (dia >= 1 && dia <= diasNoMes) despesas[dia - 1] += valor;
+      if (dia >= 1 && dia <= diasNoMes) despesas[dia - 1] += Number(p.valor) || 0;
     }
   });
+  // Para meses futuros, carregar o saldo de hoje somado aos lançamentos posteriores
+  // à data atual e anteriores ao mês selecionado.
+  let saldoAnterior = SALDO_CAIXA_HOJE;
+  if (ym > hojeISO.slice(0, 7)) {
+    (D.receber || []).forEach(r => {
+      const data = String(r.vencimento || '').slice(0, 10);
+      if (data > hojeISO && data.slice(0, 7) < ym) saldoAnterior += Number(r.valor) || 0;
+    });
+    (D.pagar || []).forEach(p => {
+      const data = String(p.vencimento || '').slice(0, 10);
+      if (data > hojeISO && data.slice(0, 7) < ym) saldoAnterior -= Number(p.valor) || 0;
+    });
+  }
 
   const W = Math.max(760, diasNoMes * 30);
   const H = 270;
   const pad = { top: 24, right: 18, bottom: 38, left: 66 };
   const plotW = W - pad.left - pad.right;
   const plotH = H - pad.top - pad.bottom;
-  // Saldo acumulado: saldo líquido dos meses anteriores + movimentos do mês selecionado.
-  // O saldo anterior é estimado pelos lançamentos cadastrados; saldo bancário inicial não configurado.
-  let saldoCorrente = saldoAnterior;
-  const saldoCaixa = receitas.map((valorReceita, i) => {
-    saldoCorrente += valorReceita - despesas[i];
-    return saldoCorrente;
-  });
+  // No mês atual, o ponto de hoje corresponde exatamente ao saldo real informado (R$ 160,23).
+  // Dias anteriores são reconstruídos para trás; dias futuros projetam apenas os movimentos posteriores a hoje.
+  let saldoCaixa;
+  if (ym === hojeISO.slice(0, 7)) {
+    const diaHoje = agora.getDate() - 1;
+    saldoCaixa = receitas.map((_, i) => {
+      if (i < diaHoje) {
+        let saldo = SALDO_CAIXA_HOJE;
+        for (let j = i + 1; j <= diaHoje; j++) saldo -= receitas[j] - despesas[j];
+        return saldo;
+      }
+      let saldo = SALDO_CAIXA_HOJE;
+      for (let j = diaHoje + 1; j <= i; j++) saldo += receitas[j] - despesas[j];
+      return saldo;
+    });
+  } else {
+    let saldoCorrente = saldoAnterior;
+    saldoCaixa = receitas.map((valorReceita, i) => {
+      saldoCorrente += valorReceita - despesas[i];
+      return saldoCorrente;
+    });
+  }
   const todosValores = [...receitas, ...despesas, ...saldoCaixa, saldoAnterior, 0];
   const minValor = Math.min(...todosValores);
   const maxValor = Math.max(...todosValores, 1);
@@ -3560,7 +3583,7 @@ window.desenharReceitasDespesasDiarias = function(mesSelecionado) {
     '<path d="' + path(despesas) + '" fill="none" stroke="#D85A30" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' +
     '<path d="' + path(saldoCaixa) + '" fill="none" stroke="#16856B" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>' +
     pontos(receitas, '#185FA5', 'Receitas agendadas') + pontos(despesas, '#D85A30', 'Despesas agendadas') + pontos(saldoCaixa, '#16856B', 'Saldo de caixa acumulado') + labelsDias + '</svg>';
-  if (periodo) periodo.textContent = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date(ano, mes, 1)).replace(/^./, c => c.toUpperCase()) + ' · dia 1 ao dia ' + diasNoMes + ' · saldo inicial estimado dos lançamentos anteriores: ' + formatar(saldoAnterior);
+  if (periodo) periodo.textContent = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date(ano, mes, 1)).replace(/^./, c => c.toUpperCase()) + ' · dia 1 ao dia ' + diasNoMes + (ym === hojeISO.slice(0, 7) ? ' · saldo real em ' + agora.getDate() + '/' + (mesAtual + 1) + ': ' + formatar(SALDO_CAIXA_HOJE) : ' · saldo inicial projetado: ' + formatar(saldoAnterior));
   if (legenda) legenda.innerHTML = '<span><i style="background:#185FA5"></i>Receitas agendadas · ' + formatar(receitas.reduce((a, b) => a + b, 0)) + '</span>' +
     '<span><i style="background:#D85A30"></i>Despesas agendadas · ' + formatar(despesas.reduce((a, b) => a + b, 0)) + '</span>' +
     '<span><i style="background:#16856B"></i>Saldo de caixa acumulado · ' + formatar(saldoCaixa[saldoCaixa.length - 1] || 0) + '</span>';
