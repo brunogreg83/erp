@@ -3274,86 +3274,7 @@ window.__enviarOCEmail = function(ocId, cb) {
     '<p style="margin-top:24px;">Aguardamos confirmação. Atenciosamente,<br><b>AB Chemicals</b></p>' +
     '<div class="footer">Email gerado automaticamente pelo ERP AB Chemicals.</div>' +
     '
-<script>
-(function(){
-  let tipoAtual='', linhasCSV=[], tituloAtual='';
-  const nomes={vendas:'Vendas por cliente',margem:'Margem por produto',fluxo:'Fluxo de caixa',giro:'Giro de estoque',inadimplencia:'Inadimplência',fornecedores:'Desempenho de fornecedores'};
-  const n=v=>Number(v)||0, money=v=>'R$ '+n(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const pct=v=>n(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
-  const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const today=()=>new Date().toISOString().slice(0,10), data=()=>window.D||{};
-  const period=d=>{const a=document.getElementById('report-start')?.value||'',b=document.getElementById('report-end')?.value||'';if(!d)return !a&&!b;d=String(d).slice(0,10);return(!a||d>=a)&&(!b||d<=b);};
-  const totalPedido=p=>Math.max(0,(p.itens||[]).reduce((s,i)=>s+n(i.qty)*n(i.preco),0)-n(p.desconto));
-  function table(h,rows){return '<div class="table-wrap"><table><thead><tr>'+h.map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead><tbody>'+(rows.length?rows.map(r=>'<tr>'+r.map(x=>'<td>'+esc(x)+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+h.length+'"><div class="empty-state">Nenhum registro encontrado para os filtros selecionados.</div></td></tr>')+'</tbody></table></div>';}
-  function summary(items){return '<div class="three-col">'+items.map(x=>'<div class="card"><div class="kpi-label">'+esc(x[0])+'</div><div class="kpi-value">'+esc(x[1])+'</div></div>').join('')+'</div>';}
-  function build(t){
-    const D=data();let h=[],rows=[],s=[],note='';
-    if(t==='vendas'){
-      const ps=(D.pedidos||[]).filter(p=>p.status!=='Orçamento'&&period(p.data)),g={};
-      ps.forEach(p=>{const k=p.cliente||'Cliente não informado',x=g[k]||(g[k]={q:0,total:0,itens:0});x.q++;x.total+=totalPedido(p);x.itens+=(p.itens||[]).reduce((a,i)=>a+n(i.qty),0);});
-      const a=Object.keys(g).map(k=>({nome:k,...g[k]})).sort((x,y)=>y.total-x.total);
-      s=[['Vendas no período',money(a.reduce((z,x)=>z+x.total,0))],['Pedidos considerados',String(ps.length)],['Clientes com vendas',String(a.length)]];
-      h=['Cliente','Pedidos','Unidades vendidas','Total vendido','Ticket médio'];rows=a.map(x=>[x.nome,x.q,x.itens,money(x.total),money(x.q?x.total/x.q:0)]);note='Considera pedidos cujo status não seja Orçamento.';
-    }else if(t==='margem'){
-      const a=(D.produtos||[]).map(p=>({cod:p.cod||'',nome:p.nome||'',c:n(p.custo),v:n(p.preco),e:n(p.estoque)})).map(p=>({...p,l:p.v-p.c,m:p.v?(p.v-p.c)/p.v*100:0})).sort((x,y)=>y.m-x.m);
-      s=[['Produtos cadastrados',String(a.length)],['Margem positiva',String(a.filter(x=>x.l>0).length)],['Margem negativa',String(a.filter(x=>x.l<0).length)]];
-      h=['Código','Produto','Custo unitário','Preço de venda','Lucro unitário','Margem bruta','Estoque'];rows=a.map(x=>[x.cod,x.nome,money(x.c),money(x.v),money(x.l),pct(x.m),x.e]);note='Margem unitária = (preço − custo) ÷ preço. Não inclui despesas operacionais ou impostos.';
-    }else if(t==='fluxo'){
-      const r=(D.receber||[]).filter(x=>period(x.vencimento)),p=(D.pagar||[]).filter(x=>period(x.vencimento));
-      const tr=r.reduce((a,x)=>a+n(x.valor),0),tp=p.reduce((a,x)=>a+n(x.valor),0),rr=r.filter(x=>x.recebido===true).reduce((a,x)=>a+n(x.valor),0),pp=p.filter(x=>x.pago===true).reduce((a,x)=>a+n(x.valor),0);
-      s=[['Entradas previstas',money(tr)],['Saídas previstas',money(tp)],['Saldo previsto',money(tr-tp)],['Saldo realizado',money(rr-pp)]];
-      h=['Tipo','Descrição','Vencimento','Valor','Situação'];
-      rows=r.map(x=>['Entrada',x.cliente||x.descricao||'Conta a receber',x.vencimento||'',money(x.valor),x.recebido===true?'Recebido':(x.vencimento<today()?'Em atraso':'Pendente')]).concat(p.map(x=>['Saída',x.fornecedor||x.descricao||'Conta a pagar',x.vencimento||'',money(x.valor),x.pago===true?'Pago':(x.vencimento<today()?'Em atraso':'Pendente')])).sort((a,b)=>String(a[2]).localeCompare(String(b[2])));
-      note='Agrupado pela data de vencimento. Saldo realizado considera apenas títulos marcados como recebidos/pagos.';
-    }else if(t==='giro'){
-      const sales={};(D.pedidos||[]).filter(p=>p.status!=='Orçamento'&&period(p.data)).forEach(p=>(p.itens||[]).forEach(i=>{const k=i.produto||'';const x=sales[k]||(sales[k]={q:0,v:0});x.q+=n(i.qty);x.v+=n(i.qty)*n(i.preco);}));
-      const a=(D.produtos||[]).map(p=>({cod:p.cod||'',nome:p.nome||'',e:n(p.estoque),min:n(p.minimo),c:n(p.custo),q:n(sales[p.nome]?.q),v:n(sales[p.nome]?.v)})).sort((x,y)=>y.v-x.v);
-      const total=a.reduce((z,x)=>z+x.v,0);let acum=0;a.forEach(x=>{acum+=x.v;x.curva=!x.v?'Sem venda':(acum/Math.max(total,1)<=.8?'A':(acum/Math.max(total,1)<=.95?'B':'C'));});
-      s=[['SKUs cadastrados',String(a.length)],['Valor em estoque',money(a.reduce((z,x)=>z+x.e*x.c,0))],['Produtos sem venda',String(a.filter(x=>!x.q).length)]];
-      h=['Código','Produto','Unid. vendidas','Venda no período','Estoque atual','Estoque mínimo','Valor em estoque','Curva indicativa'];rows=a.map(x=>[x.cod,x.nome,x.q,money(x.v),x.e,x.min,money(x.e*x.c),x.curva]);note='Curva indicativa pelo valor vendido no período: A até 80% acumulado, B até 95%, C restante. Sem venda é separado.';
-    }else if(t==='inadimplencia'){
-      const a=(D.receber||[]).filter(x=>x.recebido!==true&&x.vencimento&&x.vencimento<today()&&period(x.vencimento)).sort((x,y)=>String(x.vencimento).localeCompare(String(y.vencimento)));
-      s=[['Títulos em atraso',String(a.length)],['Total vencido',money(a.reduce((z,x)=>z+n(x.valor),0))],['Clientes em atraso',String(new Set(a.map(x=>x.cliente||'Não informado')).size)]];
-      h=['Cliente','Vencimento','Dias em atraso','Valor','Pedido vinculado'];rows=a.map(x=>[x.cliente||'Não informado',x.vencimento,Math.floor((new Date(today()+'T00:00:00')-new Date(x.vencimento+'T00:00:00'))/86400000),money(x.valor),x.pedidoId||'—']);note='Contas a receber não marcadas como recebidas, com vencimento anterior à data de hoje.';
-    }else if(t==='fornecedores'){
-      const g={};(D.produtos||[]).forEach(p=>{const k=p.fornecedor||'Sem fornecedor cadastrado',x=g[k]||(g[k]={q:0,e:0,v:0,c:0});x.q++;x.e+=n(p.estoque);x.v+=n(p.estoque)*n(p.custo);x.c+=n(p.custo);});
-      const a=Object.keys(g).map(k=>({nome:k,...g[k]})).sort((x,y)=>y.v-x.v);
-      s=[['Fornecedores identificados',String(a.length)],['Produtos cadastrados',String((D.produtos||[]).length)],['Valor em estoque',money(a.reduce((z,x)=>z+x.v,0))]];
-      h=['Fornecedor','Produtos cadastrados','Unidades em estoque','Valor do estoque','Custo unitário médio'];rows=a.map(x=>[x.nome,x.q,x.e,money(x.v),money(x.q?x.c/x.q:0)]);note='Baseado no cadastro de produtos. Prazo de entrega não é calculado porque esse indicador não está estruturado nos dados atuais do ERP.';
-    }
-    return{h,rows,s,note};
-  }
-  window.relatorio=function(t){
-    if(!nomes[t])return;tipoAtual=t;
-    const a=document.getElementById('report-start'),b=document.getElementById('report-end');
-    if(a&&!a.value)a.value=today().slice(0,8)+'01';if(b&&!b.value)b.value=today();
-    window.gerarRelatorioAtual();
-    document.getElementById('report-controls')?.scrollIntoView({behavior:'smooth',block:'start'});
-  };
-  window.gerarRelatorioAtual=function(){
-    if(!tipoAtual){toast('Selecione um relatório acima.');return;}
-    const a=document.getElementById('report-start')?.value||'',b=document.getElementById('report-end')?.value||'';
-    if(a&&b&&a>b){toast('A data inicial não pode ser posterior à data final.');return;}
-    const r=build(tipoAtual);tituloAtual=nomes[tipoAtual];linhasCSV=[r.h,...r.rows];
-    const periodo=(a||b)?' · Período: '+(a||'início')+' a '+(b||'hoje'):' · Todo o período';
-    document.getElementById('report-output').innerHTML='<div class="card" style="margin-bottom:12px;"><div class="section-title">'+esc(tituloAtual)+'</div><div class="form-hint">Gerado em '+new Date().toLocaleString('pt-BR')+esc(periodo)+'</div><span class="badge badge-blue">'+r.rows.length+' registro(s)</span></div>'+summary(r.s)+table(r.h,r.rows)+'<div class="form-hint" style="margin:8px 2px 22px;">'+esc(r.note)+'</div>';
-  };
-  window.exportarRelatorioCSV=function(){
-    if(!linhasCSV.length){toast('Gere um relatório antes de exportar.');return;}
-    const csv=linhasCSV.map(r=>r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(';')).join('\r\n');
-    const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');
-    a.href=url;a.download=(tipoAtual||'relatorio')+'-'+today()+'.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
-  };
-  window.imprimirRelatorio=function(){
-    if(!linhasCSV.length){toast('Gere um relatório antes de imprimir.');return;}
-    const w=window.open('','_blank');if(!w){toast('Permita pop-ups para imprimir o relatório.');return;}
-    w.document.write('<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>'+esc(tituloAtual)+'</title><style>body{font:12px Arial;padding:24px;color:#222}h1{font-size:20px}table{width:100%;border-collapse:collapse;margin-top:16px}th,td{border:1px solid #ccc;padding:7px;text-align:left}th{background:#eee}.three-col{display:flex;gap:10px}.card{border:1px solid #ddd;padding:10px;margin:8px 0;flex:1}.kpi-label{color:#555}.form-hint{color:#555}</style></head><body><h1>'+esc(tituloAtual)+'</h1>'+document.getElementById('report-output').innerHTML+'</body></html>');
-    w.document.close();w.focus();setTimeout(()=>w.print(),250);
-  };
-})();
-</script>
-
-</body></html>';
+    '</body></html>';
 
   function doSend() {
     emailjs.send('service_pedidos', 'template_xk8fggd', {
@@ -5533,6 +5454,85 @@ window._getSessao = () => { try { return JSON.parse(localStorage.getItem(SESSION
   window.renderCFO=render;
 })();
 </script>
+<script>
+(function(){
+  let tipoAtual='', linhasCSV=[], tituloAtual='';
+  const nomes={vendas:'Vendas por cliente',margem:'Margem por produto',fluxo:'Fluxo de caixa',giro:'Giro de estoque',inadimplencia:'Inadimplência',fornecedores:'Desempenho de fornecedores'};
+  const n=v=>Number(v)||0, money=v=>'R$ '+n(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const pct=v=>n(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
+  const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const today=()=>new Date().toISOString().slice(0,10), data=()=>window.D||{};
+  const period=d=>{const a=document.getElementById('report-start')?.value||'',b=document.getElementById('report-end')?.value||'';if(!d)return !a&&!b;d=String(d).slice(0,10);return(!a||d>=a)&&(!b||d<=b);};
+  const totalPedido=p=>Math.max(0,(p.itens||[]).reduce((s,i)=>s+n(i.qty)*n(i.preco),0)-n(p.desconto));
+  function table(h,rows){return '<div class="table-wrap"><table><thead><tr>'+h.map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead><tbody>'+(rows.length?rows.map(r=>'<tr>'+r.map(x=>'<td>'+esc(x)+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+h.length+'"><div class="empty-state">Nenhum registro encontrado para os filtros selecionados.</div></td></tr>')+'</tbody></table></div>';}
+  function summary(items){return '<div class="three-col">'+items.map(x=>'<div class="card"><div class="kpi-label">'+esc(x[0])+'</div><div class="kpi-value">'+esc(x[1])+'</div></div>').join('')+'</div>';}
+  function build(t){
+    const D=data();let h=[],rows=[],s=[],note='';
+    if(t==='vendas'){
+      const ps=(D.pedidos||[]).filter(p=>p.status!=='Orçamento'&&period(p.data)),g={};
+      ps.forEach(p=>{const k=p.cliente||'Cliente não informado',x=g[k]||(g[k]={q:0,total:0,itens:0});x.q++;x.total+=totalPedido(p);x.itens+=(p.itens||[]).reduce((a,i)=>a+n(i.qty),0);});
+      const a=Object.keys(g).map(k=>({nome:k,...g[k]})).sort((x,y)=>y.total-x.total);
+      s=[['Vendas no período',money(a.reduce((z,x)=>z+x.total,0))],['Pedidos considerados',String(ps.length)],['Clientes com vendas',String(a.length)]];
+      h=['Cliente','Pedidos','Unidades vendidas','Total vendido','Ticket médio'];rows=a.map(x=>[x.nome,x.q,x.itens,money(x.total),money(x.q?x.total/x.q:0)]);note='Considera pedidos cujo status não seja Orçamento.';
+    }else if(t==='margem'){
+      const a=(D.produtos||[]).map(p=>({cod:p.cod||'',nome:p.nome||'',c:n(p.custo),v:n(p.preco),e:n(p.estoque)})).map(p=>({...p,l:p.v-p.c,m:p.v?(p.v-p.c)/p.v*100:0})).sort((x,y)=>y.m-x.m);
+      s=[['Produtos cadastrados',String(a.length)],['Margem positiva',String(a.filter(x=>x.l>0).length)],['Margem negativa',String(a.filter(x=>x.l<0).length)]];
+      h=['Código','Produto','Custo unitário','Preço de venda','Lucro unitário','Margem bruta','Estoque'];rows=a.map(x=>[x.cod,x.nome,money(x.c),money(x.v),money(x.l),pct(x.m),x.e]);note='Margem unitária = (preço − custo) ÷ preço. Não inclui despesas operacionais ou impostos.';
+    }else if(t==='fluxo'){
+      const r=(D.receber||[]).filter(x=>period(x.vencimento)),p=(D.pagar||[]).filter(x=>period(x.vencimento));
+      const tr=r.reduce((a,x)=>a+n(x.valor),0),tp=p.reduce((a,x)=>a+n(x.valor),0),rr=r.filter(x=>x.recebido===true).reduce((a,x)=>a+n(x.valor),0),pp=p.filter(x=>x.pago===true).reduce((a,x)=>a+n(x.valor),0);
+      s=[['Entradas previstas',money(tr)],['Saídas previstas',money(tp)],['Saldo previsto',money(tr-tp)],['Saldo realizado',money(rr-pp)]];
+      h=['Tipo','Descrição','Vencimento','Valor','Situação'];
+      rows=r.map(x=>['Entrada',x.cliente||x.descricao||'Conta a receber',x.vencimento||'',money(x.valor),x.recebido===true?'Recebido':(x.vencimento<today()?'Em atraso':'Pendente')]).concat(p.map(x=>['Saída',x.fornecedor||x.descricao||'Conta a pagar',x.vencimento||'',money(x.valor),x.pago===true?'Pago':(x.vencimento<today()?'Em atraso':'Pendente')])).sort((a,b)=>String(a[2]).localeCompare(String(b[2])));
+      note='Agrupado pela data de vencimento. Saldo realizado considera apenas títulos marcados como recebidos/pagos.';
+    }else if(t==='giro'){
+      const sales={};(D.pedidos||[]).filter(p=>p.status!=='Orçamento'&&period(p.data)).forEach(p=>(p.itens||[]).forEach(i=>{const k=i.produto||'';const x=sales[k]||(sales[k]={q:0,v:0});x.q+=n(i.qty);x.v+=n(i.qty)*n(i.preco);}));
+      const a=(D.produtos||[]).map(p=>({cod:p.cod||'',nome:p.nome||'',e:n(p.estoque),min:n(p.minimo),c:n(p.custo),q:n(sales[p.nome]?.q),v:n(sales[p.nome]?.v)})).sort((x,y)=>y.v-x.v);
+      const total=a.reduce((z,x)=>z+x.v,0);let acum=0;a.forEach(x=>{acum+=x.v;x.curva=!x.v?'Sem venda':(acum/Math.max(total,1)<=.8?'A':(acum/Math.max(total,1)<=.95?'B':'C'));});
+      s=[['SKUs cadastrados',String(a.length)],['Valor em estoque',money(a.reduce((z,x)=>z+x.e*x.c,0))],['Produtos sem venda',String(a.filter(x=>!x.q).length)]];
+      h=['Código','Produto','Unid. vendidas','Venda no período','Estoque atual','Estoque mínimo','Valor em estoque','Curva indicativa'];rows=a.map(x=>[x.cod,x.nome,x.q,money(x.v),x.e,x.min,money(x.e*x.c),x.curva]);note='Curva indicativa pelo valor vendido no período: A até 80% acumulado, B até 95%, C restante. Sem venda é separado.';
+    }else if(t==='inadimplencia'){
+      const a=(D.receber||[]).filter(x=>x.recebido!==true&&x.vencimento&&x.vencimento<today()&&period(x.vencimento)).sort((x,y)=>String(x.vencimento).localeCompare(String(y.vencimento)));
+      s=[['Títulos em atraso',String(a.length)],['Total vencido',money(a.reduce((z,x)=>z+n(x.valor),0))],['Clientes em atraso',String(new Set(a.map(x=>x.cliente||'Não informado')).size)]];
+      h=['Cliente','Vencimento','Dias em atraso','Valor','Pedido vinculado'];rows=a.map(x=>[x.cliente||'Não informado',x.vencimento,Math.floor((new Date(today()+'T00:00:00')-new Date(x.vencimento+'T00:00:00'))/86400000),money(x.valor),x.pedidoId||'—']);note='Contas a receber não marcadas como recebidas, com vencimento anterior à data de hoje.';
+    }else if(t==='fornecedores'){
+      const g={};(D.produtos||[]).forEach(p=>{const k=p.fornecedor||'Sem fornecedor cadastrado',x=g[k]||(g[k]={q:0,e:0,v:0,c:0});x.q++;x.e+=n(p.estoque);x.v+=n(p.estoque)*n(p.custo);x.c+=n(p.custo);});
+      const a=Object.keys(g).map(k=>({nome:k,...g[k]})).sort((x,y)=>y.v-x.v);
+      s=[['Fornecedores identificados',String(a.length)],['Produtos cadastrados',String((D.produtos||[]).length)],['Valor em estoque',money(a.reduce((z,x)=>z+x.v,0))]];
+      h=['Fornecedor','Produtos cadastrados','Unidades em estoque','Valor do estoque','Custo unitário médio'];rows=a.map(x=>[x.nome,x.q,x.e,money(x.v),money(x.q?x.c/x.q:0)]);note='Baseado no cadastro de produtos. Prazo de entrega não é calculado porque esse indicador não está estruturado nos dados atuais do ERP.';
+    }
+    return{h,rows,s,note};
+  }
+  window.relatorio=function(t){
+    if(!nomes[t])return;tipoAtual=t;
+    const a=document.getElementById('report-start'),b=document.getElementById('report-end');
+    if(a&&!a.value)a.value=today().slice(0,8)+'01';if(b&&!b.value)b.value=today();
+    window.gerarRelatorioAtual();
+    document.getElementById('report-controls')?.scrollIntoView({behavior:'smooth',block:'start'});
+  };
+  window.gerarRelatorioAtual=function(){
+    if(!tipoAtual){toast('Selecione um relatório acima.');return;}
+    const a=document.getElementById('report-start')?.value||'',b=document.getElementById('report-end')?.value||'';
+    if(a&&b&&a>b){toast('A data inicial não pode ser posterior à data final.');return;}
+    const r=build(tipoAtual);tituloAtual=nomes[tipoAtual];linhasCSV=[r.h,...r.rows];
+    const periodo=(a||b)?' · Período: '+(a||'início')+' a '+(b||'hoje'):' · Todo o período';
+    document.getElementById('report-output').innerHTML='<div class="card" style="margin-bottom:12px;"><div class="section-title">'+esc(tituloAtual)+'</div><div class="form-hint">Gerado em '+new Date().toLocaleString('pt-BR')+esc(periodo)+'</div><span class="badge badge-blue">'+r.rows.length+' registro(s)</span></div>'+summary(r.s)+table(r.h,r.rows)+'<div class="form-hint" style="margin:8px 2px 22px;">'+esc(r.note)+'</div>';
+  };
+  window.exportarRelatorioCSV=function(){
+    if(!linhasCSV.length){toast('Gere um relatório antes de exportar.');return;}
+    const csv=linhasCSV.map(r=>r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(';')).join('\r\n');
+    const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download=(tipoAtual||'relatorio')+'-'+today()+'.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+  };
+  window.imprimirRelatorio=function(){
+    if(!linhasCSV.length){toast('Gere um relatório antes de imprimir.');return;}
+    const w=window.open('','_blank');if(!w){toast('Permita pop-ups para imprimir o relatório.');return;}
+    w.document.write('<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>'+esc(tituloAtual)+'</title><style>body{font:12px Arial;padding:24px;color:#222}h1{font-size:20px}table{width:100%;border-collapse:collapse;margin-top:16px}th,td{border:1px solid #ccc;padding:7px;text-align:left}th{background:#eee}.three-col{display:flex;gap:10px}.card{border:1px solid #ddd;padding:10px;margin:8px 0;flex:1}.kpi-label{color:#555}.form-hint{color:#555}</style></head><body><h1>'+esc(tituloAtual)+'</h1>'+document.getElementById('report-output').innerHTML+'</body></html>');
+    w.document.close();w.focus();setTimeout(()=>w.print(),250);
+  };
+})();
+</script>
+
 </body>
 </html>
 
