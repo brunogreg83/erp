@@ -604,6 +604,43 @@ document.addEventListener("DOMContentLoaded", () => {
 .pdf-galao-label{position:absolute;z-index:2;width:28%;max-width:145px;min-width:95px;aspect-ratio:1/1.08;background:#050505;border-radius:5px;padding:7px;color:#fff;text-align:center;font-family:Montserrat,Arial,sans-serif;left:50%;top:56%;transform:translate(-50%,-50%);display:flex;flex-direction:column;}
 .pdf-label-logo{font-size:8px;font-weight:900;line-height:1;display:flex;align-items:center;justify-content:center;gap:3px;white-space:nowrap}.pdf-label-mark{color:#08baf1;font-size:12px}.pdf-label-tagline{font-size:3.5px;margin-top:2px;white-space:nowrap}.pdf-label-code{font-size:19px;font-weight:900;line-height:1;margin-top:13px;max-width:100%;overflow:hidden;overflow-wrap:anywhere}.pdf-label-name{font-size:6px;font-weight:800;line-height:1.15;margin-top:6px;text-transform:uppercase;display:block;width:100%;max-width:100%;max-height:none;white-space:nowrap;overflow:hidden;text-overflow:clip;overflow-wrap:normal;word-break:keep-all;box-sizing:border-box}.pdf-label-accent{height:2px;width:55%;margin:6px auto 0;background:linear-gradient(90deg,#0b8fa3,#14d9ec)}.pdf-label-volume{font-size:8px;font-weight:900;text-align:right;margin-top:auto}
 </style>
+<style id="synthera-pdf-label-center-all">
+/* Centraliza horizontalmente todos os elementos dentro dos rótulos dos galões. */
+.pdf-galao-label{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  text-align:center !important;
+}
+.pdf-galao-label > .pdf-label-logo,
+.pdf-galao-label > .pdf-label-tagline,
+.pdf-galao-label > .pdf-label-code,
+.pdf-galao-label > .pdf-label-name,
+.pdf-galao-label > .pdf-label-accent,
+.pdf-galao-label > .pdf-label-volume{
+  align-self:center !important;
+  text-align:center !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+}
+.pdf-galao-label > .pdf-label-logo,
+.pdf-galao-label > .pdf-label-tagline,
+.pdf-galao-label > .pdf-label-code,
+.pdf-galao-label > .pdf-label-name,
+.pdf-galao-label > .pdf-label-volume{
+  width:100% !important;
+  max-width:100% !important;
+  box-sizing:border-box !important;
+}
+.pdf-galao-label > .pdf-label-code,
+.pdf-galao-label > .pdf-label-name{
+  white-space:nowrap !important;
+  text-align:center !important;
+}
+.pdf-galao-label > .pdf-label-volume{
+  text-align:center !important;
+}
+</style>
 <style id="synthera-original-pdf-fix">
 /* SOMENTE remoção do recorte/inset do espaço do galão no PDF */
 .pdf-card-media{
