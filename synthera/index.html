@@ -1973,42 +1973,36 @@ ${media}</div><div class="pdf-card-titlebar"></div></div>`;
           };
           const labelCode=label.querySelector(".pdf-label-code");
           if(labelCode){
-            // Centraliza o nome branco no eixo do rótulo e impede que ultrapasse suas bordas.
+            // O nome branco deve ficar centralizado pelo próprio bloco, sem deslocamento por transform.
             labelCode.style.display="block";
-            labelCode.style.position="relative";
-            labelCode.style.left="0";
+            labelCode.style.position="static";
             labelCode.style.alignSelf="stretch";
             labelCode.style.flex="0 0 auto";
             labelCode.style.boxSizing="border-box";
             labelCode.style.width="100%";
             labelCode.style.maxWidth="100%";
             labelCode.style.minWidth="0";
-            labelCode.style.marginLeft="0";
-            labelCode.style.marginRight="0";
-            labelCode.style.paddingLeft="0";
-            labelCode.style.paddingRight="0";
+            labelCode.style.margin="13px 0 0";
+            labelCode.style.padding="0";
             labelCode.style.textAlign="center";
             labelCode.style.whiteSpace="nowrap";
             labelCode.style.overflow="visible";
             labelCode.style.overflowWrap="normal";
             labelCode.style.wordBreak="normal";
-            labelCode.style.fontSize="19px";
             labelCode.style.transform="none";
-            labelCode.style.transformOrigin="50% 50%";
+            labelCode.style.transformOrigin="initial";
             const codeText=labelCode.textContent||"";
             const codeStyle=getComputedStyle(labelCode);
             const codeCanvas=document.createElement("canvas");
             const codeCtx=codeCanvas.getContext("2d");
-            codeCtx.font=codeStyle.font;
+            const available=labelCode.clientWidth;
+            let fontSize=19;
+            codeCtx.font=`900 ${fontSize}px ${codeStyle.fontFamily}`;
             const measured=codeCtx.measureText(codeText).width;
-            const letterSpacing=parseFloat(codeStyle.letterSpacing)||0;
-            const codeWidth=measured+Math.max(0,codeText.length-1)*letterSpacing;
-            const labelStyle=getComputedStyle(label);
-            const codeAvailable=label.clientWidth-
-              (parseFloat(labelStyle.paddingLeft)||0)-
-              (parseFloat(labelStyle.paddingRight)||0);
-            const codeScale=codeWidth>0&&codeAvailable>0?Math.min(1,codeAvailable/codeWidth):1;
-            labelCode.style.transform=`scaleX(${codeScale})`;
+            if(measured>0&&available>0&&measured>available){
+              fontSize=Math.max(7,fontSize*available/measured);
+            }
+            labelCode.style.fontSize=fontSize+"px";
           }
           const labelName=label.querySelector(".pdf-label-name");
           if(labelName){
