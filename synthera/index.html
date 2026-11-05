@@ -1459,14 +1459,18 @@ async function gerarPDF(){
     const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
     const isEspecialidade=p=>String(p.categoria||"").trim()==="Especialidades";
     const codeOf=p=>{
-      const raw=String(p.nome||"");
-      if(isEspecialidade(p)) return (raw.match(/\b([A-Z]{1,5}\d{2,5})\b/i)||[])[1]||"";
+      const raw=String(p.nome||"").trim();
+      if(isEspecialidade(p)){
+        const normalized=raw.replace(/^\s*Synthera\s+/i,"").trim();
+        const prefix=normalized.split(/\s*[—–-]\s*/,2)[0].trim();
+        return prefix && prefix.length<=18 ? prefix : "";
+      }
       return (raw.match(/^([A-Z]{3}\d{3})/)||[])[1]||"";
     };
     const nameOf=p=>{
-      const raw=String(p.nome||"");
+      const raw=String(p.nome||"").trim();
       if(isEspecialidade(p)){
-        return raw.replace(/^\s*Synthera\s+/i,"").replace(/^[A-Z]{1,5}\d{2,5}\s*[—-]\s*/i,"").trim()||"Produto";
+        return raw.replace(/^\s*Synthera\s+/i,"").replace(/^[^—–-]{1,24}\s*[—–-]\s*/,"").trim()||raw;
       }
       return raw.replace(/^[A-Z]{3}\d{3}\s*[—-]\s*/i,"").trim()||"Produto";
     };
@@ -1904,7 +1908,7 @@ ${media}</div><div class="pdf-card-titlebar"></div></div>`;
           let lo=13,hi=28,best=13;
           for(let n=0;n<18;n++){const mid=(lo+hi)/2;name.style.fontSize=mid+"px";if(name.scrollWidth<=name.clientWidth+1&&name.scrollHeight<=name.clientHeight+1){best=mid;lo=mid;}else hi=mid;}
           name.style.fontSize=best+"px";
-          lo=20;hi=42;best=20;
+          lo=16;hi=42;best=16;
           for(let n=0;n<18;n++){const mid=(lo+hi)/2;code.style.fontSize=mid+"px";if(code.scrollWidth<=code.clientWidth+1){best=mid;lo=mid;}else hi=mid;}
           code.style.fontSize=best+"px";
           lo=7;hi=12;best=7;
