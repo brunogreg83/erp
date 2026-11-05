@@ -1447,50 +1447,65 @@ async function gerarPDF(){
         const im=new Image();im.onload=()=>{doc.addImage(approvedCover,"PNG",0,0,PW,PH,undefined,"FAST");resolve();};im.onerror=reject;im.src=approvedCover;
       });
 
-      // Aplicar a logo Synthera completa, já incorporada em base64 no HTML.
-      // A imagem original tem transparência; o fundo escuro e os detalhes ciano
-      // dos rótulos são preservados.
-      const logoImage = await new Promise((resolve,reject)=>{
-        const img=new Image();
-        img.onload=()=>resolve(img);
-        img.onerror=reject;
-        img.src="data:image/webp;base64,"+LOGO_B64;
+      // Reconstruir os rótulos diretamente sobre a arte original em coordenadas
+      // de pixel da imagem, evitando deslocamentos causados por coordenadas em mm.
+      const coverCanvas=document.createElement("canvas");
+      coverCanvas.width=im.naturalWidth;
+      coverCanvas.height=im.naturalHeight;
+      const coverCtx=coverCanvas.getContext("2d");
+      coverCtx.drawImage(im,0,0);
+
+      const logoImage=await new Promise((resolve,reject)=>{
+        const logo=new Image();
+        logo.onload=()=>resolve(logo);
+        logo.onerror=reject;
+        logo.src="data:image/webp;base64,"+LOGO_B64;
       });
-      const logoCanvas=document.createElement("canvas");
-      logoCanvas.width=logoImage.naturalWidth;
-      logoCanvas.height=logoImage.naturalHeight;
-      const logoCtx=logoCanvas.getContext("2d");
-      logoCtx.drawImage(logoImage,0,0);
-      const logoPng=logoCanvas.toDataURL("image/png");
 
-      const drawSyntheraOnlyLabel=(x,y,w,h,bg,accent)=>{
-        doc.setFillColor(...bg);
-        doc.setDrawColor(...accent);
-        doc.setLineWidth(0.38);
-        doc.roundedRect(x,y,w,h,1.15,1.15,"FD");
-
-        const padX=w*0.055;
-        const logoW=w-padX*2;
-        const logoH=logoW/(logoImage.naturalWidth/logoImage.naturalHeight);
-        const logoY=y+(h-logoH)*0.40;
-        doc.addImage(logoPng,"PNG",x+padX,logoY,logoW,logoH,undefined,"FAST");
-
-        doc.setTextColor(24,211,235);
-        doc.setFont("helvetica","bold");
-        doc.setFontSize(Math.max(2.2,Math.min(3.2,w*0.085)));
-        doc.text("SOLUÇÕES QUÍMICAS DE ALTA PERFORMANCE",x+w/2,y+h*0.88,{
-          align:"center",maxWidth:w*0.91
-        });
-
-        doc.setFillColor(...accent);
-        doc.roundedRect(x+w*0.27,y+h-0.9,w*0.46,0.55,0.2,0.2,"F");
+      const drawRoundedRect=(ctx,x,y,w,h,r)=>{
+        ctx.beginPath();
+        ctx.moveTo(x+r,y);
+        ctx.arcTo(x+w,y,x+w,y+h,r);
+        ctx.arcTo(x+w,y+h,x,y+h,r);
+        ctx.arcTo(x,y+h,x,y,r);
+        ctx.arcTo(x,y,x+w,y,r);
+        ctx.closePath();
       };
 
-      // Coordenadas proporcionais à arte original da capa A4.
-      drawSyntheraOnlyLabel(151.2,100.3,34.0,36.8,[3,13,25],[5,119,170]);
-      drawSyntheraOnlyLabel(107.7,141.3,40.0,39.0,[3,13,25],[5,119,170]);
-      drawSyntheraOnlyLabel(131.3,163.0,32.8,59.0,[5,15,26],[5,119,170]);
-      drawSyntheraOnlyLabel(173.2,160.0,31.2,66.0,[2,29,39],[4,112,137]);
+      const drawLabel=(x,y,w,h)=>{
+        const ctx=coverCtx;
+        ctx.save();
+        drawRoundedRect(ctx,x,y,w,h,Math.max(7,w*0.025));
+        ctx.fillStyle="#020e20";
+        ctx.fill();
+        ctx.lineWidth=Math.max(3,w*0.012);
+        ctx.strokeStyle="#087eae";
+        ctx.stroke();
+
+        const logoW=w*0.78;
+        const logoH=logoW*(logoImage.naturalHeight/logoImage.naturalWidth);
+        const logoX=x+(w-logoW)/2;
+        const logoY=y+h*0.23;
+        ctx.drawImage(logoImage,logoX,logoY,logoW,logoH);
+
+        ctx.fillStyle="#20c8e8";
+        ctx.font="700 "+Math.max(7,Math.round(w*0.033))+"px Arial,sans-serif";
+        ctx.textAlign="center";
+        ctx.textBaseline="middle";
+        ctx.fillText("SOLUÇÕES QUÍMICAS DE ALTA PERFORMANCE",x+w/2,y+h*0.82,w*0.88);
+        ctx.restore();
+      };
+
+      // Limites alinhados aos rótulos impressos na imagem da capa original.
+      const sx=coverCanvas.width/1024, sy=coverCanvas.height/1448;
+      const label=(x,y,w,h)=>drawLabel(x*sx,y*sy,w*sx,h*sy);
+      label(740,490,162,205);   // galão branco 5 L
+      label(526,690,143,180);   // galão azul
+      label(650,827,146,218);   // balde
+      label(846,806,143,163);   // frasco transparente
+
+      const coverFinal=coverCanvas.toDataURL("image/jpeg",0.96);
+      doc.addImage(coverFinal,"JPEG",0,0,PW,PH,undefined,"FAST");
     }
 
     const order=["SGP - Governança","SCP - Limpeza Pesada","SKP - Cozinha","SAP - Preparação de Alimentos","SLP - Lavanderia","Especialidades"];
