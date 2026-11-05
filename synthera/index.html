@@ -2006,11 +2006,16 @@ ${media}</div><div class="pdf-card-titlebar"></div></div>`;
           }
           const labelName=label.querySelector(".pdf-label-name");
           if(labelName){
-            // Aplica ao subtítulo o mesmo alinhamento central e ajuste proporcional do título.
-            labelName.style.display="block";
-            labelName.style.position="static";
+            // Centraliza o subtítulo por uma caixa de texto própria, independente da largura da frase.
+            const subtitleText=labelName.textContent||"";
+            labelName.textContent="";
+            labelName.style.display="flex";
+            labelName.style.position="relative";
+            labelName.style.left="0";
+            labelName.style.right="0";
             labelName.style.alignSelf="stretch";
-            labelName.style.flex="0 0 auto";
+            labelName.style.justifyContent="center";
+            labelName.style.alignItems="center";
             labelName.style.boxSizing="border-box";
             labelName.style.width="100%";
             labelName.style.maxWidth="100%";
@@ -2027,18 +2032,28 @@ ${media}</div><div class="pdf-card-titlebar"></div></div>`;
             labelName.style.fontSize="6px";
             labelName.style.lineHeight="1.15";
             labelName.style.transform="none";
-            labelName.style.transformOrigin="50% 50%";
-            const subtitleText=labelName.textContent||"";
-            const subtitleStyle=getComputedStyle(labelName);
+            const subtitleSpan=document.createElement("span");
+            subtitleSpan.textContent=subtitleText;
+            subtitleSpan.style.display="inline-block";
+            subtitleSpan.style.position="relative";
+            subtitleSpan.style.flex="0 0 auto";
+            subtitleSpan.style.width="max-content";
+            subtitleSpan.style.maxWidth="none";
+            subtitleSpan.style.whiteSpace="nowrap";
+            subtitleSpan.style.textAlign="center";
+            subtitleSpan.style.font="800 6px Montserrat,Arial,sans-serif";
+            subtitleSpan.style.lineHeight="1.15";
             const subtitleCanvas=document.createElement("canvas");
             const subtitleCtx=subtitleCanvas.getContext("2d");
-            subtitleCtx.font=subtitleStyle.font;
+            subtitleCtx.font=getComputedStyle(subtitleSpan).font;
             const measured=subtitleCtx.measureText(subtitleText).width;
-            const letterSpacing=parseFloat(subtitleStyle.letterSpacing)||0;
+            const letterSpacing=parseFloat(getComputedStyle(subtitleSpan).letterSpacing)||0;
             const textWidth=measured+Math.max(0,subtitleText.length-1)*letterSpacing;
             const availableWidth=labelName.clientWidth;
             const scale=textWidth>0&&availableWidth>0?Math.min(1,availableWidth/textWidth):1;
-            labelName.style.transform=`scaleX(${scale})`;
+            subtitleSpan.style.transform=`scaleX(${scale})`;
+            subtitleSpan.style.transformOrigin="50% 50%";
+            labelName.appendChild(subtitleSpan);
           }
         }
           await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
