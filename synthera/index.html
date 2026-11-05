@@ -1937,10 +1937,30 @@ ${media}</div><div class="pdf-card-titlebar"></div></div>`;
           fitLabelText(label.querySelector(".pdf-label-code"),7,19);
           const labelName=label.querySelector(".pdf-label-name");
           if(labelName){
+            // Mede a largura real do texto e comprime horizontalmente quando necessário.
+            // Assim o nome permanece em uma única linha, mesmo quando é muito comprido.
+            labelName.style.display="block";
+            labelName.style.flex="0 1 auto";
+            labelName.style.minWidth="0";
+            labelName.style.width="100%";
+            labelName.style.maxWidth="100%";
             labelName.style.whiteSpace="nowrap";
+            labelName.style.overflow="visible";
             labelName.style.overflowWrap="normal";
-            labelName.style.wordBreak="keep-all";
-            fitLabelText(labelName,2,6);
+            labelName.style.wordBreak="normal";
+            labelName.style.fontSize="6px";
+            labelName.style.lineHeight="1.15";
+            labelName.style.transform="none";
+            const text=labelName.textContent||"";
+            const style=getComputedStyle(labelName);
+            const canvasMeasure=document.createElement("canvas");
+            const ctx=canvasMeasure.getContext("2d");
+            ctx.font=`800 6px ${style.fontFamily}`;
+            const textWidth=ctx.measureText(text).width;
+            const availableWidth=labelName.clientWidth;
+            const scale=textWidth>0&&availableWidth>0?Math.min(1,availableWidth/textWidth):1;
+            labelName.style.transform=`scaleX(${scale})`;
+            labelName.style.transformOrigin="center center";
           }
         }
           await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
