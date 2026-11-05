@@ -1446,10 +1446,23 @@ async function gerarPDF(){
       await new Promise((resolve,reject)=>{
         const coverImage=new Image();
         coverImage.onload=()=>{
-          doc.addImage(approvedCover,"WEBP",0,0,PW,PH,undefined,"FAST");
-          resolve();
+          try{
+            // Converter WebP para JPEG via canvas: jsPDF nem sempre aceita WebP
+            // diretamente em addImage, o que provoca erro genérico na exportação.
+            const coverCanvas=document.createElement("canvas");
+            coverCanvas.width=coverImage.naturalWidth;
+            coverCanvas.height=coverImage.naturalHeight;
+            const coverCtx=coverCanvas.getContext("2d");
+            if(!coverCtx) throw new Error("Não foi possível preparar a imagem da capa.");
+            coverCtx.fillStyle="#001020";
+            coverCtx.fillRect(0,0,coverCanvas.width,coverCanvas.height);
+            coverCtx.drawImage(coverImage,0,0);
+            const coverJpeg=coverCanvas.toDataURL("image/jpeg",0.94);
+            doc.addImage(coverJpeg,"JPEG",0,0,PW,PH,undefined,"FAST");
+            resolve();
+          }catch(error){reject(error);}
         };
-        coverImage.onerror=reject;
+        coverImage.onerror=()=>reject(new Error("Não foi possível carregar a imagem da capa."));
         coverImage.src=approvedCover;
       });
     }
