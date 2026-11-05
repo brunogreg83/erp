@@ -1934,7 +1934,31 @@ ${media}</div><div class="pdf-card-titlebar"></div></div>`;
             }
             el.style.fontSize=best+"px";
           };
-          fitLabelText(label.querySelector(".pdf-label-code"),7,19);
+          const labelCode=label.querySelector(".pdf-label-code");
+          if(labelCode){
+            // O nome branco em destaque no rótulo é o código/nome comercial do produto.
+            // Mantém esse texto em uma única linha e ajusta sua largura ao espaço do rótulo.
+            labelCode.style.display="block";
+            labelCode.style.width="100%";
+            labelCode.style.maxWidth="100%";
+            labelCode.style.minWidth="0";
+            labelCode.style.whiteSpace="nowrap";
+            labelCode.style.overflow="visible";
+            labelCode.style.overflowWrap="normal";
+            labelCode.style.wordBreak="normal";
+            labelCode.style.fontSize="19px";
+            labelCode.style.transform="none";
+            const codeText=labelCode.textContent||"";
+            const codeStyle=getComputedStyle(labelCode);
+            const codeCanvas=document.createElement("canvas");
+            const codeCtx=codeCanvas.getContext("2d");
+            codeCtx.font=`900 19px ${codeStyle.fontFamily}`;
+            const codeWidth=codeCtx.measureText(codeText).width;
+            const codeAvailable=labelCode.clientWidth;
+            const codeScale=codeWidth>0&&codeAvailable>0?Math.min(1,codeAvailable/codeWidth):1;
+            labelCode.style.transform=`scaleX(${codeScale})`;
+            labelCode.style.transformOrigin="center center";
+          }
           const labelName=label.querySelector(".pdf-label-name");
           if(labelName){
             // Mede a largura real do texto e comprime horizontalmente quando necessário.
