@@ -2006,13 +2006,20 @@ ${media}</div><div class="pdf-card-titlebar"></div></div>`;
           }
           const labelName=label.querySelector(".pdf-label-name");
           if(labelName){
-            // Mede a largura real do texto e comprime horizontalmente quando necessário.
-            // Assim o nome permanece em uma única linha, mesmo quando é muito comprido.
+            // Aplica ao subtítulo o mesmo alinhamento central e ajuste proporcional do título.
             labelName.style.display="block";
-            labelName.style.flex="0 1 auto";
-            labelName.style.minWidth="0";
+            labelName.style.position="static";
+            labelName.style.alignSelf="stretch";
+            labelName.style.flex="0 0 auto";
+            labelName.style.boxSizing="border-box";
             labelName.style.width="100%";
             labelName.style.maxWidth="100%";
+            labelName.style.minWidth="0";
+            labelName.style.marginLeft="0";
+            labelName.style.marginRight="0";
+            labelName.style.paddingLeft="0";
+            labelName.style.paddingRight="0";
+            labelName.style.textAlign="center";
             labelName.style.whiteSpace="nowrap";
             labelName.style.overflow="visible";
             labelName.style.overflowWrap="normal";
@@ -2020,16 +2027,18 @@ ${media}</div><div class="pdf-card-titlebar"></div></div>`;
             labelName.style.fontSize="6px";
             labelName.style.lineHeight="1.15";
             labelName.style.transform="none";
-            const text=labelName.textContent||"";
-            const style=getComputedStyle(labelName);
-            const canvasMeasure=document.createElement("canvas");
-            const ctx=canvasMeasure.getContext("2d");
-            ctx.font=`800 6px ${style.fontFamily}`;
-            const textWidth=ctx.measureText(text).width;
+            labelName.style.transformOrigin="50% 50%";
+            const subtitleText=labelName.textContent||"";
+            const subtitleStyle=getComputedStyle(labelName);
+            const subtitleCanvas=document.createElement("canvas");
+            const subtitleCtx=subtitleCanvas.getContext("2d");
+            subtitleCtx.font=subtitleStyle.font;
+            const measured=subtitleCtx.measureText(subtitleText).width;
+            const letterSpacing=parseFloat(subtitleStyle.letterSpacing)||0;
+            const textWidth=measured+Math.max(0,subtitleText.length-1)*letterSpacing;
             const availableWidth=labelName.clientWidth;
             const scale=textWidth>0&&availableWidth>0?Math.min(1,availableWidth/textWidth):1;
             labelName.style.transform=`scaleX(${scale})`;
-            labelName.style.transformOrigin="center center";
           }
         }
           await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
