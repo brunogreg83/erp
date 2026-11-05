@@ -1447,29 +1447,43 @@ async function gerarPDF(){
         const im=new Image();im.onload=()=>{doc.addImage(approvedCover,"PNG",0,0,PW,PH,undefined,"FAST");resolve();};im.onerror=reject;im.src=approvedCover;
       });
 
-      // Capa do catálogo: substituir os dados impressos nos quatro rótulos
-      // por versões limpas com apenas a marca Synthera, preservando a paleta.
+      // Aplicar a logo Synthera completa, já incorporada em base64 no HTML.
+      // A imagem original tem transparência; o fundo escuro e os detalhes ciano
+      // dos rótulos são preservados.
+      const logoImage = await new Promise((resolve,reject)=>{
+        const img=new Image();
+        img.onload=()=>resolve(img);
+        img.onerror=reject;
+        img.src="data:image/webp;base64,"+LOGO_B64;
+      });
+      const logoCanvas=document.createElement("canvas");
+      logoCanvas.width=logoImage.naturalWidth;
+      logoCanvas.height=logoImage.naturalHeight;
+      const logoCtx=logoCanvas.getContext("2d");
+      logoCtx.drawImage(logoImage,0,0);
+      const logoPng=logoCanvas.toDataURL("image/png");
+
       const drawSyntheraOnlyLabel=(x,y,w,h,bg,accent)=>{
         doc.setFillColor(...bg);
-        doc.setDrawColor(8,186,241);
-        doc.setLineWidth(0.28);
+        doc.setDrawColor(...accent);
+        doc.setLineWidth(0.38);
         doc.roundedRect(x,y,w,h,1.15,1.15,"FD");
-        doc.setFillColor(...accent);
-        doc.roundedRect(x+0.25,y+h-1.55,w-0.5,1.25,0.35,0.35,"F");
 
-        const cx=x+w/2, cy=y+h*0.39;
-        const orbitW=w*0.19, orbitH=h*0.065;
-        doc.setDrawColor(8,186,241);
-        doc.setLineWidth(0.28);
-        doc.ellipse(cx,cy,orbitW,orbitH,"S");
-        doc.ellipse(cx,cy,orbitH,orbitW,"S");
-        doc.setFillColor(8,186,241);
-        doc.circle(cx,cy,Math.max(0.45,w*0.018),"F");
+        const padX=w*0.055;
+        const logoW=w-padX*2;
+        const logoH=logoW/(logoImage.naturalWidth/logoImage.naturalHeight);
+        const logoY=y+(h-logoH)*0.40;
+        doc.addImage(logoPng,"PNG",x+padX,logoY,logoW,logoH,undefined,"FAST");
 
-        doc.setTextColor(255,255,255);
+        doc.setTextColor(24,211,235);
         doc.setFont("helvetica","bold");
-        doc.setFontSize(Math.max(4.1,Math.min(6.1,w*0.19)));
-        doc.text("SYNTHERA",cx,y+h*0.64,{align:"center"});
+        doc.setFontSize(Math.max(2.2,Math.min(3.2,w*0.085)));
+        doc.text("SOLUÇÕES QUÍMICAS DE ALTA PERFORMANCE",x+w/2,y+h*0.88,{
+          align:"center",maxWidth:w*0.91
+        });
+
+        doc.setFillColor(...accent);
+        doc.roundedRect(x+w*0.27,y+h-0.9,w*0.46,0.55,0.2,0.2,"F");
       };
 
       // Coordenadas proporcionais à arte original da capa A4.
