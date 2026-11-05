@@ -196,15 +196,9 @@ document.addEventListener("DOMContentLoaded", () => {
   setTimeout(() => clearInterval(poll), 3000);
 
   let first = true;
-  window._fb.cadastrarEstruturaSynthera().then(criados => {
-    if(criados > 0 && typeof window.showToast === 'function') {
-      window.showToast(`${criados} produtos Synthera cadastrados`, 'success');
-    }
-  }).catch(err => {
-    console.error('Erro ao cadastrar estrutura Synthera:', err);
-    if(typeof window.showToast === 'function') window.showToast('Não foi possível cadastrar a estrutura Synthera', 'error');
-  });
-
+  // Não recriar automaticamente produtos-padrão ausentes.
+  // A ausência pode significar que o usuário os excluiu intencionalmente.
+  
   window._fb.listen(docs => {
     tryRender(docs);
     if(first){
@@ -1216,12 +1210,22 @@ async function salvarProduto(){
 
 // ── DELETE ────────────────────────────────────────────────
 async function removerProduto(id){
-  if(!confirm("Remover este produto do catálogo?")) return;
+  const produto = window.produtos.find(p=>p.id===id);
+  if(!produto){
+    showToast("Não foi possível localizar este produto.","error");
+    return;
+  }
+  if(!confirm(`Remover "${produto.nome||"este produto"}" do catálogo? Esta ação não poderá ser desfeita.`)) return;
   try{
     await window._fb.remove(id);
+    window.selecionados.delete(id);
+    delete window.precosPersonalizados[id];
     showSaving();
-    showToast("Produto removido.","error");
-  } catch(e){ showToast("Erro ao remover.","error"); }
+    showToast("Produto excluído permanentemente do catálogo.");
+  } catch(e){
+    console.error("Erro ao excluir produto:",e);
+    showToast("Falha ao excluir: "+(e.message||"verifique a conexão e as permissões do Firebase."),"error");
+  }
 }
 
 // ── EDIT ──────────────────────────────────────────────────
