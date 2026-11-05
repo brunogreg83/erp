@@ -1465,21 +1465,15 @@ async function gerarPDF(){
         ? {title:match[1].trim(),subtitle:match[2].trim()}
         : {title:raw,subtitle:""};
     };
-    const codeOf=p=>{
-      const raw=String(p.nome||"").trim();
-      if(isEspecialidade(p)){
-        const title=specialtyParts(p).title;
-        return title && title.length<=28 ? title : "";
-      }
-      return (raw.match(/^([A-Z]{3}\d{3})/)||[])[1]||"";
+    const productTitleParts=p=>{
+      const raw=String(p.nome||"").replace(/^\s*Synthera\s+/i,"").trim();
+      const match=raw.match(/^(.+?)\s*[—–-]\s*(.+)$/);
+      return match
+        ? {title:match[1].trim(),subtitle:match[2].trim()}
+        : {title:raw,subtitle:""};
     };
-    const nameOf=p=>{
-      const raw=String(p.nome||"").trim();
-      if(isEspecialidade(p)){
-        return specialtyParts(p).subtitle||specialtyParts(p).title||"Produto";
-      }
-      return raw.replace(/^[A-Z]{3}\d{3}\s*[—-]\s*/i,"").trim()||"Produto";
-    };
+    const codeOf=p=>productTitleParts(p).title||"";
+    const nameOf=p=>productTitleParts(p).subtitle||productTitleParts(p).title||"Produto";
     const subOf=p=>{
       const attrs=p.attrs||[];
       const raw=attrs.length?String(attrs[0].v||"").trim():"";
@@ -1860,7 +1854,7 @@ async function gerarPDF(){
 
         chunk.forEach((p,i)=>{
           const code=codeOf(p),title=nameOf(p),sub=subOf(p);
-          const card=document.createElement("div");card.className="pdf-card"+(i%2?" reverse":"")+(isEspecialidade(p)?" specialty":"");
+          const card=document.createElement("div");card.className="pdf-card"+(i%2?" reverse":"")+" specialty";
           const media=`<div class="pdf-galao-wrap"><img class="pdf-galao-real" src="${SYNTHERA_GALAO_TRANSPARENTE}" alt="${esc(title)}"><div class="pdf-galao-label"><div class="pdf-label-logo"><span class="pdf-label-mark">●</span><span>SYNTHERA<sup>®</sup></span></div><div class="pdf-label-tagline">SOLUÇÕES EM LIMPEZA PROFISSIONAL</div><div class="pdf-label-code">${esc(code||"SYN")}</div><div class="pdf-label-name">${esc(title.toUpperCase())}</div><div class="pdf-label-accent"></div><div class="pdf-label-volume">${esc(p.embalagem||"5L")}</div></div></div>`;
           const price=p.preco?String(p.preco):"CONSULTAR";
           card.innerHTML=`<div class="pdf-futuristic-bg" aria-hidden="true"></div><div class="pdf-card-inner"><div class="pdf-card-content">
