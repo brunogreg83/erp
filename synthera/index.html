@@ -1458,19 +1458,25 @@ async function gerarPDF(){
 
     const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
     const isEspecialidade=p=>String(p.categoria||"").trim()==="Especialidades";
+    const specialtyParts=p=>{
+      const raw=String(p.nome||"").replace(/^\s*Synthera\s+/i,"").trim();
+      const match=raw.match(/^(.+?)\s*[—–-]\s*(.+)$/);
+      return match
+        ? {title:match[1].trim(),subtitle:match[2].trim()}
+        : {title:raw,subtitle:""};
+    };
     const codeOf=p=>{
       const raw=String(p.nome||"").trim();
       if(isEspecialidade(p)){
-        const normalized=raw.replace(/^\s*Synthera\s+/i,"").trim();
-        const prefix=normalized.split(/\s*[—–-]\s*/,2)[0].trim();
-        return prefix && prefix.length<=18 ? prefix : "";
+        const title=specialtyParts(p).title;
+        return title && title.length<=28 ? title : "";
       }
       return (raw.match(/^([A-Z]{3}\d{3})/)||[])[1]||"";
     };
     const nameOf=p=>{
       const raw=String(p.nome||"").trim();
       if(isEspecialidade(p)){
-        return raw.replace(/^\s*Synthera\s+/i,"").replace(/^[^—–-]{1,24}\s*[—–-]\s*/,"").trim()||raw;
+        return specialtyParts(p).subtitle||specialtyParts(p).title||"Produto";
       }
       return raw.replace(/^[A-Z]{3}\d{3}\s*[—-]\s*/i,"").trim()||"Produto";
     };
@@ -1545,6 +1551,8 @@ async function gerarPDF(){
         .pdf-card:not(.reverse) .pdf-card-titlebar{left:55%}.pdf-card.reverse .pdf-card-titlebar{right:45%}
         .pdf-code{font-family:Montserrat,sans-serif;font-weight:900;font-size:37px;line-height:.92;color:#fff;margin-bottom:13px;white-space:nowrap;max-width:100%;overflow:hidden}
         .pdf-name{font-family:Montserrat,sans-serif;font-weight:900;font-size:24px;line-height:1.02;color:#08aaf4;text-transform:uppercase;width:100%;max-width:100%;height:51px;overflow:hidden;white-space:normal;overflow-wrap:normal;word-break:normal;margin-bottom:8px}
+        .pdf-card.specialty .pdf-code{color:#fff;display:block;margin-bottom:10px}
+        .pdf-card.specialty .pdf-name{color:#08aaf4;display:block;margin-top:0}
         .pdf-sub{font-family:Nunito,sans-serif;font-size:11px;line-height:1.2;color:#e4eef2;width:100%;max-width:100%;height:29px;overflow:hidden;margin-bottom:8px}
         .pdf-rule{height:3px;width:50px;background:#08baf1;margin:5px 0 12px;flex:none}
         .pdf-price{display:flex;align-items:center;width:100%;max-width:100%;height:34px;overflow:hidden;border:2px solid #0ab9ff;border-radius:10px;background:#01101d;padding:6px 10px;font:800 10px Montserrat,sans-serif;color:#08aaf4;white-space:nowrap;line-height:1}
@@ -1852,7 +1860,7 @@ async function gerarPDF(){
 
         chunk.forEach((p,i)=>{
           const code=codeOf(p),title=nameOf(p),sub=subOf(p);
-          const card=document.createElement("div");card.className="pdf-card"+(i%2?" reverse":"");
+          const card=document.createElement("div");card.className="pdf-card"+(i%2?" reverse":"")+(isEspecialidade(p)?" specialty":"");
           const media=`<div class="pdf-galao-wrap"><img class="pdf-galao-real" src="${SYNTHERA_GALAO_TRANSPARENTE}" alt="${esc(title)}"><div class="pdf-galao-label"><div class="pdf-label-logo"><span class="pdf-label-mark">●</span><span>SYNTHERA<sup>®</sup></span></div><div class="pdf-label-tagline">SOLUÇÕES EM LIMPEZA PROFISSIONAL</div><div class="pdf-label-code">${esc(code||"SYN")}</div><div class="pdf-label-name">${esc(title.toUpperCase())}</div><div class="pdf-label-accent"></div><div class="pdf-label-volume">${esc(p.embalagem||"5L")}</div></div></div>`;
           const price=p.preco?String(p.preco):"CONSULTAR";
           card.innerHTML=`<div class="pdf-futuristic-bg" aria-hidden="true"></div><div class="pdf-card-inner"><div class="pdf-card-content">
