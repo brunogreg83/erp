@@ -602,7 +602,7 @@ document.addEventListener("DOMContentLoaded", () => {
 .pdf-galao-wrap{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:visible;}
 .pdf-card-media .pdf-galao-real{width:auto!important;height:92%!important;max-width:100%!important;object-fit:contain!important;clip-path:none!important;-webkit-clip-path:none!important;position:relative;z-index:1;}
 .pdf-galao-label{position:absolute;z-index:2;width:28%;max-width:145px;min-width:95px;aspect-ratio:1/1.08;background:#050505;border-radius:5px;padding:7px;color:#fff;text-align:center;font-family:Montserrat,Arial,sans-serif;left:50%;top:56%;transform:translate(-50%,-50%);display:flex;flex-direction:column;}
-.pdf-label-logo{font-size:8px;font-weight:900;line-height:1;display:flex;align-items:center;justify-content:center;gap:3px;white-space:nowrap}.pdf-label-mark{color:#08baf1;font-size:12px}.pdf-label-tagline{font-size:3.5px;margin-top:2px;white-space:nowrap}.pdf-label-code{font-size:19px;font-weight:900;line-height:1;margin-top:13px;max-width:100%;overflow:hidden;overflow-wrap:anywhere}.pdf-label-name{font-size:6px;font-weight:800;line-height:1.15;margin-top:6px;text-transform:uppercase;width:100%;max-width:100%;max-height:25%;overflow:hidden;overflow-wrap:anywhere;word-break:normal;box-sizing:border-box}.pdf-label-accent{height:2px;width:55%;margin:6px auto 0;background:linear-gradient(90deg,#0b8fa3,#14d9ec)}.pdf-label-volume{font-size:8px;font-weight:900;text-align:right;margin-top:auto}
+.pdf-label-logo{font-size:8px;font-weight:900;line-height:1;display:flex;align-items:center;justify-content:center;gap:3px;white-space:nowrap}.pdf-label-mark{color:#08baf1;font-size:12px}.pdf-label-tagline{font-size:3.5px;margin-top:2px;white-space:nowrap}.pdf-label-code{font-size:19px;font-weight:900;line-height:1;margin-top:13px;max-width:100%;overflow:hidden;overflow-wrap:anywhere}.pdf-label-name{font-size:6px;font-weight:800;line-height:1.15;margin-top:6px;text-transform:uppercase;display:block;width:100%;max-width:100%;max-height:none;white-space:nowrap;overflow:hidden;text-overflow:clip;overflow-wrap:normal;word-break:keep-all;box-sizing:border-box}.pdf-label-accent{height:2px;width:55%;margin:6px auto 0;background:linear-gradient(90deg,#0b8fa3,#14d9ec)}.pdf-label-volume{font-size:8px;font-weight:900;text-align:right;margin-top:auto}
 </style>
 <style id="synthera-original-pdf-fix">
 /* SOMENTE remoção do recorte/inset do espaço do galão no PDF */
@@ -1935,7 +1935,13 @@ ${media}</div><div class="pdf-card-titlebar"></div></div>`;
             el.style.fontSize=best+"px";
           };
           fitLabelText(label.querySelector(".pdf-label-code"),7,19);
-          fitLabelText(label.querySelector(".pdf-label-name"),3,6);
+          const labelName=label.querySelector(".pdf-label-name");
+          if(labelName){
+            labelName.style.whiteSpace="nowrap";
+            labelName.style.overflowWrap="normal";
+            labelName.style.wordBreak="keep-all";
+            fitLabelText(labelName,2,6);
+          }
         }
           await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
           if(document.fonts?.ready) await document.fonts.ready;
